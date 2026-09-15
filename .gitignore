@@ -1,0 +1,8 @@
+# Local tooling for tools/check_ui.mjs (npm i playwright-core)
+# No trailing slash: this is often a symlink, which "node_modules/" would miss.
+node_modules
+
+# That npm install also writes these. They are not dependencies of the game —
+# there are none — and committing them would say otherwise.
+package.json
+package-lock.json

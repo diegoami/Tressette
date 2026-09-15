@@ -93,7 +93,9 @@ which always leaves exactly 11 points per deal between the two players.
   golden tests and the self-play harness reproducible.
 - Ten cards each; twenty remain face down as the tallone.
 - The non-dealer leads the first trick. The deal alternates, so whoever did
-  not lead this deal leads the next — Discola's rule, and Tressette's.
+  not lead this deal leads the next — Discola's rule, and Tressette's. On a
+  cold start you lead the first deal, as in Discola, where `partitaPrimo`
+  begins at `BASSO`.
 
 ### 2.3 A trick
 
@@ -177,11 +179,20 @@ scoreDeal(state)                   // floors terzi, adds ultima, adds accusi
 vincitore(state)                   // BASSO, ALTO or null for a draw
 
 // the opponent
-compGioca(state, P)                // slot to play, given the profile's weights
+WEIGHT_KEYS                        // the twelve names, in table order
+rollProfiles(rng)                  // {Valerio, Graziano, Piero, Franco}; Piero drawn from rng
+compGioca(state, P)                // slot to play, given one profile's weights
 ```
 
 Nothing in this file touches `document`, `window`, timers or `Math.random`
 directly. That is what lets the same file run under Node.
+
+The profiles live here, not in the page, because three callers need them: the
+page, the self-play harness and the golden test. Piero's roll takes the same
+injectable rng as `mescola`. The page calls `rollProfiles(Math.random)` once
+at startup, which keeps Discola's once-per-session tradition; the harness and
+the golden test call it with their seeded rng, so a fixture that includes
+Piero is still reproducible.
 
 ### 3.3 State
 
@@ -196,7 +207,7 @@ terzi[2]           points taken this deal, in thirds
 accusi[2]          declarations, credited at first play
 perPrimo           who led this trick
 deveGiocare        whose turn it is
-partitaPrimo       who leads the next deal; alternates, as in Discola
+partitaPrimo       who leads the next deal; BASSO on a cold start, then alternates
 tricks             tricks completed this deal, 0..20
 seen[]             what the opponent has seen: its own draws, every card played
 voids[2][4]        suits a player has shown they cannot follow
@@ -212,41 +223,60 @@ highest, ties to the lowest slot. Two branches, leading and following. `P` is
 the profile's weights; the features come from the hand, `seen`, `voids`, the
 tallone and the trick count.
 
-**Knowledge.** Three derived facts drive everything, all computed from `seen`
+**Knowledge.** Four derived facts drive everything, all computed from `seen`
 and the opponent's own hand:
 
-- `outstanding(suit)`: which of the 3, 2 and asso of a suit are neither seen
-  nor in hand — the cards that can still beat or be beaten.
-- `sure(card)`: no outstanding card outranks it. A sure card led wins the
-  trick.
+- `outstanding(suit)`: every card of the suit, at any rank, that is neither
+  seen nor in hand — what the human may still hold.
+- `controls(suit)`: which of the 3, 2 and asso are among them — the cards
+  that decide who captures the asso.
+- `sure(card)`: no outstanding card of its suit outranks it. A sure card led
+  wins the trick. This is tested over the full rank order, not over
+  `controls`: once the 3, 2 and asso of bastoni are gone, the Re of bastoni is
+  sure and the 7 of bastoni is not, because the Re, Cavallo and Fante still
+  beat it.
 - `voids[BASSO][suit]`: the human failed to follow this suit. This is the
   inference Tressette is played on; Briscola never had it.
 
 **Leading** — the question is which suit to open and how high.
 
 ```
-v = terzi(c);  s = suit(c);  late = tricks / 20
-sure(c):              score += LEAD_SURE_BONUS × (1 + late × LATE_FACTOR)
+v = terzi(c);  s = suit(c);  late = min(1, tricks / 10);  k = 1 + late × LATE_FACTOR
+sure(c):              score += LEAD_SURE_BONUS × k
 liscio (v == 0):      score += LEAD_LISCIO_BONUS
                       score += (cards held in s − 1) × LEAD_LONG_SUIT
-asso not sure:        score −= LEAD_ACE_EXPOSED_PENALTY × |outstanding 3/2 in s|
-3 or 2, not sure:     score −= LEAD_CONTROL_PENALTY
+asso not sure:        score −= LEAD_ACE_EXPOSED_PENALTY × |controls(s) above the asso|
+3 or 2, not sure:     score −= LEAD_CONTROL_PENALTY × k
 voids[BASSO][s]:      score −= LEAD_INTO_VOID_PENALTY      (they discard for free)
 ```
 
 **Following** — the question is whether the trick is worth what it costs.
 
 ```
-takes = prende(c, led);  L = terzi(led);  v = terzi(c)
+takes = prende(c, led);  L = terzi(led);  v = terzi(c);  k as above
+tricks == 19 (the ultima):  L += ULTIMA_WEIGHT before anything else
 takes:      score = (L + v) × TAKE_TERZI_WEIGHT
 else:       score = −v × GIVE_TERZI_WEIGHT
-takes with a 3 or 2 onto a trick worth < SPEND_CONTROL_FLOOR terzi:
-            score −= SPEND_CONTROL_PENALTY
+takes with a 3 or 2 onto a trick worth less than an asso (L + v < 3):
+            score −= SPEND_CONTROL_PENALTY × k
 void in the led suit and c guards an asso (only other card of its suit):
-            score −= DISCARD_GUARD_PENALTY
-tricks == 19 (the ultima):  L += 3 before scoring
-everything above × (1 + late × LATE_FACTOR)
+            score −= DISCARD_GUARD_PENALTY × k
 ```
+
+**What `late` does, and does not, touch.** `k` multiplies the four control
+terms only — the sure bonus, the two control penalties and the guard penalty
+— and never the point terms. Two reasons. Points on the table are worth the
+same on trick one as on trick twenty, while a control card's certainty grows
+as the tallone empties and `seen` approaches the whole deck; by trick ten the
+information is complete, which is why `late` saturates there. And a factor
+applied to a whole branch would change nothing: `compGioca` takes the argmax
+within the branch, and a common multiplier leaves the argmax where it was.
+Later readers will be tempted to "fix" the asymmetry into symmetry; doing so
+silently invalidates the golden fixture and makes the weight inert.
+
+The floor of 3 terzi in the spend-control line is an asso's worth. It is a
+constant, not a weight: there are twelve weights, and the settings sheet
+discloses twelve.
 
 **The weights, v1.** Twelve, to mirror the twelve, and because that was
 enough to give four opponents four characters.
@@ -263,13 +293,14 @@ enough to give four opponents four characters.
 | GIVE_TERZI_WEIGHT | cost of points handed over |
 | SPEND_CONTROL_PENALTY | cost of using a 3 or 2 on a cheap trick |
 | DISCARD_GUARD_PENALTY | cost of leaving an asso unguarded |
-| ULTIMA_WEIGHT | how much the last trick's point counts |
-| LATE_FACTOR | how much everything steepens as the tallone empties |
+| ULTIMA_WEIGHT | the last trick's bonus, in terzi; 3 is the rule's value, more makes the ultima a goal |
+| LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
 **The four temperaments.** Valerio balanced and the default; Graziano loose,
 cashing sure cards early and spending 3s freely; Franco tight, hoarding control
-and guarding every asso; Piero rolled once per session, as in Discola, because
-that is now a house tradition rather than a Delphi accident.
+and guarding every asso; Piero rolled once per session by `rollProfiles`, as
+in Discola, because that is now a house tradition rather than a Delphi
+accident.
 
 **The contract, from v1.0 on.** Discola's rule was *change a weight, not the
 formula* because the formula was the 1997 artefact. Here the formula is ours
@@ -282,9 +313,11 @@ mean points per deal and the noise floor. Discola's 40,000-hand comparison is
 the model. Acceptance for v1: every profile beats random-legal in at least
 95% of deals and greedy-take in at least 70%, and no profile beats another by
 more than 65% — they should be characters, not tiers. A small suite of
-*trap positions* (an asso on the table and the 3 in hand; forced to follow
-with only an asso and a figure; the ultima) asserts the obvious plays
-directly, because a win rate can hide a stupid habit.
+*trap positions* asserts the obvious plays directly, because a win rate can
+hide a stupid habit: an asso on the table and the 3 in hand; forced to follow
+with only an asso and a figure; the ultima; and the 3, 2 and asso of a suit
+all gone with a 7 and a Cavallo of that suit in hand, where the 7 must not be
+led as if it were sure.
 
 ### 3.5 Turn flow
 
@@ -410,9 +443,17 @@ Copy from `discola-web`: `decks/`, `tools/pack_cards.py`, `netlify.toml`,
 `.gitignore`, the `ui-check` skill. Expand the stub `CLAUDE.md` into this
 repo's version of Discola's (the same three rules, reworded: the fan budget,
 the engine contract, Italian text). Empty `index.html` with the title and the
-font links.
+font links. A two-line `README.md` pointing at `PLAN.md`; iteration 6
+rewrites it.
 
-**Done when** the repo has the shape in §3.1 and nothing else.
+The `ui-check` skill and `check_ui.mjs` are carried over **dormant**: the
+check drives screens that do not exist until iteration 3, so do not try to
+make it pass, and word the rule in `CLAUDE.md` as taking effect once
+`index.html` has a table. `engine.js`, the tests, the harness and `SPEC.md`
+belong to later iterations; §3.1 describes the finished repo, not this one.
+
+**Done when** the repo holds exactly what the two paragraphs above name, and
+nothing else.
 
 ### 1 — Engine and tests (1 day)
 

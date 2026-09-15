@@ -147,7 +147,7 @@ CLAUDE.md, README.md, SPEC.md (when built), .claude/skills/ui-check/
 
 **Why a second file.** Discola's engine is inline and that is right for
 Discola: the formula was tuned in 1997 and nothing needs to run it outside a
-browser. Here the formula is new, and the only way to tune twelve weights
+browser. Here the formula is new, and the only way to tune eleven weights
 honestly is to play tens of thousands of hands headlessly. `engine.js` is a
 classic script — `<script src="engine.js">`, no `type="module"`, so it loads
 over `file://` — and Node runs the same file with `vm.runInThisContext`. No
@@ -179,7 +179,7 @@ scoreDeal(state)                   // floors terzi, adds ultima, adds accusi
 vincitore(state)                   // BASSO, ALTO or null for a draw
 
 // the opponent
-WEIGHT_KEYS                        // the twelve names, in table order
+WEIGHT_KEYS                        // the eleven names, in table order
 rollProfiles(rng)                  // {Valerio, Graziano, Piero, Franco}; Piero drawn from rng
 compGioca(state, P)                // slot to play, given one profile's weights
 ```
@@ -254,7 +254,6 @@ voids[BASSO][s]:      score −= LEAD_INTO_VOID_PENALTY      (they discard for f
 
 ```
 takes = prende(c, led);  L = terzi(led);  v = terzi(c);  k as above
-tricks == 19 (the ultima):  L += ULTIMA_WEIGHT before anything else
 takes:      score = (L + v) × TAKE_TERZI_WEIGHT
 else:       score = −v × GIVE_TERZI_WEIGHT
 takes with a 3 or 2 onto a trick worth less than an asso (L + v < 3):
@@ -275,11 +274,38 @@ Later readers will be tempted to "fix" the asymmetry into symmetry; doing so
 silently invalidates the golden fixture and makes the weight inert.
 
 The floor of 3 terzi in the spend-control line is an asso's worth. It is a
-constant, not a weight: there are twelve weights, and the settings sheet
-discloses twelve.
+constant, not a weight: there are eleven weights, and the settings sheet
+discloses eleven.
 
-**The weights, v1.** Twelve, to mirror the twelve, and because that was
-enough to give four opponents four characters.
+**The last two tricks are played exactly, not weighed.** From trick eleven on
+the opponent has perfect information: the tallone is empty, `seen` holds
+every card played, so the cards it has not seen are exactly the human's hand.
+The formula plays that half heuristically anyway — a formula is the artefact,
+as `CompGioca` was — with one exception. With two cards each, the only choice
+left in the deal is which card to keep for the ultima, and no one-card score
+can express it: both branches above score the card played, never the card
+kept. So at `tricks == 18` `compGioca` enumerates instead: for each of its
+two cards, the human's best legal reply, then the forced last trick, summing
+its own terzi over both tricks with the ultima's 3 included; it plays the
+higher, ties to the lower slot. Four cards, at most four lines of play.
+
+The case that shows why: the opponent holds the Re di coppe and the 7 di
+spade and leads; the human holds the Fante di coppe and the asso di spade.
+Leading the Re wins one terzo now and loses the asso and the ultima after,
+2 to 6. Leading the 7 loses the asso now and wins the Fante and the ultima
+with the Re, 5 to 3. The formula would lead the Re, because it is sure.
+
+There is no ultima weight. An earlier draft had one, applied on trick twenty,
+where both players hold a single card and nothing is chosen; it could be set
+to anything without moving a play. A weight the settings sheet discloses has
+to do something.
+
+**The weights, v1.** Eleven. Discola had twelve because `Global.pas` did; a
+twelfth is not invented here to match the count. If iteration 2's harness
+shows the opponent failing to cash sure winners because it will not take a
+cheap trick to gain the lead, the candidate is a tempo term — a bonus for
+taking, scaled by the sure cards in hand — and it is decided then, before the
+formula freezes.
 
 | Weight | What it does |
 |---|---|
@@ -293,7 +319,6 @@ enough to give four opponents four characters.
 | GIVE_TERZI_WEIGHT | cost of points handed over |
 | SPEND_CONTROL_PENALTY | cost of using a 3 or 2 on a cheap trick |
 | DISCARD_GUARD_PENALTY | cost of leaving an asso unguarded |
-| ULTIMA_WEIGHT | the last trick's bonus, in terzi; 3 is the rule's value, more makes the ultima a goal |
 | LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
 **The four temperaments.** Valerio balanced and the default; Graziano loose,
@@ -315,9 +340,11 @@ the model. Acceptance for v1: every profile beats random-legal in at least
 more than 65% — they should be characters, not tiers. A small suite of
 *trap positions* asserts the obvious plays directly, because a win rate can
 hide a stupid habit: an asso on the table and the 3 in hand; forced to follow
-with only an asso and a figure; the ultima; and the 3, 2 and asso of a suit
-all gone with a 7 and a Cavallo of that suit in hand, where the 7 must not be
-led as if it were sure.
+with only an asso and a figure; the Re and 7 position above at `tricks == 18`,
+where the 7 must be led first; and the 3, 2 and asso of a suit all gone with
+a 7 and a Cavallo of that suit in hand, where the 7 must not be led as if it
+were sure. Every trap is a position with a real choice: a position where
+every legal play is forced asserts nothing.
 
 ### 3.5 Turn flow
 
@@ -475,6 +502,15 @@ The formula in §3.4 with one profile; `tools/selfplay.mjs` with the two
 baselines; the trap suite. Tune until the acceptance numbers hold. Then the
 golden test: seed 1..20, both seats `compGioca`, the sequence of plays frozen
 in a fixture.
+
+Two questions to put to the harness before the freeze, because they cannot
+be seen in a win rate. `sure()` is suppressed early by construction (twenty
+face-down cards leave almost nothing sure) and `k` suppresses the sure bonus
+again on top; measure how often the bonus fires before trick ten, and whether
+forcing `k = 1` moves the acceptance numbers. If it does not, one of the two
+mechanisms is doing nothing and is simplified away now, not tuned around in
+iteration 5. And the tempo question from §3.4: does the opponent decline
+cheap tricks while holding sure winners it then never gets to lead?
 
 **Done when** the acceptance numbers in §3.4 hold and the golden fixture is
 committed.

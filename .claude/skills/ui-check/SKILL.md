@@ -77,9 +77,12 @@ did not, because a hand of ten cards overlaps: every card has an uncovered
 strip at least `--strip` wide and the last card is fully visible; a raised card
 is entirely inside the table and above the fold; and the fan never exceeds the
 table's width, in every deck, at every viewport, with the spacing tokens
-inflated. Cards are excluded from the 32px tap-target rule — a fan strip is
-narrower than that by design, which is why a card is raised by one tap and
-played by a second.
+inflated. Cards are already excluded from the 32px tap-target rule, and were
+before this game existed: `check_ui.mjs:163` excludes them because a card's
+size is the table's budget, asserted by the table pass rather than by a
+thumb-sized floor. The fan gives that exclusion a second reason rather than its
+first — a strip is narrower than 32px by design, which is why a card is raised
+by one tap and played by a second.
 
 ## Reading a failure
 

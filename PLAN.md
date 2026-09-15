@@ -407,9 +407,10 @@ Each is independently shippable, and each ends with its check green.
 ### 0 — Scaffold (½ day)
 
 Copy from `discola-web`: `decks/`, `tools/pack_cards.py`, `netlify.toml`,
-`.gitignore`, the `ui-check` skill. Write `CLAUDE.md` for this repo (the same
-three rules, reworded: the fan budget, the engine contract, Italian text).
-Empty `index.html` with the title and the font links.
+`.gitignore`, the `ui-check` skill. Expand the stub `CLAUDE.md` into this
+repo's version of Discola's (the same three rules, reworded: the fan budget,
+the engine contract, Italian text). Empty `index.html` with the title and the
+font links.
 
 **Done when** the repo has the shape in §3.1 and nothing else.
 
@@ -421,7 +422,11 @@ Empty `index.html` with the title and the font links.
 trump; declarations detected in fixed hands; `vincitore` returns the higher
 total and null on the one kind of tie declarations can produce.
 
-**Done when** the tests pass and the engine has no DOM reference.
+Add `.github/workflows/check.yml`: on every push and pull request, run
+`node --test tools/` on the current Node LTS. No dependencies to install.
+
+**Done when** the tests pass locally and in the Action, and the engine has no
+DOM reference.
 
 ### 2 — Opponent v1 and the self-play harness (1–2 days)
 
@@ -445,7 +450,12 @@ briscola, the ultima marker, the trick sweep. Extend `check_ui.mjs` with the
 three fan assertions — against a broken fan first. Run it at all nineteen
 viewports in all five decks.
 
-**Done when** a full deal can be played against Valerio and the check is
+Add a second job to `check.yml` that installs `playwright-core` and Chromium
+(`npx playwright install --with-deps chromium`) and runs
+`node tools/check_ui.mjs`. Discola listed "no CI" as a known gap; this closes
+it here, so no pull request can merge with a layout the check rejects.
+
+**Done when** a full deal can be played against Valerio and both jobs are
 green.
 
 ### 4 — Result and sheets (1 day)
@@ -501,7 +511,116 @@ stranger take the project over.
    — declarations from the deal only, one deal per partita — as single
    constants so a later change is one line.
 
-## 7. Glossary
+## 7. How this gets built
+
+Written for a builder starting with no context. Read this section, then the
+rest of this document, then Discola.
+
+### 7.1 One builder, one iteration per session
+
+There is no orchestrator agent. This document is the plan and the owner
+decides when each iteration starts. Each iteration is one session, opened
+with:
+
+> Do iteration N of PLAN.md in `diegoami/Tressette`. Read PLAN.md in full
+> first, then `diegoami/discola-web` (`CLAUDE.md`, `SPEC.md`, `index.html`,
+> `tools/check_ui.mjs`, `.claude/skills/ui-check`), then the previous
+> iteration's pull request. Work on a branch named `iteration-N-<slug>` off
+> the default branch. Stop at the iteration's "Done when": do not start the
+> next one. Finish with every check green, commit, push, and open a pull
+> request with the description in §7.4.
+
+Why one iteration and not several: the defects this kind of page ships are
+invisible in a diff and show up only in the check or at the table, and a
+session that holds the whole of one iteration in context catches them. A
+handoff in the middle of the fan or the opponent loses exactly that.
+
+Why no orchestrator: the iterations are sequential and coupled — the table
+needs the engine's API, the check needs the table's markup, the profiles need
+the harness. At most a day could run in parallel, and an orchestrator would
+never see the code. Subagents earn their keep in one place: read-only
+exploration of Discola while the builder works.
+
+Discola is the reference for everything not stated here. If it is not already
+beside this repo, clone it: `https://github.com/diegoami/discola-web`.
+
+### 7.2 Model and effort
+
+| Iteration | Effort | Why |
+|---|---|---|
+| 0 Scaffold | medium | copying and rewording |
+| 1 Engine and tests | medium | well specified in §2 and §3.2 |
+| 2 Opponent and harness | **high** | the project's first way to fail quietly; §4 gives it slack |
+| 3 The table | **high** | the second; may take two sessions, fan first, then the check |
+| 4 Result and sheets | medium | Discola's screens, forked |
+| 5 The four opponents | medium | the harness does the work; the builder reads numbers |
+| 6 Ship | medium | docs in Discola's voice |
+
+The builder is the Opus tier throughout. Do not drop to a smaller model on the
+cheap iterations: the saving over eight days is small, and a missed layout
+defect costs more than it saves. Exploration subagents the builder spawns to
+read Discola can be the small tier.
+
+Iterations 2 and 3 run alone. Nothing else is in flight while either is open.
+
+### 7.3 The reviewer
+
+Every pull request gets one review from a **fresh context** — a new session or
+a subagent that has not seen the work — at high effort, same tier as the
+builder. Fresh matters more than different: the builder cannot see its own
+diff, and a reviewer that shares its context cannot either.
+
+The reviewer is given three things: this document, the diff, and the check
+output pasted into the pull request. It checks, in order:
+
+1. the rules against §2, line by line — ranking, terzi, following suit, the
+   ultima, the declarations, the draw order;
+2. the opponent against §3.4 — the formula as written, the weights named as
+   listed, no DOM or `Math.random` in `engine.js`;
+3. that the UI check actually ran, on this commit, and that every assertion
+   still names a defect (a new threshold with no story behind it is a
+   finding);
+4. the iteration's "Done when", item by item;
+5. Italian on the page, English in comments and commits.
+
+The reviewer reports; it does not fix. The builder fixes in the same pull
+request, and the reviewer looks once more. A finding the builder disagrees
+with goes to the owner, in the pull request, not into a silent merge.
+
+### 7.4 GitHub, at the lowest useful ceremony
+
+- **One pull request per iteration.** It is the unit of work, review and CI.
+  Its description has four parts: what was built; the iteration's "Done when"
+  as a ticked list; the check output, verbatim; what was left out and why.
+- **CI on every pull request**: the engine tests from iteration 1, the UI
+  check from iteration 3. A red check does not merge. Nothing is skipped or
+  quarantined to get to green.
+- **Issues only for defects found by playing** after an iteration has merged.
+  Label them `defect`. Each is closed by a pull request that fixes the page
+  *and* adds the assertion that would have caught it, per the `ui-check`
+  skill: the assertion is written against the broken commit first. This is
+  how every threshold in Discola's check got its story.
+- **No project board, no milestones, no issue per iteration.** This document
+  holds the plan; a second copy goes stale.
+- **Commit messages** as in Discola's history: one line saying what changed
+  and why, in English, imperative mood, no ticket numbers.
+
+### 7.5 What outlives a session
+
+Nothing lives in a session's memory. Anything learned goes into one of three
+files: a decision into §0 of this document, a rule the builder must follow
+into `CLAUDE.md`, and, at iteration 6, everything a stranger needs into
+`SPEC.md`. If a session ends with something only it knows, that is a defect
+in the handoff.
+
+### 7.6 The owner's part
+
+Start each iteration. Answer the two open defaults in §0 (declarations,
+opponent names) before iteration 4 and iteration 5 respectively. Play the game
+after iterations 3 and 5 — the harness measures strength, and only a player
+can measure whether it is fun — and file what you find as `defect` issues.
+
+## 8. Glossary
 
 | Italian | Meaning |
 |---|---|

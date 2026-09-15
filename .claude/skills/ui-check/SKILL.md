@@ -18,7 +18,8 @@ The check and this skill were copied from `discola-web` in iteration 0, before
 there is anything to check. `index.html` holds a title and the font links, and
 `check_ui.mjs` drives screens that do not exist yet, so **it fails, and that is
 expected**. On the iteration 0 scaffold it does not report a tidy failure — it
-throws on the first screen, because the element it reaches for is not there:
+throws on the first screen, because the element it reaches for is not there.
+Abridged; the whole of it is in pull request #1:
 
 ```
 screens
@@ -78,7 +79,7 @@ strip at least `--strip` wide and the last card is fully visible; a raised card
 is entirely inside the table and above the fold; and the fan never exceeds the
 table's width, in every deck, at every viewport, with the spacing tokens
 inflated. Cards are already excluded from the 32px tap-target rule, and were
-before this game existed: `check_ui.mjs:163` excludes them because a card's
+before this game existed: `check_ui.mjs:163-168` excludes them because a card's
 size is the table's budget, asserted by the table pass rather than by a
 thumb-sized floor. The fan gives that exclusion a second reason rather than its
 first — a strip is narrower than 32px by design, which is why a card is raised

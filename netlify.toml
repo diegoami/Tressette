@@ -1,0 +1,17 @@
+# The site is plain static files — no build step. index.html, decks/ and the
+# README sit at the repo root, so the repo root is what gets published.
+[build]
+  publish = "."
+
+# The deck sprite sheets are the original 1997 bitmaps and never change once a
+# deck is packed, so they can be cached hard. The page itself must not be, or
+# players keep an old build after a deploy.
+[[headers]]
+  for = "/decks/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

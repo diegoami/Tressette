@@ -20,11 +20,13 @@ and the sections below say what moves.
 |---|---|---|---|
 | 1 | Is there a 1997 original to transcribe? | **No.** No Tressette source exists among the repos; the opponent is designed here and tuned by self-play. | If one exists, §3.3 becomes a transcription and the fidelity contract in §1 applies to it, exactly as in Discola. |
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
-| 3 | What is a *partita*? | **A match to 21 points across several deals.** A deal (*mano*) is worth 11 points plus declarations, so a match is 2–5 deals. | Discola's "one deal is one match" would make a partita last five minutes and turn every 6–5 into a coin toss. Playing to 21 is how the game is played. |
+| 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
 | 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
 | 5 | The opponents | **The same four names — Valerio, Graziano, Piero, Franco — with Tressette temperaments.** | New names cost nothing technically; the four are kept because they are the house. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
-| 7 | A match survives a reload | **The score between deals is saved; a deal in progress is not.** | Matches are longer than Discola's hands, so losing one to a tab reload matters more. |
+
+Decisions 1, 2, 3 and 6 were confirmed by the owner; 4 and 5 are defaults
+still open to change.
 
 ## 1. What "in the spirit of Discola" means here
 
@@ -56,7 +58,6 @@ The contract, in one list. Everything else is detail.
 | You must follow suit if you can | The engine has a `legalMoves` function and the UI has to show which cards are playable. Discola never needed either. |
 | Ten cards in hand, not three | The card-size budget gains a **width** term and the hand becomes a fan. This is the layout risk of the project. §3.7. |
 | Points come in thirds | Scores are kept in *terzi* (integers) and shown as whole points; fractions are dropped at the end of each deal. |
-| A match spans deals | Two result dialogs instead of one: end of deal, end of match. The plate shows both the match score and the current deal. |
 | Declarations | One more scoring branch and one announcement. |
 | No 1997 author tuned the opponent | Tuning is real work here, not a transcription. A headless self-play harness is part of the architecture, not an afterthought. §3.4. |
 
@@ -120,10 +121,11 @@ can be declared is a house rule; here they cannot (decision 4).
 
 ### 2.5 The match
 
-To 21. The deal's points are added to each player's match score at its end.
-The match ends after any deal that leaves at least one player at 21 or more;
-the higher score wins, and a tie plays another deal. Discola's 61-of-120 is
-one deal; this is several. The option of 31 is cheap and can be a setting.
+A partita is one deal, as Discola's is one hand of forty cards. Eleven points
+plus declarations are at stake; the higher total wins. Eleven is odd, so
+without declarations there is no draw; with them there can be one (7–4 with a
+napoletana to the loser is 7–7), and it is recorded as a draw, as Discola
+records 60–60. Whoever did not lead this deal leads the next.
 
 ## 3. Architecture
 
@@ -172,9 +174,7 @@ prende(follow, led)                // does the follower's card beat the led card
 gioca(state, who, slot)            // play a card; resolves the trick when complete
 accusi(hand)                       // [{kind, suit?, points}], from the dealt ten
 scoreDeal(state)                   // floors terzi, adds ultima, adds accusi
-
-// a match
-matchOver(state, target)           // {over, winner} — both at 21+, higher wins
+vincitore(state)                   // BASSO, ALTO or null for a draw
 
 // the opponent
 compGioca(state, P)                // slot to play, given the profile's weights
@@ -194,17 +194,15 @@ hands[2][10]       BASSO = 0 (you), ALTO = 1 (them); null = empty slot
 played[2]          the two cards on the table, or null
 terzi[2]           points taken this deal, in thirds
 accusi[2]          declarations, credited at first play
-match[2]           whole points across the match
-deals              deals played this match
 perPrimo           who led this trick
 deveGiocare        whose turn it is
-dealerNext         who leads the next deal; alternates
+partitaPrimo       who leads the next deal; alternates, as in Discola
 tricks             tricks completed this deal, 0..20
 seen[]             what the opponent has seen: its own draws, every card played
 voids[2][4]        suits a player has shown they cannot follow
 selected           the slot you have raised but not yet played (§3.7)
 over, dealt, cheat
-opponent, deck, felt, speed, showPoints, sound, target   settings
+opponent, deck, felt, speed, showPoints, sound   settings
 ```
 
 ### 3.4 The opponent
@@ -290,14 +288,13 @@ directly, because a win rate can hide a stupid habit.
 
 ### 3.5 Turn flow
 
-Discola's, with a draw phase and a second dialog.
+Discola's, with a draw phase that ends halfway through the deal.
 
 ```
 newDeal ──► render ──► (if they lead) computerPlay
 humanPlay ──► trick complete? ──► resolve ──► draw (while tallone) ──► computerPlay
                       └── no ──► computerPlay
-resolve ──► 20 tricks? ──► endDeal ──► credit match ──► dialog: fine della mano
-endDeal ──► matchOver? ──► endMatch ──► record ──► dialog: fine della partita
+resolve ──► 20 tricks? ──► finish ──► scoreDeal ──► record ──► result dialog
 ```
 
 Timers drive the opponent through `later()` with the epoch guard, exactly as
@@ -306,33 +303,34 @@ playing itself behind the start screen.
 
 ### 3.6 Screens
 
-The same five views and the same two scrims, plus a third dialog state.
+The same five views and the same two scrims. Discola's screen map holds
+exactly.
 
 ```
 start ──Gioca──► table ──┬─ reload icon ─► confirm ─► start
                          ├─ history icon ─► history ─back─► table
                          ├─ settings icon ─► settings ─back─► table
                          └─ about icon ────► about ───back─► table
-table ──20 tricks──► fine della mano ──Continua──► table (next deal)
-fine della mano ──match over──► fine della partita ──┬─ Ancora ─► table (new match)
-                                                    └─ Cambia ─► start
+table ──20 tricks──► result ──┬─ Ancora ────► table (new deal)
+                              └─ Cambia ────► start
 ```
 
 - **start** — opponent chips and dossier, deck row, Gioca pinned in the
   footer. Unchanged in structure.
-- **table** — the icon bar; the plates show the match score large and this
-  deal's points small (`7` and `2⅔`); the trick; the tallone as a pile with a
-  count and no face-up card; an "Ultima presa" marker on trick twenty; a
-  transient line for declarations ("Napoletana di coppe: 3 punti").
-- **settings** — deck, felt, rhythm, show points, sound, match target (21 or
-  31), change opponent, and the weights disclosure.
+- **table** — the icon bar; the plates show this deal's points with their
+  thirds (`4⅔`), since the thirds are what a Tressette player is counting;
+  the trick; the tallone as a pile with a count and no face-up card; an
+  "Ultima presa" marker on trick twenty; a transient line for declarations
+  ("Napoletana di coppe: 3 punti").
+- **settings** — deck, felt, rhythm, show points, sound, change opponent,
+  and the weights disclosure. The same list as Discola's.
 - **history** — tally, record against each opponent, the last hundred
-  matches with their deal counts.
+  partite.
 - **about** — what the game is, which Tressette it plays, where the cards
   come from.
-- **confirm** — guards abandoning a match in progress.
-- **result** — end of deal (both scores, running match, Continua) and end of
-  match (Ancora, Cambia).
+- **confirm** — guards abandoning a deal in progress.
+- **result** — end of the deal: both scores, the declarations if any, a
+  one-line note, Ancora and Cambia.
 
 Keys: `1`–`9` and `0` select a card, `Enter` plays the selected one, `Escape`
 backs out of a sheet. The `6winouj64ie` easter egg is kept; it is the house's.
@@ -390,9 +388,11 @@ no briscola lying across it, which gives portrait a little back.
 
 | Key | Shape |
 |---|---|
-| `tressette.settings` | `{opponent, deck, felt, speed, showPoints, sound, target}` |
-| `tressette.history` | `[{t, o, d, y, a, m}, …]` newest first, capped at 100; `m` = deals |
-| `tressette.match` | `{o, match:[y,a], deals, dealerNext}` between deals; cleared at match end or abandon |
+| `tressette.settings` | `{opponent, deck, felt, speed, showPoints, sound}` |
+| `tressette.history` | `[{t, o, d, y, a}, …]` newest first, capped at 100 |
+
+The same two keys as Discola, under a different prefix. Nothing in progress
+is saved: a deal abandoned or reloaded is gone, as in Discola.
 
 ### 3.9 Sound, motion, deployment
 
@@ -418,8 +418,8 @@ Empty `index.html` with the title and the font links.
 `engine.js` per §3.2, with a seeded rng. `tools/engine.test.mjs` on
 `node --test`: ranking; terzi; every deal of 10,000 random ones scores exactly
 11 points plus declarations; `mosseLegali` forces the suit; `prende` with no
-trump; declarations detected in fixed hands; a match ends at 21, at 22–21,
-and not at 21–21.
+trump; declarations detected in fixed hands; `vincitore` returns the higher
+total and null on the one kind of tie declarations can produce.
 
 **Done when** the tests pass and the engine has no DOM reference.
 
@@ -448,14 +448,13 @@ viewports in all five decks.
 **Done when** a full deal can be played against Valerio and the check is
 green.
 
-### 4 — Deal, match, sheets (1 day)
+### 4 — Result and sheets (1 day)
 
-The two result dialogs, the declarations line, the match saved between deals,
-the start, settings, history and about sheets, the confirm scrim, keys, sound,
-the easter egg.
+The result dialog, the declarations line, the start, settings, history and
+about sheets, the confirm scrim, keys, sound, the easter egg.
 
-**Done when** a match to 21 can be played end to end, abandoned, resumed after
-a reload between deals, and shows up in history.
+**Done when** a deal can be played end to end, abandoned with the confirm,
+and shows up in history with the right score.
 
 ### 5 — The four opponents (1 day)
 
@@ -463,7 +462,7 @@ Four weight vectors, tuned by self-play to the acceptance numbers and to feel
 different. Dossier text. The weights disclosure. The README table.
 
 **Done when** the four beat the baselines, none dominates another, and each
-has a one-line character you can recognise across a match.
+has a one-line character you can recognise across a few deals.
 
 ### 6 — Ship (½ day)
 
@@ -483,6 +482,7 @@ stranger take the project over.
 | Four-player Tressette with partners | A different game: partner signals (*bussare*, *striscio*, *volo*), three opponents to render, a partner AI to trust. Worth its own plan if wanted; nothing here precludes it, because the engine's trick and scoring rules are the same. |
 | Multiplayer, accounts, a server | Same reason as Discola: any server is an operational liability that outlives interest. |
 | A framework or build step | Same reason as Discola. The one concession is a second script file, and it is still static. |
+| A match to 21 across deals | The traditional form, left out on the owner's call to keep Discola's rhythm of one deal per partita. `scoreDeal` returns per-deal points, so a running total, a second dialog and a saved match are additions, not a redesign. |
 | Other variants (Tressette a perdere, Terziglio, Quintiglio) | Scope is one game done properly. |
 | Localisation | The terms of art are Italian. |
 | A difficulty slider | The four opponents are the difficulty, as in Discola. |
@@ -496,12 +496,10 @@ stranger take the project over.
    that has to feel natural. The three new assertions and the select-then-play
    pattern are the mitigation; the fallback is two rows of five on portrait
    phones, which the budget can express as `--rows: 5`.
-3. **Match length.** Several deals per match is right for the game and slower
-   than Discola. The end-of-deal dialog must be one tap, and the match must
-   survive a reload.
-4. **House rules.** Tressette has more variants than Briscola. The about
-   screen states the rules played, and the engine keeps the two variable
-   points — declarations from the deal only, target 21 — as single constants.
+3. **House rules.** Tressette has more variants than Briscola. The about
+   screen states the rules played, and the engine keeps the variable points
+   — declarations from the deal only, one deal per partita — as single
+   constants so a later change is one line.
 
 ## 7. Glossary
 
@@ -510,7 +508,7 @@ stranger take the project over.
 | tressette | the game; "three sevens", though nobody agrees why |
 | tallone | the stock, the twenty undealt cards |
 | mano | a deal, twenty tricks |
-| partita | a match, to 21 |
+| partita | a match; here one deal, as in Discola |
 | presa | a trick |
 | ultima | the last trick, worth an extra point |
 | terzo, terzi | a third of a point, the unit the engine counts in |

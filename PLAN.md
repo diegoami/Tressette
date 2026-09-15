@@ -42,9 +42,14 @@ The contract, in one list. Everything else is detail.
   plates in the corners, the trick in the middle, the sheets for start,
   settings, history and about. The CSS is forked from Discola and changed
   where Tressette needs it, not restyled.
-- **One formula, four weight vectors.** The opponent scores every legal card
-  and plays the highest. The four opponents differ only in their weights, and
-  the weights are shown in the settings sheet, as in Discola.
+- **One formula, four weight vectors, and one exception.** For eighteen
+  tricks the opponent scores every legal card and plays the highest, and the
+  four opponents differ only in their weights, which the settings sheet shows
+  as in Discola. For the last two tricks, where the information is perfect
+  and the only question is which card to keep for the ultima, all four play
+  the position out exactly and identically. Exact play beats a temperament
+  where the answer is knowable; the characters have eighteen tricks in twenty
+  to show themselves. §3.4 has the rule.
 - **Player-facing text is Italian.** Comments, commits and documents are
   English.
 - **The UI check runs after every UI change**, and every threshold in it names
@@ -218,8 +223,12 @@ opponent, deck, felt, speed, showPoints, sound   settings
 
 ### 3.4 The opponent
 
-**Shape.** Identical to `CompGioca`: score every legal card in hand, play the
-highest, ties to the lowest slot. Two branches, leading and following. `P` is
+**Shape.** Three branches. Leading and following are `CompGioca`'s shape:
+score every legal card in hand with the profile's weights, play the highest,
+ties to the lowest slot. The third, the last two tricks, scores nothing and
+reads no weight; it enumerates the position and has no ancestor in
+`UGiocatore.pas`, because Briscola's last two tricks were never a position
+anyone needed to solve. `P` is
 the profile's weights; the features come from the hand, `seen`, `voids`, the
 tallone and the trick count.
 
@@ -284,10 +293,20 @@ The formula plays that half heuristically anyway — a formula is the artefact,
 as `CompGioca` was — with one exception. With two cards each, the only choice
 left in the deal is which card to keep for the ultima, and no one-card score
 can express it: both branches above score the card played, never the card
-kept. So at `tricks == 18` `compGioca` enumerates instead: for each of its
-two cards, the human's best legal reply, then the forced last trick, summing
-its own terzi over both tricks with the ultima's 3 included; it plays the
-higher, ties to the lower slot. Four cards, at most four lines of play.
+kept. So at `tricks == 18` `compGioca` enumerates instead, in whichever seat
+it finds itself:
+
+- **Leading:** for each of its two cards, the human's best legal reply, then
+  the forced last trick. At most four lines of play.
+- **Following:** the human has already led; for each of its legal cards, one
+  or two depending on the suit led, the forced last trick. At most two lines.
+
+Either way it sums its own terzi over both tricks with the ultima's 3
+included, plays the card that starts the best line, and ties to the lower
+slot. "Best reply" is well defined because the two players' totals over the
+two tricks add up to a constant — the four cards' terzi plus the ultima's 3 —
+so the reply that maximises the human's total is the one that minimises the
+opponent's, and that is the one assumed.
 
 The case that shows why: the opponent holds the Re di coppe and the 7 di
 spade and leads; the human holds the Fante di coppe and the asso di spade.

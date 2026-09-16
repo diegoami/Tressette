@@ -547,17 +547,42 @@ Done in `acb4203`, with `5a59078` and `cc3cde5` closing two rounds of review
 and `55754ba` correcting this document. Pull request #2: 24 tests, green in
 the Action.
 
-The lesson worth carrying into iteration 2, because it cost two review rounds
-to learn: **a rule can be wrong and still balance.** Inverting the trick's
-winner, crediting its terzi to the loser, or handing the lead to the wrong
-player each leaves the terzi summing to 32 and the deal scoring 11, so the
-10,000-deal invariant — the assertion this iteration was proudest of — sees
-none of them. Three tests were also written in ways that could not fail: one
-read the winner back out of the engine before asserting who won, one ran on a
-seed where the case it tested never arose, and one grepped a source file for
-words its own comments contained. Every assertion added since has been checked
-by breaking the engine and watching it fail. 31 mutants, 30 caught, one
-declined because no forty-card deck can tell it apart.
+**What this iteration got wrong, twice, and what it costs to find out.**
+
+The test this iteration leaned on hardest plays 10,000 random deals and checks
+that each one scores exactly 11 points. It is a good test, and it is not the
+test it looks like. It checks that all the points are handed out — none
+invented, none lost — and says nothing about **who gets them**.
+
+So each of these breaks the game and leaves it green:
+
+- the trick goes to the lower card instead of the higher one;
+- the trick's points are credited to the player who lost it;
+- the player who lost the trick leads the next one.
+
+All three still play twenty tricks and still hand out the deck's 32 terzi plus
+the last trick's 3, so the two scores still come to 11 between them. It is a
+balance sheet that balances with the entries in the wrong accounts: adding up
+the columns cannot find that, only reading the entries can.
+
+Three of the tests here were also written so that they could not fail at all.
+One asked the engine who won the trick and then checked that the points went to
+the player the engine had named. One ran on a shuffle where the situation it
+meant to test never came up, so it passed on an empty case. One searched the
+engine's source for the word `document` — and found it, in the comment
+promising not to use it.
+
+The habit that fixes both: after writing a test, break the thing it is supposed
+to protect and watch the test fail. If it still passes, the test is decoration.
+Every assertion added since has been through that. 31 deliberate breaks, 30
+caught; the one left alone is a change no forty-card deck can tell apart.
+
+**For iteration 2 in particular:** the opponent is judged by win rate, and a
+win rate hides a wrong rule even better than a total does. A player that loses
+tricks it should win still wins some deals, and the number it reports will look
+plausible. That is what the trap positions in §3.4 are for, and every one of
+them needs a real choice in it — a position where the opponent has only one
+legal card asserts nothing about how it chooses.
 
 `engine.js` per §3.2, with a seeded rng. `tools/engine.test.mjs` on
 `node --test`: ranking; terzi; every deal of 10,000 random ones scores exactly

@@ -363,7 +363,9 @@ formula freezes.
 | DISCARD_GUARD_PENALTY | cost of leaving an asso unguarded |
 | LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
-**The four temperaments.** Valerio balanced and the default; Graziano loose,
+**The four temperaments.** Iteration 2 measured whether this formula can
+actually tell them apart; §4.5 has the answer and it is not a comfortable one.
+Valerio balanced and the default; Graziano loose,
 cashing sure cards early and spending 3s freely; Franco tight, hoarding control
 and guarding every asso; Piero rolled once per session by `rollProfiles`, as
 in Discola, because that is now a house tradition rather than a Delphi
@@ -686,8 +688,49 @@ and shows up in history with the right score.
 Four weight vectors, tuned by self-play to the acceptance numbers and to feel
 different. Dossier text. The weights disclosure. The README table.
 
+**Read this before starting, because iteration 2 found the hard part.** Six of
+the eleven weights barely move a play. Iteration 2 tuned Valerio and then
+sketched the other two temperaments straight from the prose above — Graziano
+loose, Franco tight — and measured how often each pair chooses a different
+card, over 600 deals, counting only positions with more than one legal move:
+
+| pair | choices that differ |
+|---|---|
+| Graziano vs Franco | 14.8% |
+| Valerio vs Graziano | 13.7% |
+| **Valerio vs Franco** | **1.0%** |
+
+Franco is Valerio ninety-nine times in a hundred, with six weights moved
+hard: the control penalties from 2.5 to 6, the guard from 1.5 to 5,
+ace-exposed from 3 to 8. Those are exactly the weights an ablation on 6,000 deals could not
+distinguish from zero. Almost all the character on offer is Graziano's, and it
+comes from the handful of weights that do move plays: the liscio bonus, the
+sure bonus, and the two terzi weights.
+
+So tuning cannot produce four characters out of this formula, because tuning
+moves the same weights. That leaves three honest ways out, and it is a decision
+rather than a task:
+
+- **Give the formula a term that expresses "tight."** Franco's identity is
+  holding control cards back and guarding assi, and neither penalty changes an
+  argmax at any magnitude. This is a formula change, so it belongs here, before
+  v1.0 freezes it — §3.4's contract says so in as many words.
+- **Ship two characters and two variations**, and say so in the dossier rather
+  than claiming four.
+- **Find out whether a tuned Franco separates further than a sketched one.**
+  Cheapest first step: tune Graziano and Franco against each other for
+  *difference* rather than for strength, and measure the same table again. If
+  the gap stays near 1%, the first option is the only one left.
+
+The sketches those numbers come from are in iteration 2's pull request, not in
+the repo. They are two points far enough apart that if character cannot
+show between them it cannot show at all. But they are sketches, and a tuned
+pair is the measurement that settles it.
+
 **Done when** the four beat the baselines, none dominates another, and each
-has a one-line character you can recognise across a few deals.
+has a one-line character you can recognise across a few deals — or, if the
+measurement above says that is not reachable with eleven weights, when the
+decision taken instead is written into §0 and the dossier tells the truth.
 
 ### 6 — Ship (½ day)
 

@@ -39,8 +39,8 @@ The contract, in one list. Everything else is detail.
   site assets. Discola learned that by serving its own `SPEC.md`. The page
   must open from a folder in ten years, and it does.
 - **The same art, untouched.** Tressette uses the same forty-card Italian deck
-  as Briscola, so the five sprite sheets from `discola-web/decks/` are copied
-  byte for byte. Nothing is redrawn and nothing is repacked.
+  as Briscola, so the five sprite sheets from `discola-web/public/decks/` are
+  copied byte for byte. Nothing is redrawn and nothing is repacked.
 - **The same table.** Green baize under warm light, the icon bar, the name
   plates in the corners, the trick in the middle, the sheets for start,
   settings, history and about. The CSS is forked from Discola and changed
@@ -663,12 +663,12 @@ decides when each iteration starts. Each iteration is one session, opened
 with:
 
 > Do iteration N of PLAN.md in `diegoami/Tressette`. Read PLAN.md in full
-> first, then `diegoami/discola-web` (`CLAUDE.md`, `SPEC.md`, `index.html`,
-> `tools/check_ui.mjs`, `.claude/skills/ui-check`), then the previous
-> iteration's pull request. Work on a branch named `iteration-N-<slug>` off
-> the default branch. Stop at the iteration's "Done when": do not start the
-> next one. Finish with every check green, commit, push, and open a pull
-> request with the description in §7.4.
+> first, then `diegoami/discola-web` (`CLAUDE.md`, `SPEC.md`,
+> `public/index.html`, `tools/check_ui.mjs`, `.claude/skills/ui-check`), then
+> the previous iteration's pull request. Work on a branch named
+> `iteration-N-<slug>` off the default branch. Stop at the iteration's "Done
+> when": do not start the next one. Finish with every check green, commit,
+> push, and open a pull request with the description in §7.4.
 
 Why one iteration and not several: the defects this kind of page ships are
 invisible in a diff and show up only in the check or at the table, and a

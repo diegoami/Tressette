@@ -32,9 +32,12 @@ still open to change.
 
 The contract, in one list. Everything else is detail.
 
-- **One static page.** `index.html` plus one script and the sprite sheets.
-  No framework, no bundler, no runtime dependency. Netlify publishes the repo
-  root. It must open from a folder in ten years.
+- **One static page.** `public/index.html` plus one script and the sprite
+  sheets. No framework, no bundler, no runtime dependency. Netlify publishes
+  `public/` and nothing else: the repo root is documents, and a private
+  repository does not keep them off a public URL once they are uploaded as
+  site assets. Discola learned that by serving its own `SPEC.md`. The page
+  must open from a folder in ten years, and it does.
 - **The same art, untouched.** Tressette uses the same forty-card Italian deck
   as Briscola, so the five sprite sheets from `discola-web/decks/` are copied
   byte for byte. Nothing is redrawn and nothing is repacked.
@@ -139,16 +142,20 @@ records 60–60. Whoever did not lead this deal leads the next.
 ### 3.1 Files
 
 ```
-index.html          markup, CSS, and the UI script: screens, rendering, input, storage
-engine.js           rules + opponent. Pure functions over a plain state object. No DOM.
-decks/*.png         the five sprite sheets, byte-identical copies from discola-web
+public/index.html   markup, CSS, and the UI script: screens, rendering, input, storage
+public/engine.js    rules + opponent. Pure functions over a plain state object. No DOM.
+public/decks/*.png  the five sprite sheets, byte-identical copies from discola-web
 tools/check_ui.mjs  the UI check, forked from Discola and extended for the fan (§3.7)
 tools/engine.test.mjs  unit tests on node --test, no dependencies
 tools/selfplay.mjs  headless matches: profile vs profile, vs baselines; the tuning loop
 tools/pack_cards.py the packer, carried over unchanged in case a deck is ever repacked
-netlify.toml        publish ".", cache decks/* for a year, revalidate index.html
+netlify.toml        publish "public", cache decks/* for a year, revalidate index.html
 CLAUDE.md, README.md, SPEC.md (when built), .claude/skills/ui-check/
 ```
+
+Only `public/` is the site. Everything that is served lives there, and
+nothing that is not served does; a whitelist, because a 404 rule for `*.md`
+would have covered today's root and missed whatever lands there next.
 
 **Why a second file.** Discola's engine is inline and that is right for
 Discola: the formula was tuned in 1997 and nothing needs to run it outside a
@@ -416,26 +423,43 @@ backs out of a sheet. The `6winouj64ie` easter egg is kept; it is the house's.
 
 ### 3.7 Layout: the budget gains a width term
 
-Discola's card size is a **height** budget:
+Discola's card size is a **height** budget, `(100dvh − --chrome) / --rows /
+--ratio`, clamped, with `--chrome` derived from the spacing tokens beside it
+and never hand-set. That derivation is kept, including the `--plates` token
+Discola added for the name plates when they stack on a phone. What is **not**
+kept is the `vw` cap that Discola's clamps carry — `9vw` in landscape, `22vw`
+in portrait. Those numbers were chosen while the page had no viewport meta
+tag and every phone reported a phantom 980px layout width; Discola has since
+added the tag and kept the caps on their own merits, but here the width term
+below does their job and knows about the fan, and keeping both would bind the
+wrong one: at 360px, `9vw` is 32px against a width term of 64px, half the card
+this section works out.
 
-```
---cw = clamp(min, min(9vw, (100dvh − --chrome) / --rows / --ratio), max)
-```
-
-with `--chrome` derived from the spacing tokens, never hand-set. All of that is
-kept. What changes is that a hand of ten cannot sit side by side on a phone —
-ten cards across 328px is 30px each — so the hand is a **fan**: cards overlap
-and each one after the first shows a strip of width `--strip`.
+A hand of ten cannot sit side by side on a phone — ten cards across 328px is
+30px each — so the hand is a **fan**: cards overlap and each one after the
+first shows a strip of width `--strip`.
 
 ```
 hand width = --cw + 9 × --strip
 --strip    = --cw × --overlap             (--overlap ≈ .45 on a phone, .7 on a desktop)
---cw       ≤ (table width − 2 × --pad-inline) / (1 + 9 × --overlap)
+height     = (100dvh − --chrome) / --rows / --ratio
+width      = (table width − 2 × --pad-inline) / (1 + 9 × --overlap)
+--cw       = clamp(floor, min(height, width), cap)
 ```
 
-so `--cw` is the minimum of the height term and the width term. On a 360px
-phone that gives a 64px card and a 29px strip. The opponent's hand is the same
-fan, face down.
+Two terms, no `vw`, one clamp per orientation with Discola's floors and caps
+(32px to 156px in landscape, 40px to 168px in portrait). On a phone in
+portrait the width term binds and gives a 64px card and a 29px strip at 360px;
+in landscape the height term binds, as it did in Discola. The opponent's hand
+is the same fan, face down.
+
+Every number forked from Discola's stylesheet is a starting point for the
+check to re-measure, not a constant to trust: that stylesheet was tuned in
+quirks mode, from `file://`, against the phantom width above, until Discola's
+commit `22c4b9c` fixed the doctype and the head tags. The `--plates` token and
+the stacked name plates arrived in the same commit, and a ten-card fan
+interacts with them differently from three cards; iteration 3 measures rather
+than assumes.
 
 **Selection instead of a direct tap.** A 29px strip is under any sane tap
 target, and a misplay in Tressette costs the deal. So a tap on a card *raises*
@@ -476,27 +500,36 @@ is saved: a deal abandoned or reloaded is gone, as in Discola.
 ### 3.9 Sound, motion, deployment
 
 Card sounds synthesised with WebAudio as in Discola. `prefers-reduced-motion`
-honoured. Netlify site linked to `main`, publish root, `decks/*` immutable,
-`index.html` revalidated on every load.
+honoured. Netlify site linked to `main`, publishing `public/` and nothing
+else, `decks/*` immutable, `index.html` revalidated on every load.
 
 ## 4. Iterations
 
 Each is independently shippable, and each ends with its check green.
 
-### 0 — Scaffold (½ day)
+### 0 — Scaffold (½ day) — done
 
-Copy from `discola-web`: `decks/`, `tools/pack_cards.py`, `netlify.toml`,
-`.gitignore`, the `ui-check` skill. Expand the stub `CLAUDE.md` into this
-repo's version of Discola's (the same three rules, reworded: the fan budget,
-the engine contract, Italian text). Empty `index.html` with the title and the
-font links. A two-line `README.md` pointing at `PLAN.md`; iteration 6
-rewrites it.
+Done in `3e8198d`, forked from Discola at `44363d8`, then re-synced in
+`106584f` to Discola's `22c4b9c` when Discola moved twice in between: once to
+publish `public/` instead of the repo root, once to add the head tags and fix
+what they exposed. Both are in this repo now.
+
+Copy from `discola-web`: `public/decks/`, `tools/pack_cards.py`,
+`netlify.toml`, `.gitignore`, the `ui-check` skill. Expand the stub
+`CLAUDE.md` into this repo's version of Discola's (the same three rules,
+reworded: the fan budget, the engine contract, Italian text). Empty
+`public/index.html` with the doctype, `lang="it"`, the UTF-8 charset, the
+viewport meta (`width=device-width, initial-scale=1`), the title and the font
+links — the four head tags are what the check's document pass asserts, and
+without the viewport tag a phone lays the page out at 980px. A two-line
+`README.md` pointing at `PLAN.md`; iteration 6 rewrites it.
 
 The `ui-check` skill and `check_ui.mjs` are carried over **dormant**: the
 check drives screens that do not exist until iteration 3, so do not try to
 make it pass, and word the rule in `CLAUDE.md` as taking effect once
-`index.html` has a table. `engine.js`, the tests, the harness and `SPEC.md`
-belong to later iterations; §3.1 describes the finished repo, not this one.
+`public/index.html` has a table. `engine.js`, the tests, the harness and
+`SPEC.md` belong to later iterations; §3.1 describes the finished repo, not
+this one.
 
 **Done when** the repo holds exactly what the two paragraphs above name, and
 nothing else.
@@ -540,11 +573,22 @@ a second day and play it yourself before moving on.
 
 ### 3 — The table (2 days)
 
-Fork Discola's CSS and table markup. Build the fan, the selection state, the
-follow-suit dimming, the plates with two scores, the tallone without a
-briscola, the ultima marker, the trick sweep. Extend `check_ui.mjs` with the
-three fan assertions — against a broken fan first. Run it at all nineteen
-viewports in all five decks.
+Fork Discola's CSS and table markup **from a named commit, `22c4b9c` or
+later**, and write the commit into the pull request. Before forking, check
+whether Discola has moved again since §7.5's last recorded commit. That
+commit changed the seat layout: the name plate stacks above or below the hand
+on phone-shaped screens and is paid for out of the card budget through
+`--plates`, and the tallone may shrink and wrap. A ten-card fan meets those
+rules differently from three cards, so measure.
+
+Build the fan, the selection state, the follow-suit dimming, the plates with
+the deal's points, the tallone without a briscola, the ultima marker, the
+trick sweep. Then the check: the copy on hand is still Briscola inside —
+three-card fixtures, a faked result screen, the `discola.history` storage key
+— so rewrite the fixtures and the key for this game, keep the document pass
+and the edge-clipping assertion Discola added, and add the three fan
+assertions against a broken fan first. Run it at all nineteen viewports in
+all five decks.
 
 Add a second job to `check.yml` that installs `playwright-core` and Chromium
 (`npx playwright install --with-deps chromium`) and runs
@@ -708,6 +752,17 @@ files: a decision into §0 of this document, a rule the builder must follow
 into `CLAUDE.md`, and, at iteration 6, everything a stranger needs into
 `SPEC.md`. If a session ends with something only it knows, that is a defect
 in the handoff.
+
+**Discola is a moving reference, not a fixed one.** It is a live repository
+with its own sessions, and it moved twice during iteration 0 alone. Anything
+forked from it is a snapshot with a date. When an iteration forks from
+Discola, it records the commit here and in its pull request, and the next
+iteration that forks checks for movement first.
+
+| Forked | From Discola at | By |
+|---|---|---|
+| decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
+| CSS and table markup | to be recorded | iteration 3 |
 
 ### 7.6 The owner's part
 

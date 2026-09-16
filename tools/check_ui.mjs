@@ -2,7 +2,7 @@
 /**
  * UI check for Discola. Run it after any UI change.
  *
- *   node tools/check_ui.mjs [path-to-index.html]
+ *   node tools/check_ui.mjs [path-to-index.html]   # defaults to public/index.html
  *
  * Needs playwright-core and a Chromium binary:
  *   npm i playwright-core && npx playwright install chromium
@@ -29,7 +29,7 @@
 import { chromium } from 'playwright-core';
 import path from 'node:path';
 
-const FILE = path.resolve(process.argv[2] ?? new URL('../index.html', import.meta.url).pathname);
+const FILE = path.resolve(process.argv[2] ?? new URL('../public/index.html', import.meta.url).pathname);
 const CHROME = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const URL_ = 'file://' + FILE;
 
@@ -136,6 +136,21 @@ const audit = () => {
   if (document.documentElement.scrollWidth > window.innerWidth + 1)
     out.push(`page scrolls sideways (${document.documentElement.scrollWidth} > ${window.innerWidth})`);
 
+  // Sideways scroll is not enough on its own. The table sets `overflow: hidden
+  // auto`, so anything too wide is clipped rather than scrollable and the
+  // document width never betrays it — the opponent's third card was being cut
+  // off a phone screen while that assertion passed. Ask the elements directly.
+  const past = [...document.querySelectorAll('.hand, .trick, .tallone, .plate, .chips, .decks')]
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1);
+    });
+  for (const el of past.slice(0, 3)) {
+    const r = el.getBoundingClientRect();
+    out.push(`${name(el)} runs off the screen (${Math.round(r.left)}…${Math.round(r.right)} `
+      + `vs 0…${window.innerWidth})`);
+  }
+
   for (const el of document.querySelectorAll('body *')) {
     if (!shown(el)) continue;
     const cs = getComputedStyle(el);
@@ -176,6 +191,38 @@ const audit = () => {
 
 // Local runs have no network, so the Google Fonts stylesheet always fails.
 const noise = m => /ERR_CERT_AUTHORITY_INVALID|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED|fonts\.googleapis/.test(m);
+
+/* ---- pass 0: the document itself ------------------------------------------- */
+
+// A layout assertion cannot catch a missing viewport meta: Playwright's
+// `viewport` option sets the layout viewport directly, and the tag is only
+// consulted under mobile emulation. So the page measures identically with or
+// without it here, while a real phone lays it out at ~980px and scales the
+// result down. These are document facts instead, checked once — cheap, and the
+// only thing that would have caught it.
+async function checkDocument(browser) {
+  console.log('\ndocument');
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  await page.goto(URL_);
+  const bad = await page.evaluate(() => {
+    const out = [];
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) out.push('no viewport meta — a phone will lay the page out at ~980px and scale it down');
+    else if (!/width\s*=\s*device-width/.test(vp.content))
+      out.push(`viewport meta does not set width=device-width: "${vp.content}"`);
+    if (document.compatMode !== 'CSS1Compat')
+      out.push('quirks mode — no doctype, so box sizing and table layout differ from every browser default');
+    if (document.characterSet !== 'UTF-8')
+      out.push(`charset is ${document.characterSet}, not UTF-8 — accented Italian will render as mojibake over file://`);
+    if (!document.documentElement.lang)
+      out.push('no lang on <html> — screen readers and hyphenation have no language to work from');
+    return out;
+  });
+  await page.close();
+  console.log(`  ${bad.length ? 'FAIL' : 'pass'}  head tags`);
+  bad.forEach(b => console.log(`        ${b}`));
+  return bad.length ? 1 : 0;
+}
 
 /* ---- pass 1: every screen -------------------------------------------------- */
 
@@ -291,6 +338,7 @@ async function checkTable(browser, only, inflate) {
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox'] });
 let failed = 0;
+failed += await checkDocument(browser);
 failed += await checkScreens(browser);
 failed += await checkTable(browser, null, false);
 failed += await checkTable(browser, TIGHT, true);

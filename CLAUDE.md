@@ -18,7 +18,7 @@ node tools/check_ui.mjs
 ```
 
 Not optional, and not only when something looks wrong — **from iteration 3 on,
-when `index.html` has a table**. Until then the check and its skill sit here
+when `public/index.html` has a table**. Until then the check and its skill sit here
 dormant: they drive screens that do not exist yet, so the check fails, and
 nothing should be softened to make it pass.
 

@@ -1,7 +1,10 @@
-# The site is plain static files — no build step. index.html, decks/ and the
-# README sit at the repo root, so the repo root is what gets published.
+# The site is plain static files — no build step. Everything that should be on
+# the web lives in public/, and nothing else is published: the repo root holds
+# PLAN.md, CLAUDE.md, the tooling and this file, none of which belong on a
+# public URL. Publishing "." served SPEC.md and ROADMAP.md from Discola's
+# private repo; this repo's root is documents almost entirely.
 [build]
-  publish = "."
+  publish = "public"
 
 # The deck sprite sheets are the original 1997 bitmaps and never change once a
 # deck is packed, so they can be cached hard. The page itself must not be, or

@@ -1,6 +1,6 @@
 ---
 name: ui-check
-description: Run Tressette's UI checks across every screen, dialog and viewport. Use after any change to index.html's markup, CSS, screen flow or typography — and always before committing or publishing a UI change. Also use when a layout or readability bug is reported, to reproduce it and to confirm the fix.
+description: Run Tressette's UI checks across every screen, dialog and viewport. Use after any change to public/index.html's markup, CSS, screen flow or typography — and always before committing or publishing a UI change. Also use when a layout or readability bug is reported, to reproduce it and to confirm the fix.
 ---
 
 # UI check
@@ -15,16 +15,20 @@ every threshold below was calibrated.
 ## Dormant until iteration 3
 
 The check and this skill were copied from `discola-web` in iteration 0, before
-there is anything to check. `index.html` holds a title and the font links, and
+there is anything to check. `public/index.html` holds a title and the font links, and
 `check_ui.mjs` drives screens that do not exist yet, so **it fails, and that is
 expected**. On the iteration 0 scaffold it does not report a tidy failure — it
 throws on the first screen, because the element it reaches for is not there.
-Abridged; the whole of it is in pull request #1:
+The document pass runs before it and already passes — the scaffold's head tags
+satisfy it. Abridged; the whole of it is in pull request #1:
 
 ```
+document
+  pass  head tags
+
 screens
 page.evaluate: TypeError: Cannot read properties of null (reading 'getBoundingClientRect')
-    at checkScreens (tools/check_ui.mjs:203)
+    at checkScreens (tools/check_ui.mjs:250)
 ```
 
 That is the check working, not the check broken. Do not try to make it pass and
@@ -51,16 +55,22 @@ npm i playwright-core && npx playwright install chromium
 CHROME=/path/to/chrome node tools/check_ui.mjs      # if Chromium is elsewhere
 ```
 
-To check a file that is not `index.html` — an older revision, say — pass it as
+To check a file that is not `public/index.html` — an older revision, say — pass it as
 an argument. That is how you confirm an assertion really catches the bug it
 was written for:
 
 ```sh
-git show <commit>:index.html > .old.html
+git show <commit>:public/index.html > .old.html
 node tools/check_ui.mjs "$PWD/.old.html"; rm .old.html
 ```
 
 ## What it covers
+
+**Document pass** — one page load, four facts about the document rather than
+its layout: a viewport meta setting `width=device-width`, standards mode, UTF-8,
+and a `lang` on `<html>`. These cannot be layout assertions, because Playwright's
+`viewport` option sets the layout viewport directly and the tag is only consulted
+under mobile emulation — the page measures identically with or without it.
 
 **Screens pass** — all five screens plus the confirm and end-of-deal dialogs,
 at five real device shapes. Asserts exactly one screen is visible, no sideways
@@ -69,7 +79,8 @@ cannot scroll, no tap target under 32px, and no script or console errors.
 
 **Table pass** — the card table at all nineteen viewports in all five decks.
 Asserts the trick never overlaps either hand, your hand is never below the
-fold, nothing overflows the table, and the rows never drift apart. Then it
+fold, nothing overflows the table, no element runs past the screen edge, and
+the rows never drift apart. Then it
 repeats the tightest viewports with the spacing tokens inflated, which fails if
 anyone replaces the derived `--chrome` with a hard-coded number.
 
@@ -99,6 +110,8 @@ shipped — in Discola, which is the same table and the same budget:
 | trick vs hands | a phone in landscape collapsed the middle row and the played cards landed on top of the hand |
 | rows drift apart | cards hit their cap, and the grid handed the leftover height to the gaps until a third of the table was empty |
 | inflated spacing | `--chrome` was hand-estimated three times and was wrong three times |
+| head tags | no viewport meta, so a 393px phone laid the page out at 980px and scaled it down; Chrome's text autosizing then inflated body copy to 55px, and three rounds of mobile sizing work chased the symptom |
+| past the screen edge | the table sets `overflow: hidden auto`, so a too-wide row is clipped rather than scrollable and "no sideways scroll" never fires — the opponent's third card was cut off a phone screen through nineteen viewports |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

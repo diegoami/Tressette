@@ -52,10 +52,11 @@ The contract, in one list. Everything else is detail.
   hand can be deduced rather than guessed at, all four play the rest of the
   deal out exactly and identically. Exact play beats a temperament where the
   answer is knowable, and it is worth about seven points of win rate.
-  Measured before it was chosen: two temperaments disagree on 14.8% of the
-  positions where they have a choice, and only 17% of those disagreements fall
-  in the tricks the search takes over — character lives in tricks eight to
-  twelve, not at the end. §3.4 has the rule.
+  Measured before it was chosen, on the formula with the search switched off,
+  which is the only way the question can be asked: two temperaments disagree on
+  about 15% of the positions where they have a choice, and under a fifth of
+  those disagreements fall in the tricks the search now takes over. In the
+  opponent that ships it is none of them, by construction. §3.4 has the rule.
 - **Player-facing text is Italian.** Comments, commits and documents are
   English.
 - **The UI check runs after every UI change**, and every threshold in it names
@@ -389,7 +390,8 @@ instead. 95% was unreachable by anything: a player that cheats outright wins
 82.5%. 70% turned out to be a real bar — a first tuning pass failed it and a
 second cleared it — and then the endgame search cleared it by so much that it
 stopped being one. The numbers above sit about two points under what iteration
-2 measured on seeds no tuner had seen, which is margin, not a target fitted
+2 measured on seeds no tuner had seen — two points of margin against
+random-legal and nearly six against greedy-take, rather than a target fitted
 to the result. A small suite of
 *trap positions* asserts the obvious plays directly, because a win rate can
 hide a stupid habit: an asso on the table and the 3 in hand; forced to follow

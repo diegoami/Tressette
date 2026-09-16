@@ -311,10 +311,32 @@ therefore stops scoring and starts searching — from **trick fourteen**
 (`CODA_FROM = 13`, counting completed tricks), in whichever seat it finds
 itself, deducing the other hand rather than reading it.
 
-Thirteen is a budget, not a principle. At thirteen each side holds seven
-cards and a decision searches in about 2ms, 49ms at its worst; two tricks
-earlier the tree is an order of magnitude larger for about a point of
-strength. The search is plain minimax over the remaining tricks with a
+Thirteen is a budget, not a principle, and the budget is the interesting
+part. Measured rather than estimated — the first of the seven decisions is
+the expensive one, and quoting the mean over all seven hides it behind the
+trivial ones:
+
+| `CODA_FROM` | first searched decision | vs greedy-take |
+|---|---|---|
+| 13 | 28ms median, 66ms worst | 85.0% |
+| 11 | 767ms median, 1,906ms worst | 89.2% |
+
+So two tricks earlier is worth **four points** of win rate, not the one an
+earlier draft of this paragraph guessed at, and costs about twenty-seven
+times the time. Thirteen trades those four points to keep the worst case
+near 70ms instead of near two seconds — a hang of that length once a deal,
+worse on a phone, is not a trade this game should make. It is a good trade
+honestly argued, which is not what it was when the numbers were guessed.
+
+**The named next move on the formula**, while §3.4's contract still allows
+one: the search is plain minimax with a transposition table, no move
+ordering and no alpha-beta. Alpha-beta on a tree this shape typically buys
+close to a square-root reduction, which would plausibly bring the eight-card
+decision inside the budget and put `CODA_FROM = 12` — and most of those four
+points — within reach without the hang. That is a lead, not a measurement.
+It belongs before v1.0 freezes the fixture rather than after.
+
+The search is plain minimax over the remaining tricks with a
 transposition table, the ultima's 3 terzi included, ties to the lower slot.
 "Their best reply" is well defined because the two totals over the rest of the
 deal add up to a constant: the terzi still in play plus the ultima's 3. So

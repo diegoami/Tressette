@@ -356,8 +356,9 @@ one it thinks it is, and it falls back to the formula rather than answering
 confidently from a deck that does not add up.
 
 What this costs is stated in §1, and was measured before it was chosen: the
-four opponents play these seven tricks alike. What it buys, against the same baselines and on seeds no tuner saw, is 79.8%
-to 86.7% against random-legal and 74.5% to 86.7% against greedy-take.
+four opponents play these seven tricks alike. What it buys, against the same
+baselines and on seeds no tuner saw, is 79.8% to 86.7% against random-legal
+and 74.5% to 86.7% against greedy-take.
 
 The case that shows why the formula cannot do it: the opponent holds the Re di
 coppe and the Fante di spade and leads; the human holds the Fante di coppe and

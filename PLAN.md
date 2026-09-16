@@ -541,7 +541,23 @@ this one.
 **Done when** the repo holds exactly what the two paragraphs above name, and
 nothing else.
 
-### 1 — Engine and tests (1 day)
+### 1 — Engine and tests (1 day) — done
+
+Done in `acb4203`, with `5a59078` and `cc3cde5` closing two rounds of review
+and `55754ba` correcting this document. Pull request #2: 24 tests, green in
+the Action.
+
+The lesson worth carrying into iteration 2, because it cost two review rounds
+to learn: **a rule can be wrong and still balance.** Inverting the trick's
+winner, crediting its terzi to the loser, or handing the lead to the wrong
+player each leaves the terzi summing to 32 and the deal scoring 11, so the
+10,000-deal invariant — the assertion this iteration was proudest of — sees
+none of them. Three tests were also written in ways that could not fail: one
+read the winner back out of the engine before asserting who won, one ran on a
+seed where the case it tested never arose, and one grepped a source file for
+words its own comments contained. Every assertion added since has been checked
+by breaking the engine and watching it fail. 31 mutants, 30 caught, one
+declined because no forty-card deck can tell it apart.
 
 `engine.js` per §3.2, with a seeded rng. `tools/engine.test.mjs` on
 `node --test`: ranking; terzi; every deal of 10,000 random ones scores exactly

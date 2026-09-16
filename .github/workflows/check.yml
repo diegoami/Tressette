@@ -6,8 +6,12 @@
 # that will not be dependency-free.
 name: check
 
+# push is filtered to main: without the filter every commit on a pull request
+# branch runs the suite twice, once for the push and once for the pull request.
+# Harmless now, but iteration 3 adds a Chromium job to this file.
 on:
   push:
+    branches: [main]
   pull_request:
 
 jobs:

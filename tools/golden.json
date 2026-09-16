@@ -16,28 +16,28 @@
   "Graziano": {
    "LEAD_SURE_BONUS": 4,
    "LEAD_LISCIO_BONUS": 8,
-   "LEAD_LONG_SUIT": 0,
-   "LEAD_ACE_EXPOSED_PENALTY": 1,
+   "LEAD_LONG_SUIT": 0.5,
+   "LEAD_ACE_EXPOSED_PENALTY": 3,
    "LEAD_CONTROL_PENALTY": 2.5,
    "LEAD_INTO_VOID_PENALTY": -4,
-   "TAKE_TERZI_WEIGHT": 2.5,
+   "TAKE_TERZI_WEIGHT": 1.5,
    "GIVE_TERZI_WEIGHT": 1.5,
-   "SPEND_CONTROL_PENALTY": 1,
+   "SPEND_CONTROL_PENALTY": 2,
    "DISCARD_GUARD_PENALTY": 1.5,
    "LATE_FACTOR": 1
   },
   "Piero": {
-   "LEAD_SURE_BONUS": 4.5,
-   "LEAD_LISCIO_BONUS": 7,
-   "LEAD_LONG_SUIT": 0.5,
-   "LEAD_ACE_EXPOSED_PENALTY": 4.9,
-   "LEAD_CONTROL_PENALTY": 3.9,
-   "LEAD_INTO_VOID_PENALTY": -3.9,
-   "TAKE_TERZI_WEIGHT": 2.2,
-   "GIVE_TERZI_WEIGHT": 2.4,
-   "SPEND_CONTROL_PENALTY": 1.6,
-   "DISCARD_GUARD_PENALTY": 3,
-   "LATE_FACTOR": 1
+   "LEAD_SURE_BONUS": 3.7,
+   "LEAD_LISCIO_BONUS": 14,
+   "LEAD_LONG_SUIT": 0.6,
+   "LEAD_ACE_EXPOSED_PENALTY": 2.7,
+   "LEAD_CONTROL_PENALTY": 1,
+   "LEAD_INTO_VOID_PENALTY": -3.4,
+   "TAKE_TERZI_WEIGHT": 2,
+   "GIVE_TERZI_WEIGHT": 1.3,
+   "SPEND_CONTROL_PENALTY": 1,
+   "DISCARD_GUARD_PENALTY": 0.2,
+   "LATE_FACTOR": 0.9
   }
  },
  "deals": [
@@ -45,47 +45,7 @@
    "who": "Franco",
    "seed": 1,
    "lead": "B",
-   "plays": "B7s A5s B7c A4b B6c A2c A5d B7d B3c A4d B5c A6b BFc A4c B4s AFs A6d B2d B7b ARb AAd B6s ARd B2s A3d BRs A2b BAb A3b B5b AFb BAc AFd BCc ACb BRc ACd BCs AAs B3s",
-   "score": [
-    3,
-    8
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 2,
-   "lead": "A",
-   "plays": "A7s BCs B7b A7d B6b A4b B4c AFc A5b BAb B6d A3d A4s B6s B5d A4d B3b A2b BFb A7c BCb A6c BRb A5c B3c ACc BCd A2d ARs B3s BRd AFs BAd A2s BFd AAs B2c AAc BRc A5s",
-   "score": [
-    10,
-    1
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 3,
-   "lead": "B",
-   "plays": "B7s ARs A4s B5s B7d AAd A5c BCc B6c AAc A6b BAb B4b A7b A4c B3c B5b A5d B7c ARc A6s BAs BFb A6d B2b AFd BRb A2d B3b ACd BCs A2s AFs B4d A3s BCb AFc B2c B3d ARd",
-   "score": [
-    7,
-    4
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 4,
-   "lead": "A",
-   "plays": "A6d BRd B5c A7c A6c B4b A5d B2d B4c ACc A6s BCs B4s AAs A7d B3d B5s AFs A6b BAb B7s A3s A7b BRb B5b AFb AAd BCd A2c B3c B2s AFd BRs A4d BFc AAc A3b B2b ARc BCb",
-   "score": [
-    4,
-    7
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 5,
-   "lead": "B",
-   "plays": "B4b ARb A6s BRs B7c A5c B5b A6b A5d BRd B4c A3c A7b BCb B6c A5s B7d AAd A4d BCd BCc A4s BAc A7s BRc A6d B2s AFs BFc A3b B2c A3d BAs A3s A2b BAb A2d BCs AFd BFb",
+   "plays": "B4s AFs A5d BAd B7d A4d B7s ACs A5b BFb B4b AAb A5s BAs B6b A3b A5c BAc B6d ACd A4c BCc B6c ARc A2c B7c A3d BFd ARb B7b A2s B3s BFc A3c ARs B6s ACb B2b BRd A2d",
    "score": [
     5,
     6
@@ -93,19 +53,89 @@
   },
   {
    "who": "Franco",
+   "seed": 2,
+   "lead": "A",
+   "plays": "A6b B7c A7b B5c A4b B7d A4c BAc B4d ACd A6s BAs B5b AAb A7s BFs B2c A6c BCc AFc B5d A6d A2b BFb ACb BRd A2s B3s B3d A2d BFd ARb BAd A4s BRc A5s B3c A3b BCs ARs",
+   "score": [
+    10,
+    4
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 3,
+   "lead": "B",
+   "plays": "B6d A7d A4s BAs B7b AAb A6b BFb B5d AAd A5c BFc B4b ARb A5s BFs B7c ARc A4d BRd B7s ARs A6s BCs B6c AAc A3c BCc A2b BCb A2c B2s A5b B3s A3d BFd A4c B2d A3b BCd",
+   "score": [
+    2,
+    12
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 4,
+   "lead": "A",
+   "plays": "A4s BAs B5c A2c A4b BFb B7d AAd A4d BFd B6b A3b A6d B5d A6c BAc B7b ARb A4c BRc B7s ACs A5s BFs B7c A3c ARd B3d BAb ACb BFc A3s B2b A2d B5b ACd BCc A6s BRs A2s",
+   "score": [
+    7,
+    4
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 5,
+   "lead": "B",
+   "plays": "B7s A5s B6s A7c B4c AAc A7d B3d B5b AFb A4d BFc A6d BCs A5d B6c A5c BCc B4s AAs ACd B7b AFd BFs A6b BAb B2c ACb B3s ARs B3c A4b BRc ARd B2s A2d B2b A3b AAd BRb",
+   "score": [
+    4,
+    7
+   ]
+  },
+  {
+   "who": "Franco",
    "seed": 6,
    "lead": "A",
-   "plays": "A5c BCc B4d ARd A4c B6c B6b AFb A7c B4b A5s BFs B7d ACd AAc B6d A3c BRc A2c B6s AFc B7b A3d B5d A3s B4s AFd BCb A2d BCs ARs B7s AAd BRb AAs B2s B5b AAb A2b B3b",
+   "plays": "A7s BRs B7c AAc A4b BFb B4s A5s A7d BFd B5b AAb A7b BRb B4c ACc A6c BRc B6s A3s A6b BCb B5c AFc A5d BAd BFs ACd B2s A3d BAs A2d BCs A4d B2b A3b A3c B2c ARd B6d",
    "score": [
-    3,
-    8
+    6,
+    5
    ]
   },
   {
    "who": "Franco",
    "seed": 7,
    "lead": "B",
-   "plays": "B4b ARb A5s BFs B7d A4d B7s AAs A4c B2c B5d A6d A4s B2s B5b ACb A6c BFc B6s ARs A6b BAb B7b AFb A5c BCc B2d A3d A3b B2b A3s BRd ACs BFd AAc B3c BAd ARc BCd A7c",
+   "plays": "B7b AAb A5b BRb B6s ARs A5s BAs B5d AAd A4b B6b B7c AAc A4d BCd B7d A2d A5c BCc B4s AFs A6c BRc B4c AFc ACb B3b B3d A6d BFd AFb BRd A2c BCs A3s A3c B2s A2b B7s",
+   "score": [
+    4,
+    13
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 8,
+   "lead": "A",
+   "plays": "A7s BRs B5d ACd A5b B3b B6s A5s B4s A6c B7c AAc A7b B4c A6b B6d A4b BRb B2s A4d B3s AAs BFs A5c BCs A7d B2c A3c A2b BCb AFb BCc ARc BFc AAb B3d AFd BAd B2d ARd",
+   "score": [
+    6,
+    5
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 9,
+   "lead": "B",
+   "plays": "B4s AFs A4d B7d B6s ARs A5d BFd B5c ACc A5b BAb B7c A4c B4b ARb A7b BCb B6c A6b B2c A6d BFc A3b BAc A3d B2d AAd B3s AAs BCs A7s B2s A2b BRc ARd B5s ACd B3c AFb",
+   "score": [
+    10,
+    1
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 10,
+   "lead": "A",
+   "plays": "A6d B7d B4b ARb A7s BAs B5s A4s B3s A5b B7b A3b A6s BFs B2s ACs B4c AAc A5c BFc B6b A2b A6c BCc BRs A7c BCb ACd B2c ARc BFb A2d BAb A4d B3c A5d BFd A3d AAd BRd",
    "score": [
     9,
     5
@@ -113,109 +143,19 @@
   },
   {
    "who": "Franco",
-   "seed": 8,
-   "lead": "A",
-   "plays": "A4d BRd B4b ACb A5c BAc B7b ARb A5d BAd B4s AAs A5b BAb B7c AFc A7s BRs B6s ACs A5s B2s B7d ACd A6d BFd B2b AFb B3d A2d B6b A3s BRc A2c AFs BCc A6c B3c B3b A4c",
-   "score": [
-    7,
-    4
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 9,
-   "lead": "B",
-   "plays": "B7c AAc A5c B4c A5b B6b B7d AAd A6s BRs B6c A4d B3c A5d B7b ACb A5s B7s B2c A6d B4b AFb A4s BCc A2s B3b AAs BFc AFs BRb A3s BRc ACs B2b AFd B2d BAb ACd BRd A3d",
-   "score": [
-    3,
-    8
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 10,
-   "lead": "A",
-   "plays": "A5s B6s B5b ARb A5c BRc B4b A6d B7b A5d B4d AAd A4c BFc B4s AFs A6c B7c B3b AAb B6b A7s BFb A7d BCb ACc B2d ACd B2s A3s A2c B3c BRs AAs AAc B2b ARd B3d BCs AFd",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Franco",
    "seed": 11,
    "lead": "B",
-   "plays": "B6b A4b B7b A2b A6c B6s A7c B6d A5d BAd B5s AFs A5c BRc B7s A3s A4c BFc B3b A5b BFb A4d BCb A7d BRb A3d B2d ARd BAb ACc BFd ACd A3c B2c AAc BRs AAs B2s BCs A4s",
+   "plays": "B4b AAb A7s BAs B4c A5d B5c A6b B4d AAd A7c BRc B6s ACs A6d BCd B4s AFs A6c BCc B2c AAc BFc A5s B5b ARb A2b BCb AFb B7b A2s B3s B3c A3b BFd A2d ARs B3d A7d BRd",
    "score": [
-    8,
-    3
+    9,
+    5
    ]
   },
   {
    "who": "Franco",
    "seed": 12,
    "lead": "A",
-   "plays": "A6c BAc B4b ARb A4d BCd B7c ACc A4c B5c B5d AFd A7b BAb B7s AAs A4s BFs B5b AFb A6s BCs B6d AAd A5s B2s B2c ARc B3c A3s BFc A7d B2b A3b ARs BCb A2d BRd A3d B6b",
-   "score": [
-    5,
-    6
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 13,
-   "lead": "B",
-   "plays": "B4b AAb A6c BAc B6s AFs A4c BCc B5d ACd A5b BFb B7s A4s B6d ARd A4d BFd B7b ARb A5c BRc B5s A7c BCs A6b BAs AFc B3s A2b BRs A7d B2s AAd B2c A3c A3d B2d A3b BCb",
-   "score": [
-    6,
-    8
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 14,
-   "lead": "A",
-   "plays": "A7s B5s A7b BFb B6b ARb A4d BRd B5d ACd A4s BCs B6c A5b B6s AAs A5c BAc B4c ARc A7c BCc BFc A6d B2c A2d BFs A2s A2b B3b BAb ACb B4b ARs B3c AFd BAd A3d A3s B7d",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 15,
-   "lead": "B",
-   "plays": "B5c A4d B4c A7s B5d AFd A4b BAb B7d AAd A5b BFb B7b ARb A5s BCs B4s AAs A7c BCc B6c AAc A6b BCb B3c A6s BFc A2d BRc ARs B3b A3d B2b ACd B2c AFs B2s A3s ARd B6d",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 16,
-   "lead": "A",
-   "plays": "A6b BCb B4d A2d A7s BAs B5s AFs A6c BRc B5d ARd A4c B7d A7c B5b A4b B3b B5c AAc A6d BCd B6s ACs A7b B2b B2s AAb B3s AFb B3d AAd BFd AFc B3c A2c BRs ARb B4s ACc",
-   "score": [
-    12,
-    2
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 17,
-   "lead": "B",
-   "plays": "B6b ARb A6s BRs B6c AAc A5b BAb B7c ARc A7b BFb B4s A3s A5d BRd B7s A4d B5s AAs A5c BFc B7d AAd ACb B4b ACd B3d BCs AFd BFs A3b B6d A2d A2b B2s ACc B2c B4c A3c",
-   "score": [
-    5,
-    6
-   ]
-  },
-  {
-   "who": "Franco",
-   "seed": 18,
-   "lead": "A",
-   "plays": "A6s BAs B7s A2s A5b B7b B3b A6b B3c A4c B5c A2c A4b B5d A7c BAc B5s ACs A4d BAd B4s A6c B3s A6d BFs A7d BRc AFb BFc AAb B2d AFd B3d ARd BCd ARb BRs ACb BCc A2b",
+   "plays": "A7c B5c A5d BAd B6b AFb A4b B2b B7s A4s B7d ACd A5s BAs B4d ARd A6s BFs B5b ACb A6d BFd B4c ACc A6c BAc BAb ARb B3b A7b B3s ACs B2c ARc BFc A2d B2s ARs B3c A3d",
    "score": [
     10,
     1
@@ -223,139 +163,169 @@
   },
   {
    "who": "Franco",
+   "seed": 13,
+   "lead": "B",
+   "plays": "B7c A4c B7d AAd A5d B7s A6b BAb B6s ARs A4s BAs B4d AFd A6c BRc B6d ARd A5b BCb B4b A2b A2d BCd A3d B5s A3c B5c ACc BFc AAc B2c BFb A3b A3s BFs A2s B7b ACs BRb",
+   "score": [
+    4,
+    7
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 14,
+   "lead": "A",
+   "plays": "A7d B4d A5d B5c A7s B6s A4s B5s B6c AFc A3s B2s A3c B7c A2c BRc ACd B6d A3d B7b A5b BFb B4b AAb AFd B6b ARd BFs AAd B2b A2d B4c ACb B3b BAc ACc BAs ARs BRb ACs",
+   "score": [
+    5,
+    6
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 15,
+   "lead": "B",
+   "plays": "B6d A7d A5b BAb B7c AAc A6c BCc B4b ARb A6b BCb B5d A4d B3s A7s B6s AFs A4s BAs B5c AFc A5s BRs B4c ARc A2c B3c BFb A3b A2s BCs AFd BRd B2b A7b B2d A3d AAd BCd",
+   "score": [
+    5,
+    6
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 16,
+   "lead": "A",
+   "plays": "A7d B6d A6b BFb B7s ARs A5b B3b B7c ACc A5d BCd B6s A4b B5s A6c B4s A4d B5c AAc A7b B4c ARb B3s AAb B2d A2b BFd A3d BAd ARd BFs ACb BCs A2c B3c BAs ARc B2s AFc",
+   "score": [
+    7,
+    7
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 17,
+   "lead": "B",
+   "plays": "B5d AAd A4c BFc B4b A5b A6s BCs B7c ACc A6c B6d A5c B7b A5s BAs B7d ACd A4d BRd B7s AFs A2c B4s ARc BFb A2d B3d BAb A6b BRs A3s AAc B2s A3c BFd ARb B2b BCb A3b",
+   "score": [
+    4,
+    10
+   ]
+  },
+  {
+   "who": "Franco",
+   "seed": 18,
+   "lead": "A",
+   "plays": "A6b B3b B5s AFs A4s BRs B5d ARd A7d BAd B4d A7s B4b AAb A4c BRc B7c AAc A6c BFc B5c ACc A6d BCd B2s A6s B3c A2c B3s AAs B2d A3d AFd BFb A7b BCb B2b ARb BCs A5b",
+   "score": [
+    7,
+    4
+   ]
+  },
+  {
+   "who": "Franco",
    "seed": 19,
    "lead": "B",
-   "plays": "B4c ACc A7s BAs B6c ARc A5s B2s B7b ARb A4b BAb B4d ARd A7c BAc B7d A5d B6d A2d A6b BCb B5b AFb A5c B2c BAd A2b BCd A3b B3d AFs BFd AFc BCs ARs A3c B6s A4s B3s",
+   "plays": "B4b ACb A4s BFs B7d AAd A5c BAc B6s ARs A5b BAb B6c A7c A4d BFd B4c A2c A5s BCs B5d ACd A7b BFb B6d A3d A2s B3s B2d A2b B3b A6b BRb ACc BRd A7s BRc A3c AAs BFc",
    "score": [
-    11,
-    3
+    6,
+    5
    ]
   },
   {
    "who": "Franco",
    "seed": 20,
    "lead": "A",
-   "plays": "A7c BCc B5b A4b B7b A3b A6s BFs B6b ARb A5d BAd B6d A4d B3c A4c B7d A3d A5s BRs B6c AAc A5c BFc BCd A7s BFd ACb B2d ARc BRd A2b BFb AAb AAs BCs A2s B3s B2c A4s",
+   "plays": "A6s B4s A5c B4c A5b BRb B5s AAs A7s B3s B6d ACd A5d BAd B7b ACb A4d B3d B7d AFd A3b B6b A2d B7c ARd B4b AFc B3c B2b AFb BAc ARc B2c ACc BAb AFs B2s ACs B6c ARs",
    "score": [
-    7,
-    4
+    8,
+    3
    ]
   },
   {
    "who": "Graziano",
    "seed": 1,
    "lead": "B",
-   "plays": "B7s A5s B7c A4b B6c A2c A5d B2d BAc A4d B5c A6b B3c A4c BFc A6d BCc A5b BRc ARb B2s A6s B4s AAs A3d B7d A2b BAb A3b B7b AFb BRd ACb BRs AFs B3s BAd AFd BCs ACd",
+   "plays": "B4s AFs A5s BAs B7d A5d B7b AAb A4c BAc B4b A5b A4d BAd B7s ACs A5c B6c B6d ACd A2d BFd A3b B6b A3c B7c ARb BFb A2s B3s BCc ARc ARs B6s ACb B2b BFc A2c A3d BRd",
    "score": [
-    7,
-    4
+    4,
+    7
    ]
   },
   {
    "who": "Graziano",
    "seed": 2,
    "lead": "A",
-   "plays": "A7s BCs B7b A7d B6b A4b B4c AFc A5b BAb B3b A4s B4d A3d A6s B7c A5s B6d A3s B5d A2s BRs AFs BCd AAs BRd A3c BAc A6c BFb A5c B2b ARc BAd A2c BFd A2d BCb ACc BRb",
+   "plays": "A6b B7c A7b B5c A4b B7d A3b B4d A7s BAs B6s ACs A5b BRd A4c BAc B2d A6d B3d ACd B5d A6c BFd A4s BAd A5s B2s ARs BFs AFc B3s ACb B3c A2c BRc ARb BCc A2b BFb AAb",
    "score": [
-    1,
-    10
+    11,
+    3
    ]
   },
   {
    "who": "Graziano",
    "seed": 3,
    "lead": "B",
-   "plays": "B7s ARs A4s B5s B7d AAd A5c BCc B6c AAc A6b BAb B4b A7b A4c B3c B5b A5d BFb A6s B2b A6d BRb AFd B3b ARc B2d ACd B3d ARd B2c AFc B7c AFs B4d ACs BCb A2s BAs A3s",
+   "plays": "B6d A7d A6b B7b B5d A3d A5b BFb B6c A5c B4b AAb A4c BFc B3s A4s B7c A3c A4d BRd B2s A6s BAs A5s BRs A7s BCs A2b BCc AAc A2c BRc ACd BFd AAd B2d BFs ACb BRb A3b",
    "score": [
-    7,
-    4
+    5,
+    9
    ]
   },
   {
    "who": "Graziano",
    "seed": 4,
    "lead": "A",
-   "plays": "A6d BRd B5c A7c A6c B4b A5d B2d B4c ACc A6s BCs B4s AAs A7d B3d B5s AFs A6b BAb B3c A2c B7s A3s AAc BFc AAd BCd AFd B2s ARc BRs AFb BRb B2b A7b B5b A3b A4d BCb",
+   "plays": "A4d B5d B5c A2c A4s BAs B7c A4b BRc A6d BAc A6s B6c A7b B3c AFc BCc ARd B4c ARs B6b ACb A5s B7s B5b A3b AFs B7d A2d B3d BFb A3s BRb A2s BAb ACs B2b ACd BFd AAd",
    "score": [
-    4,
-    7
+    8,
+    3
    ]
   },
   {
    "who": "Graziano",
    "seed": 5,
    "lead": "B",
-   "plays": "B4b ARb A6s BRs B7c A5c B5b A3b A5d BRd B4c A3c A7b BCb B6c A5s BCc A4d BAc A6b BRc A7s BFc A6d B2c A3d BAs AFs B4s A3s AAd B7d A2b BAb A2d B2s ACd BCs AFd BFb",
+   "plays": "B4c A7c A6b BAb B7s A6s B6d A4d B5b AFb A7d B3d BFc A5c BCc A6c B2c A4s BAc A5s B3c A7b BRc A4b B3s ARs BRd AFd BCb A3b AAs B2s BFs ACs A2b BRb A5d BAd BCd A2d",
    "score": [
-    5,
-    6
+    7,
+    4
    ]
   },
   {
    "who": "Graziano",
    "seed": 6,
    "lead": "A",
-   "plays": "A5c BCc B4d ARd A4c B6c B6b AFb A7c B4b AAc B6d A3c B7b A2c B4s A7d B5d A5s BFs B3b AAb B5b AFd B2b A3s BRb A2d BAd A3d ACd BCs ARs B7s AFc BRc BCb A2s B6s AAs",
+   "plays": "A5d BFd B7c AAc A7s BRs B5b AAb A7d B4c A6d B4s A4d BFb A3d B6c A2d BAd ARd B6b ACd BCb A7b BRb B3c A5c B2s A6s B2b A3b A4b BFs ACc B2c BAs A3s AFc BRc BCs A5s",
    "score": [
-    5,
-    6
+    4,
+    7
    ]
   },
   {
    "who": "Graziano",
    "seed": 7,
    "lead": "B",
-   "plays": "B4b ARb A5s BFs B7d A4d B7s AAs A4c B2c B5d A6d A4s B2s B5b ACb A6c BFc B6s ARs A3b B7b A3d B2d A6b BAb BRd AFb BAd ARc BFd A5c B2b A3s BCd ACs BCc AAc A7c B3c",
+   "plays": "B6s ARs A6c BRc B7b AAb A5c B4c A4d BFd B4b A5b A7c B5d A3c B7d ACc B7s A2c B6b AAc B3d AFc BFs A6d BRd B3b A2b B2s ACs BCb AAd BRb A5s BAs A4s BFb ACd B3s A2d",
    "score": [
-    10,
-    4
+    7,
+    10
    ]
   },
   {
    "who": "Graziano",
    "seed": 8,
    "lead": "A",
-   "plays": "A4d BRd B4b ACb A5c BAc B7b ARb A5d BAd B4s AAs A5b BAb B7c AFc A7s BRs B6s ACs A5s B2s B2b AFb B6b A6d B3d A2d B7d ACd A3s BRc AFs BCc A2c B3c B3b A6c BFd A4c",
+   "plays": "A6b B5d A4b B5b B4s A7s A7d B7c A3b BFb A5c BAc B6c A3c A2b B7b AAb BRb ACb B4d ACd B6d AFd B4c A2d BRs A6s BFs BCc A2c AAd B2s A3d BRc ARd BFc A5s BAs BCs A3s",
    "score": [
-    7,
-    4
+    2,
+    9
    ]
   },
   {
    "who": "Graziano",
    "seed": 9,
    "lead": "B",
-   "plays": "B7c AAc A5c B3c B6b AFb A6c B2c B6s ACs A5b BCb B7d AAd A7b B3b B5s A2s A7s BAs BRc ACc B4b AAb A3d B6d ARb B2b BFs A4s BRs A3s AFd B2d BRd A5d B4c AFc A4d BCd",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 10,
-   "lead": "A",
-   "plays": "A5s B2s B5b ARb A5c BRc B4b A6d B7b A5d B3b A4c BAb A3s BFb A7d BCb A7c B2b A7s B6b ACc B3d ACd B4d AAd A2c B6c ARd BCs AAc B3c BFc AFs BRs AAs A2d B4s AFd B6s",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 11,
-   "lead": "B",
-   "plays": "B6b A2b A6c B7b A7c B6s A3c B6d A7d BAd B5s AFs A5c BRc B7s A3s A4c BFc B3b A5b BFb A4b BCb A4d BRb A5d B2c ACc BCd A3d AFd B2d BAb ARd BRs AAs AAc BCs A4s B2s",
-   "score": [
-    7,
-    4
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 12,
-   "lead": "A",
-   "plays": "A6c BAc B4b ARb A4d BCd B7c ACc A4c B3c B7s AAs A7b BAb B5d AFd A4s BFs B5b AFb A3s BCs A3b B6b A3d B6d ARs B2s B2c ARc B2b A2d BFc A6s BCb A5s BRd AAd A7d B5c",
+   "plays": "B5c A4c B6c A4d B4s ARs A5d BFd B3c A5b B6s AFs A7b BAb B4b ARb A6b BCb B7d AAd A7c BAc B2s A5s B3s A7s BAs A3b BCs A3d BFc A2c A2b BFb A2d B6d ARd BCc ACd BRc",
    "score": [
     5,
     6
@@ -363,69 +333,19 @@
   },
   {
    "who": "Graziano",
-   "seed": 13,
-   "lead": "B",
-   "plays": "B4b AAb A6c BAc B6s AFs A4c BCc B5d ACd A5b BFb B7s A4s B6d ARd A4d BFd B7b ARb A5c BRc B5s A7c BCs A6b BAs AFc B3s A2b BRs A7d B2s AAd B2c A3c A3d B2d A3b BCb",
-   "score": [
-    6,
-    8
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 14,
+   "seed": 10,
    "lead": "A",
-   "plays": "A7s B5s A7b BFb B6b ARb A4d BRd B5d ACd A4s BCs B6c A5b BAc A6d B5c A7d B4c ARc A2d BAd A3d B6s AFd B4b A2s BFs AAs BAb ARs BCc A3s BFc A2b B3b B2c A7c B3c ACb",
+   "plays": "A6d B7d B5s A7s A4d BFd B4b ARb A7c BAc B7b A5b B6s ACs A4s BAs B6c ACc A5d B6b A3d B2d ACd B4c ARd B3s A3b BFb AAb B2s ACb BFc A2b B2c AAd BFs A5c B3c BRs ARc",
    "score": [
-    4,
+    7,
     7
    ]
   },
   {
    "who": "Graziano",
-   "seed": 15,
+   "seed": 11,
    "lead": "B",
-   "plays": "B5c A4d B4c A7s B3c A4b B6s AAs A7d BAd B5d AFd A5b BAb B7b A3b A4s BCs B7c ARc A3s B2s A5s B6d ARs BCc A2d B3d BFc A6c BAc A2c AFs BRd ACb BRb BCd A6b BFb A2b",
-   "score": [
-    4,
-    7
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 16,
-   "lead": "A",
-   "plays": "A6b BCb B4d A2d A7s BAs B5s AFs A6c BRc B5d ARd A4c B7d A7c B5b A4b B3b B5c AAc A6d BCd B6s ACs A7b B2b B2s AAb B3s AFb B3d AAd BFd AFc B3c A2c BRs ARb B4s ACc",
-   "score": [
-    12,
-    2
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 17,
-   "lead": "B",
-   "plays": "B6b ARb A6s BRs B6c AAc A5b BAb B7c ARc A7b BFb B4s A3s A5d BRd B7s A4d B5s AAs ACb B4b A3c B4c A5c BFc B2c ACc BCs ACd BFs AFd B2s A3b B7d AAd A2b B6d A2d B3d",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 18,
-   "lead": "A",
-   "plays": "A6s BAs B7s A2s A5b B3b B7b AAb A6b B6d A4b B3d AFb B5d ARb B5s ACb BCs A2b BRc A7d BAd B6c ACc A3c BFc A4c B2c BCd ARd A4d B2d B3s A4s BFs AFd BRs A5c BAc A7c",
-   "score": [
-    6,
-    5
-   ]
-  },
-  {
-   "who": "Graziano",
-   "seed": 19,
-   "lead": "B",
-   "plays": "B4c ACc A7s BAs B6c ARc A5s B2s B7b ARb A4b BAb B4d ARd A7c BAc B7d A2d A6b BCb B3s A4s BFc A5c B3c A5d B2c A2b BAd A3d A3b B5b AFs B6s ACs BCd ARs B6d AFb BFd",
+   "plays": "B6s ARs A5d BFd B4b AAb A7s BAs B6b ARb A7c BRc B4d AAd A6d BCd B5b AFb A5c BCc B4c AAc A5s B4s A7d BRd B2c A6c B3d A2d BFc A2s BCb A3b ACs B3s B3c AFs B7b A2b",
    "score": [
     8,
     6
@@ -433,12 +353,92 @@
   },
   {
    "who": "Graziano",
-   "seed": 20,
+   "seed": 12,
    "lead": "A",
-   "plays": "A7c BCc B5b A3b A4d BAd B4s AAs A6d BCd B5d AFd A5c BFc B4c ARc A7d BRd B6s AFs A6c BAc B3c A5s B2c A7s BFb A6b BCs A3s A2s BCb ARs BRb A2b B7b A4b BAb B2d A3d",
+   "plays": "A7c B5c A7b B6b A5d BAd B7s A4s B4b AFb A7d BFd B5s A6c B4c AAc A4d B6d B5b ACb A6s BAs B3s ACs B2s AFc B2b ARb B3b ACc BAb ARd BFs A3d BRs A2d B3c ARc B2c ACd",
+   "score": [
+    10,
+    1
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 13,
+   "lead": "B",
+   "plays": "B7b A6b B7c A4c B6s ARs A5d BRd B5c A6c A7s BAs B4d AAd A5b BAb B7d AFd A4s BFs B4b A3b ACs B5s A3d B6d A2d BCd A3s BCb A2b BFb ACc BFc A2s BRb AAc B2c BRc A3c",
+   "score": [
+    4,
+    7
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 14,
+   "lead": "A",
+   "plays": "A7d B4d A5d B5c A7s B6s A4s B5s B6c AFc A3s B2s A3c B7c A2c BRc ACd B6d A3d B7b AFd B4b ARd B6b AAd BFb ACc BAc BAs ARs BFs ACs A2d B4c A5b BRb B2b AAb B3b ACb",
+   "score": [
+    6,
+    5
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 15,
+   "lead": "B",
+   "plays": "B4b A5b A6c BCc B6d A7d A7s BAs B5d A4s B7c AAc A6b BAb B4d AFd A6s B5s A7b BCb B5c AFc A3b BFb A3d B2d ARb B2b B3s AFs BRd A2s BAd ARs BCd ACs B4c ARc A2c B3c",
+   "score": [
+    8,
+    3
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 16,
+   "lead": "A",
+   "plays": "A6b B3b B7s A7d B4s A5b B5s A7c B3s A4b BAs A6s BCs A6c BFs A4d B2s ARb BRs AFc B5d AFd AAb B7b A2b B5c A2c BCc AFb BCd AAc B3c B4c ARc ACb B2d ARd BAd B6d A3d",
+   "score": [
+    9,
+    5
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 17,
+   "lead": "B",
+   "plays": "B5d AAd A4c BFc B4b A5b A6s BCs B7b ARb A6c B7c B6d ARd A5s BAs B7d ACd A4d BFd B4s AFs A6b BAb B7s A3s A2c B5c ACc BFb AAc B2b ARc BCb A3b BRs A3c B2s A2d B3d",
+   "score": [
+    4,
+    10
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 18,
+   "lead": "A",
+   "plays": "A6b B3b B5s AFs A4c BRc B5d ARd A4s BRs B4d A7d A4b BAb BCd A7s B2d AFd BAd A5c B3d A6d B7c AAc A7b BFb B3s AAs BCc A2c ACb B2b BFc A6c B3c A6s B2s ARb BCs A5b",
+   "score": [
+    9,
+    2
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 19,
+   "lead": "B",
+   "plays": "B4b ACb A4s BFs B7d AAd A5c BAc B6d ACd A5b BAb B6s ARs A7b BFb B4c A7c A5s BCs B5d A4d B6c ACc A7s B3s B2d A3d A2c BRc A3c BFc AAs BFd A2s BRb A2b B3b BRd A6b",
    "score": [
     5,
     6
+   ]
+  },
+  {
+   "who": "Graziano",
+   "seed": 20,
+   "lead": "A",
+   "plays": "A6s B4s A5c B4c A7s B5s A5b BRb B6d A4d B6b A3b A5d BAd B7b ACb A2d BCd A7d BRd B4b A7c BAb AFc B2b ARc B3c ACc BAc AFs B2c A3d BFb ARs B6c AFd BCs AAs A3s B2s",
+   "score": [
+    7,
+    4
    ]
   }
  ]

@@ -8,22 +8,33 @@ properly.
 
 ## The opponents
 
-Three players, one formula, eleven weights. They are told apart by how often
-they put down a different card in the same position — measured over dealt
-positions with more than one legal card, on seeds the tuning never saw.
+Three players, one formula, eleven weights — of which **two decide the game a
+profile plays**: whether it opens its longest suit, and what a liscio is worth
+leading. The roster is the three corners those two make that are worth
+standing in.
 
-| | vs random-legal | vs greedy-take | plays differing from Franco |
+| | opens the long suit | keeps its lisci |
+|---|---|---|
+| **Franco** — the house standard | no | yes |
+| **Graziano** — another game, not a worse one | yes | no |
+| **Piero** — rolled fresh every session | yes | yes |
+
+On seeds the tuning never saw, 500 mirrored deals each:
+
+| | vs random-legal | vs greedy-take | choices differing from Franco |
 |---|---|---|---|
-| **Franco** — the house standard, balanced | 88.6% | 88.2% | — |
-| **Graziano** — loose and quick, a little easier | 88.8% | 80.8% | 11.1% |
-| **Piero** — rolled fresh every session | 86.8%\* | 78.6%\* | 22.7%\* |
+| Franco | 86.6% | 84.8% | — |
+| Graziano | 88.4% | 86.8% | 21.4% |
+| Piero\* | 86.8% | 81.8% | 24.8% |
 
-\* one session of him. Over six: 73–84% against greedy-take, 12–30% different.
+Head to head they are within a few points of even — 42%, 56%, 60% — which is
+the point: characters, not difficulty tiers.
 
-Franco's weights are tuned; Graziano's buy their difference with the liscio
-bonus, which costs about a point of win rate per percent of plays changed;
-Piero's are drawn from ranges once per session, as they were in the 1997
-original, where `SetProfiles` ran from `FormCreate`.
+\* one session of him. Piero's two deciding weights are fixed, so that he
+cannot roll into somebody else's game; the other nine are drawn fresh each
+session, and over eight sessions he ran 82.1–85.8% against greedy-take and
+20.5–25.1% away from Franco. Most of those nine barely move a play, which is
+why his sessions differ less than his weights do.
 
 The settings sheet discloses all eleven weights for whoever you are playing.
 From the fourteenth trick the weights stop mattering: the opponent enumerates

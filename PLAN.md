@@ -45,9 +45,9 @@ The contract, in one list. Everything else is detail.
   plates in the corners, the trick in the middle, the sheets for start,
   settings, history and about. The CSS is forked from Discola and changed
   where Tressette needs it, not restyled.
-- **One formula, four weight vectors, and one exception.** For thirteen
+- **One formula, three weight vectors, and one exception.** For thirteen
   tricks the opponent scores every legal card and plays the highest, and the
-  four opponents differ only in their weights, which the settings sheet shows
+  three opponents differ only in their weights, which the settings sheet shows
   as in Discola. From trick fourteen, where the tallone is empty and the other
   hand can be deduced rather than guessed at, all four play the rest of the
   deal out exactly and identically. Exact play beats a temperament where the
@@ -197,7 +197,7 @@ vincitore(state)                   // BASSO, ALTO or null for a draw
 
 // the opponent
 WEIGHT_KEYS                        // the eleven names, in table order
-rollProfiles(rng)                  // {Valerio, Graziano, Piero, Franco}; Piero drawn from rng
+rollProfiles(rng)                  // {Franco, Graziano, Piero}; Piero drawn from rng
 compGioca(state, P)                // slot to play, given one profile's weights
 ```
 
@@ -356,7 +356,7 @@ one it thinks it is, and it falls back to the formula rather than answering
 confidently from a deck that does not add up.
 
 What this costs is stated in §1, and was measured before it was chosen: the
-four opponents play these seven tricks alike. What it buys, against the same
+three opponents play these seven tricks alike. What it buys, against the same
 baselines and on seeds no tuner saw, is 79.8% to 86.7% against random-legal
 and 74.5% to 86.7% against greedy-take.
 
@@ -393,13 +393,19 @@ formula freezes.
 | DISCARD_GUARD_PENALTY | cost of leaving an asso unguarded |
 | LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
-**The four temperaments.** Iteration 2 measured whether this formula can
-actually tell them apart; §4.5 has the answer and it is not a comfortable one.
-Valerio balanced and the default; Graziano loose,
-cashing sure cards early and spending 3s freely; Franco tight, hoarding control
-and guarding every asso; Piero rolled once per session by `rollProfiles`, as
-in Discola, because that is now a house tradition rather than a Delphi
-accident.
+**The three temperaments.** Iteration 2 measured whether this formula can
+actually tell them apart and iteration 5 priced it; §4.5 and iteration 5 have
+the answer, and it is not a comfortable one. **Franco** is the house standard
+and the default, balanced — he is the player iteration 2 tuned, under the name
+that stayed when Valerio was dropped for choosing the same card 99 times in a
+hundred. **Graziano** is loose and quick: he leads his big cards rather than
+keeping them back and spends control to take a trick, which is a temperament
+bought at a measured price in win rate. **Piero** is rolled once per session by
+`rollProfiles`, as in Discola, because that is now a house tradition rather
+than a Delphi accident. There is no "tight" character: the weights that would
+express one — the control penalties and the guard — move almost no plays at any
+magnitude, which is what iteration 2 found and iteration 5 confirmed a second
+way.
 
 **The contract, from v1.0 on.** Discola's rule was *change a weight, not the
 formula* because the formula was the 1997 artefact. Here the formula is ours
@@ -1049,31 +1055,87 @@ Franco's value, 100 seeds mirrored against greedy-take:
 |---|---|---|
 | `TAKE_TERZI_WEIGHT` 5 (from 1.5) | 85.5% | 3.0% |
 | `SPEND_CONTROL_PENALTY` 0 (from 2) | 82.0% | 6.8% |
-| `DISCARD_GUARD_PENALTY` 0 **or** 3 (from 1.5) | 90.0% | **0.1%** |
+| `DISCARD_GUARD_PENALTY` 0 (from 1.5) | 90.0% | 2 choices in 3,437 |
+| `DISCARD_GUARD_PENALTY` 3 (from 1.5) | 90.0% | **none at all** |
 
-So: **character in this formula is bought almost entirely with the liscio
-bonus, and it is paid for in win rate at about a point per percent.** The
-guard penalty moves 2 choices in 3,437 at any value, which is iteration 2's
-ablation confirmed a second way. There is no free temperament to find, and
-tuning for difference cannot invent one — it can only choose a point on that
-curve.
+The conclusion drawn from that table was **wrong**, and the review of this
+iteration caught it: the ladder had not priced `LEAD_LONG_SUIT`, the one weight
+iteration 2 set to zero. It is the cheap lever, and it is a switch rather than a
+dial — 0.5, 1 and 1.5 play identically, because the term only reorders which
+liscio is led:
 
-The owner chose the point: a Graziano who differs on one choice in ten and
-wins a little less. Held out on seeds 5001+, which the tuning never saw:
+| from Franco | vs greedy | differing |
+|---|---|---|
+| `LEAD_LISCIO_BONUS` 8 and three other weights moved | 80.8% | 15.5% |
+| `LEAD_LONG_SUIT` 0.5 | 86.2% | 17.1% |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 8 | **87.1%** | **22.2%** |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 7 | 85.2% | 27.3% |
 
-| | vs random-legal | vs greedy-take | differing from Franco |
-|---|---|---|---|
-| Franco | 88.6% | 88.2% | — |
-| Graziano | 88.8% | 80.8% | 11.1% |
-| Piero (this session's roll) | 86.8% | 78.6% | 22.7% |
+Half again the difference for a seventh of the cost. So the honest version:
+**this formula has about two and a half levers, not one** — the long suit, the
+liscio bonus, and a little from spending and taking — and the first tuning pass
+found one of them and concluded there were none. The guard penalty moves two
+choices in 3,437 at 0 and none at all at 3, which is iteration 2's ablation
+confirmed a second way; seven of the eleven weights are like that.
 
-Piero is rolled per session, so his strength is a distribution and not a
-number: over six sessions, 73.1% to 83.8% against greedy-take, differing from
-Franco by 12.3% to 30.1%. His ranges keep the liscio bonus at 7 or above,
-because that is the cliff — below it a rolled player stops playing Tressette.
-The §3.4 acceptance numbers are Franco's contract; Graziano meets both, and a
-rolled Piero can land a point or two under the greedy-take floor, which is
-what "you never play the same Piero twice" costs and the dossier says so.
+The owner chose from the corrected curve: a Graziano who plays another game
+rather than a worse one. The roster as it ships, on seeds 5001+ which the
+tuning never saw, 500 mirrored deals each:
+
+| | vs random-legal | vs greedy-take |
+|---|---|---|
+| Franco | 86.6% | 84.8% |
+| Graziano | 88.4% | 86.8% |
+| Piero (this session) | 86.8% | 81.8% |
+
+| pair | choices that differ |
+|---|---|
+| Franco vs Piero | 24.8% |
+| Franco vs Graziano | 21.4% |
+| Graziano vs Piero | 12.3% |
+
+and §3.4's second clause, which nothing had measured until the review asked:
+head to head they are 42.2%, 56.2% and 59.6% — characters, not tiers. Every
+profile clears both acceptance floors, which the first version of this
+iteration did not: a quarter of its rolled Pieros came out under the
+greedy-take floor and the plan answered that by reinterpreting the contract in
+a distant paragraph rather than amending it. **Two weights decide the game a
+profile plays**, and the corners they make are the roster:
+
+| | leads the long suit | hoards its lisci |
+|---|---|---|
+| Franco | no | yes |
+| Graziano | yes | no |
+| Piero | yes | yes |
+
+Piero's two levers are therefore not rolled at all — he stands in the corner
+the other two leave empty — and his other nine are. The fourth corner was tried
+and dropped: rolled ten times it gave a Piero 33.1% from Franco and a Piero
+7.1% from Franco, and a 7.1% Piero is Franco with another name.
+
+**What that costs, measured rather than claimed:** the weights Piero still
+rolls are mostly the inert ones, so his sessions vary less than the dossier
+used to promise. Over eight sessions he runs 82.1% to 85.8% against greedy-take
+and 20.5% to 25.1% away from Franco, with three of the eight identical to the
+decimal. "You never play the same Piero twice" is true of his weights and only
+half true of his play, and the dossier says the smaller thing now.
+
+**And what the review of this iteration is worth writing down**, beyond the
+numbers it corrected. Every measurement in the first version was real; the
+conclusion drawn from them was not, because the ladder had a hole in it and
+nobody asked what was missing from the list of weights it priced. Two smaller
+habits went with it: the difference metric counted 31% of decisions in which no
+profile *can* differ — everything from `CODA_FROM` on, where the search answers
+— so every figure it printed, including the one in a dossier, was 1.45 times
+too small; and the comment defending its denominator said "about half of all
+decisions have one legal card" when the measured number is 15.3%, three times
+smaller. Neither was a lie anyone told: they were numbers written from
+intuition beside numbers that had been measured, and they read exactly alike on
+the page.
+
+So the rule that comes out of iteration 5: **a measured number and a
+remembered one look the same in a comment.** Every figure in this document that
+is not followed by how it was obtained is a claim, not a measurement.
 
 **The fixture grew with the roster.** Twenty deals each for the two tuned
 players, forty in all, plus every weight of all three — Piero's rolled eleven
@@ -1103,7 +1165,7 @@ stranger take the project over.
 | A match to 21 across deals | The traditional form, left out on the owner's call to keep Discola's rhythm of one deal per partita. `scoreDeal` returns per-deal points, so a running total, a second dialog and a saved match are additions, not a redesign. |
 | Other variants (Tressette a perdere, Terziglio, Quintiglio) | Scope is one game done properly. |
 | Localisation | The terms of art are Italian. |
-| A difficulty slider | The four opponents are the difficulty, as in Discola. |
+| A difficulty slider | The three opponents are the difficulty, as in Discola. |
 | Card counting aids | Counting is the game. The easter egg is already more than enough. |
 
 ## 6. Risks, in order
@@ -1161,7 +1223,7 @@ beside this repo, clone it: `https://github.com/diegoami/discola-web`.
 | 2 Opponent and harness | **high** | the project's first way to fail quietly; §4 gives it slack |
 | 3 The table | **high** | the second; may take two sessions, fan first, then the check |
 | 4 Result and sheets | medium | Discola's screens, forked |
-| 5 The four opponents | medium | the harness does the work; the builder reads numbers |
+| 5 The opponents | medium | the harness does the work; the builder reads numbers |
 | 6 Ship | medium | docs in Discola's voice |
 
 The builder is the Opus tier throughout. Do not drop to a smaller model on the

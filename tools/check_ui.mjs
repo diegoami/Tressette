@@ -108,6 +108,32 @@ const SCREENS = [
         renderLastResult();
       });
     } },
+  // The review of iteration 5: nothing ever rendered an opponent other than the
+  // default, so two new dossiers and a rolled weights table went into the game
+  // without a single rule ever looking at them. Rule 3 again.
+  { name: 'start, the loosest opponent chosen', open: async p => {
+      await p.evaluate(() => selectOpponent('Graziano'));
+    },
+    // The dossier holds three lines open so that switching opponent does not
+    // move the deck row under the player's thumb. That is a claim about a
+    // layout, so it is measured: pick each of them in turn and watch the row.
+    check: () => {
+      const top = () => Math.round(document.querySelector('.decks').getBoundingClientRect().top);
+      const was = state.opponent;
+      const tops = Object.keys(PROFILES).map(name => { selectOpponent(name); return [name, top()]; });
+      selectOpponent(was);
+      const spread = Math.max(...tops.map(t => t[1])) - Math.min(...tops.map(t => t[1]));
+      return spread > 1
+        ? [`the deck row moves ${spread}px when the opponent changes (` +
+           tops.map(([n, t]) => `${n} ${t}`).join(', ') + ')']
+        : [];
+    } },
+  { name: "settings, the rolled opponent's weights", open: async p => {
+      await p.evaluate(() => selectOpponent('Piero'));
+      await p.click('#play');
+      await p.click('#btnSettings');
+      await p.evaluate(() => { document.querySelector('#viewSettings details').open = true; });
+    } },
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
     // type pushed it past the fold once; a pinned footer is the fix, and this

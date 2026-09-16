@@ -1040,8 +1040,9 @@ button.card:disabled{ cursor: default; }
       <details class="group">
         <summary class="eyebrow" style="cursor:pointer;list-style:revert">Pesi della strategia</summary>
         <p class="prose">Gli undici pesi con cui <code>compGioca</code> sceglie la
-        carta, per l&rsquo;avversario scelto. Le ultime due prese non ne usano
-        nessuno: lì la posizione si risolve per intero.</p>
+        carta, per l&rsquo;avversario scelto. Dalla quattordicesima presa in poi
+        non ne usa nessuno: lì il tallone è finito, le carte sono note e la
+        posizione si risolve per intero.</p>
         <table class="weights" id="weightsTable"><tbody></tbody></table>
       </details>
     </div>
@@ -1178,7 +1179,7 @@ const PROFILES = rollProfiles(Math.random);   // §3.2: the page rolls, the engi
 // their weights in iteration 5, and the chips are built from PROFILES, so they
 // appear here the moment the engine has them.
 const DOSSIER = {
-  Valerio: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime due prese le gioca esatte."
+  Valerio: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte."
 };
 
 const state = {
@@ -1188,6 +1189,9 @@ const state = {
   tricks: 0, seen: [],
   voids: [[false,false,false,false],[false,false,false,false]],
   selected: null, over: false, dealt: false, cheat: false,
+  // Tricks taken, counted by the table as it sweeps them: the engine scores
+  // terzi and has no reason to count prese, and the result's note does.
+  prese: [0, 0],
   opponent: "Valerio", deck: "Trevisane", felt: "#1e5140",
   speed: 900, showPoints: true, sound: true
 };
@@ -1387,6 +1391,14 @@ function tapped(slot){
 }
 
 function play(who, slot){
+  // A play can arrive before the last trick's sweep has run: whoever won the
+  // trick is on turn the moment it resolves, so your hand is live again while
+  // the sweep is still queued — and `later` has one timer, so scheduling this
+  // play cancels it. Finish the sweep here instead of leaving the table
+  // painting the trick before this one: sixteen plays in twenty landed on a
+  // table that was still showing the previous trick.
+  flushSweep();
+
   // The pair as the table shows it, captured before gioca resolves the trick:
   // resolving clears state.played and deals the draw, so a render after it
   // paints two empty slots and the sweep animates nothing. The table keeps
@@ -1410,15 +1422,24 @@ function computerPlay(){
   play(ALTO, compGioca(state, PROFILES[state.opponent]));
 }
 
+// The sweep's two classes animate `both`, so their end state — transparent and
+// 70px away — is held until something takes them off. Anything that ends a
+// sweep early has to come through here, or the next deal draws its trick into
+// two invisible boxes for twenty tricks.
+function flushSweep(){
+  for (const node of [el.slotOpp, el.slotYou])
+    node.classList.remove("card--won-up", "card--won-down");
+  sweeping = null;
+}
+
 function resolve(trick){
   // gioca has already moved the cards; the sweep is the table catching up.
   const up = trick.winner === ALTO;
   for (const node of [el.slotOpp, el.slotYou])
     node.classList.add(up ? "card--won-up" : "card--won-down");
   later(() => {
-    for (const node of [el.slotOpp, el.slotYou])
-      node.classList.remove("card--won-up", "card--won-down");
-    sweeping = null;
+    flushSweep();
+    state.prese[trick.winner]++;
     render();
     if (state.over){ finish(); return; }
     if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed * 0.6);
@@ -1430,6 +1451,13 @@ function resolve(trick){
 function finish(){
   const [you, them] = scoreDeal(state);
   recordDeal(you, them);
+
+  // The deal is over, so a question about abandoning it is not a question any
+  // more — and its promise that nothing is written down has just stopped being
+  // true. The result also belongs over the table it came from, not over
+  // whatever sheet happens to be open.
+  closeConfirm();
+  show("table");
 
   el.resultTitle.textContent = you > them ? "Hai vinto" : you < them ? "Hai perso" : "Pareggio";
   el.resultYou.textContent = you;
@@ -1461,13 +1489,20 @@ function notaFinale(you, them){
                        punti(terzi[ALTO] + (state.perPrimo === ALTO ? 3 : 0), 0)];
   const segno = ([a, b]) => Math.sign(a - b);
   const finale = segno([you, them]);
+  const scarto = Math.abs(you - them);
 
   if (finale === 0) return "Pari. Senza gli accusi gli undici punti non si dividono.";
   if (segno(senzaUltima) !== finale) return "L'ultima presa ha deciso la mano.";
   if (segno(senzaAccusi) !== finale) return "Hanno deciso gli accusi, non le prese.";
-  if (Math.abs(you - them) <= 1) return "Decisa per un punto.";
-  if (you > them) return `${state.opponent} ha lasciato andare troppi terzi.`;
-  return `${state.opponent} ha tenuto i tre e i due fino in fondo.`;
+  // The one thing worth saying that the two totals do not already say: who took
+  // more tricks. Losing on points with the tricks in hand is the mistake this
+  // game punishes, and the count is kept by the table, one per sweep.
+  if (state.prese[BASSO] > state.prese[ALTO] && finale < 0)
+    return `Hai fatto ${state.prese[BASSO]} prese su venti, e i punti sono andati a ${state.opponent}.`;
+  if (state.prese[ALTO] > state.prese[BASSO] && finale > 0)
+    return `${state.opponent} ha fatto ${state.prese[ALTO]} prese su venti, e i punti sono venuti a te.`;
+  if (scarto <= 1) return "Decisa per un punto.";
+  return `${scarto} punti di scarto.`;
 }
 
 // The same words the table announces, without the "chi — quanti punti" around
@@ -1484,7 +1519,8 @@ function newDealHere(){
   clearTimeout(sayTimer);
   newDeal(state, Math.random);
   state.selected = null;
-  sweeping = null;
+  state.prese = [0, 0];
+  flushSweep();
   el.announce.hidden = true;
   render();
   if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed);
@@ -1510,17 +1546,27 @@ function show(name){
 // Back from a sheet: to the table if a hand is in play, otherwise to the start.
 function back(){ show(state.dealt && !state.over ? "table" : "start"); }
 
-// Abandoning has to cancel what is already queued. Bumping the epoch makes
-// every pending `later` a no-op — without it the opponent plays on behind the
-// start screen, and a hand that ends there pops its result over it and records
-// a deal nobody was watching.
-function abandon(){
+// Throwing away the deal in progress, wherever the player is going next.
+// Bumping the epoch makes every pending `later` a no-op — without it the
+// opponent plays on behind whatever is on screen, and a hand that ends there
+// pops its result over it and records a deal nobody was watching. The sweep is
+// flushed by hand because its removal was one of those queued callbacks, and a
+// sweep left in its end state paints the next deal's tricks invisible.
+function discard(){
   epoch++;
   clearTimeout(timer);
   clearTimeout(sayTimer);
+  flushSweep();
   state.dealt = false;
+  state.selected = null;
+  el.announce.hidden = true;
   el.scrim.hidden = true;
-  el.confirmScrim.hidden = true;
+  closeConfirm();
+}
+
+// Leaving the table as well: the start sheet is where you pick an opponent.
+function abandon(){
+  discard();
   show("start");
 }
 
@@ -1539,11 +1585,22 @@ let pendingAbandon = null;
 const HKEY = "tressette.history";
 const HCAP = 100;
 
+// Every row is drawn from these four fields, so a row that does not have them
+// is dropped rather than rendered: one entry written by something other than
+// this build — an older shape, a null, a number — threw inside renderHistory
+// and left the sheet without its log *and* without the button that clears it,
+// so there was no way out from inside the game.
+function usable(m){
+  return m !== null && typeof m === "object"
+    && Number.isFinite(m.t) && Number.isFinite(m.y) && Number.isFinite(m.a)
+    && typeof m.o === "string";
+}
+
 function loadHistory(){
   try{
     const raw = localStorage.getItem(HKEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
+    return Array.isArray(list) ? list.filter(usable) : [];
   } catch (e){ return []; }
 }
 
@@ -1792,7 +1849,13 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !el.confirmScrim.hidden){ closeConfirm(); return; }
   if (e.key === "Escape" && screen !== "table" && screen !== "start"){ back(); return; }
 
-  if (screen === "table" && !state.over){
+  // A dialog is over the table, not beside it. While one is open the card keys
+  // are not the player's business — and Enter least of all: it is what you
+  // press to answer a dialog whose safe button already has focus, and it was
+  // playing the raised card on the way through. A misplay costs the deal.
+  const dialog = !el.confirmScrim.hidden || !el.scrim.hidden;
+
+  if (screen === "table" && !state.over && !dialog){
     // 1-9 and 0 raise a card, Enter plays the raised one.
     if (e.key === "Enter" && state.selected !== null){ tapped(state.selected); return; }
     const n = e.key === "0" ? 10 : Number(e.key);
@@ -1821,20 +1884,27 @@ el.btnAbout.addEventListener("click", () => show("about"));
 
 el.confirmNo.addEventListener("click", closeConfirm);
 el.confirmYes.addEventListener("click", () => {
+  // Throw the deal away, then do what the asking was for. Where that leaves
+  // you is the caller's business: the new-hand button deals again at the
+  // table, "cambia avversario" goes to the start sheet. Discarding used to go
+  // to the start sheet itself, which dealt the new hand behind it — a live
+  // deal you could not see or play, with the opponent leading into it.
   const after = pendingAbandon;
-  closeConfirm();
-  // Whatever was asked for gets a clean table: the epoch bump in abandon()
-  // is what stops the old deal's timers landing in the new one.
-  abandon();
+  discard();
   if (after) after();
 });
 
-el.playAgain.addEventListener("click", () => { el.scrim.hidden = true; newDealHere(); });
+el.playAgain.addEventListener("click", () => {
+  el.scrim.hidden = true;
+  show("table");
+  newDealHere();
+});
 el.backToStart.addEventListener("click", abandon);
 // Leaving the table for the start sheet is abandoning, so it asks first; when
 // there is nothing to abandon it just goes. The confirm's own Yes runs
 // abandon(), which is what lands on the start sheet.
 el.changeOpponent.addEventListener("click", () => askAbandon(() => show("start")));
+
 
 el.deckSel.addEventListener("change", () => { applyDeck(el.deckSel.value); save(); });
 el.feltSel.addEventListener("input", () => { applyFelt(el.feltSel.value); save(); });
@@ -1860,7 +1930,10 @@ function boot(){
   applyDeck(SHEET[saved.deck] ? saved.deck : "Trevisane");
   applyFelt(/^#[0-9a-f]{6}$/i.test(saved.felt || "") ? saved.felt : "#1e5140");
 
-  state.speed = Number.isFinite(saved.speed) ? saved.speed : 900;
+  // The slider runs 200..2000 and stores 2200 minus that, so the delay is
+  // 200..2000 too. Clamped, like the deck and the felt and the opponent are:
+  // a stored -500 was accepted here while the slider showed its own floor.
+  state.speed = Number.isFinite(saved.speed) ? Math.min(2000, Math.max(200, saved.speed)) : 900;
   el.speedSel.value = 2200 - state.speed;
 
   state.showPoints = saved.showPoints !== false;

@@ -56,11 +56,19 @@ and a `lang` on `<html>`. These cannot be layout assertions, because Playwright'
 under mobile emulation — the page measures identically with or without it.
 
 **Screens pass** — every screen the page has, and every state worth looking at,
-at five real device shapes: the start sheet; the table, the table with a card
-raised and the table with the longest declaration the game can say; settings
-with the weights disclosure open; history both empty and at its hundred-hand
-cap; about; the abandon confirm; and the result dialog with both players
-declaring, which is its longest form. A row pointing at a screen
+at five real device shapes: the start sheet, empty and after a hand; the table,
+the table with a card raised, the table with the longest declaration the game
+can say and the table with the opponent's hand face up; settings with the
+weights disclosure open; history empty, at its hundred-hand cap, and holding
+entries some other build wrote; about; the abandon confirm; and the result
+dialog three ways — with both players declaring, reached from a sheet, and
+reached over the confirm.
+
+Two mechanics, both of them a bug once. A row's `open` has to *put the page in
+the state*: its `check` runs after the audit, so a disclosure opened there is
+never audited. And the audit skips what a closed `<details>` is hiding, because
+Chromium still hands out live geometry for it and the rules were measuring text
+nobody could see. A row pointing at a screen
 that does not exist is a check that silently passes, so rows arrive with their
 screens. Asserts exactly one screen is visible, no sideways
 scroll, no text below its size floor, no text clipped by a container that
@@ -154,6 +162,12 @@ shipped — in Discola, which is the same table and the same budget:
 | your seat below the fold | `--plates` was a hand-set 76px against two name plates that cost 120px at 770x1475, and the fold was measured from the hand, not from the plate below it |
 | a key raised an illegal card | the pointer cannot reach one — it is a disabled button — so the keyboard path raised a forbidden card and threw on the second press |
 | dimmed but not illegal | every card dims while the opponent thinks, saying "wait" in the mark that means "illegal", with ten translucent cards showing through one another |
+| the trick still shows the trick before it | a play that lands before the sweep has run cancels it — `later` owns one timer and you are on turn the moment you win a trick — so the table went on painting the previous trick, sixteen plays in twenty |
+| the abandoned deal left its sweep behind | the sweep's classes animate `both` and their removal was a queued callback, so a deal thrown away mid-sweep painted every later trick transparent |
+| the new-hand button landed on start | discarding a deal went to the start sheet and then dealt a new one behind it, live, with the opponent leading into a table nobody could see |
+| a card was played through the abandon dialog | the card keys only checked the screen, and a dialog is a scrim over the table — `Enter` answered the dialog *and* played the raised card |
+| the result opened over a sheet | the result dialog ignored what was on screen, so it landed over the history, which still said no hand had ever been played |
+| the history has no way to clear itself | one entry written by another build threw mid-render and took the log and the wipe button with it |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

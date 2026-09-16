@@ -90,9 +90,10 @@ weights, and the settings sheet discloses eleven; a twelfth is not invented to
 match Discola's count.
 
 One exception to "score every legal card and play the highest" is deliberate
-and belongs in the source with its reason: for the last two tricks, where the
-opponent's information is already perfect, `compGioca` enumerates the position
-and plays it out exactly. All four opponents play those two tricks alike. A
+and belongs in the source with its reason: from `CODA_FROM` on — the last seven
+tricks, where the tallone is empty and the opponent's information is already
+perfect — `compGioca` enumerates the position and plays it out exactly. All four
+opponents play those seven tricks alike. A
 weight that cannot move a play does not belong in the eleven.
 
 Piero's weights are rolled once per session, as in Discola, where `SetProfiles`

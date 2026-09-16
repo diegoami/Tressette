@@ -702,8 +702,8 @@ card, over 600 deals, counting only positions with more than one legal move:
 
 Franco is Valerio ninety-nine times in a hundred, with six weights moved
 hard: the control penalties from 2.5 to 6, the guard from 1.5 to 5,
-ace-exposed from 3 to 8. Those are exactly the weights an ablation on 6,000 deals could not
-distinguish from zero. Almost all the character on offer is Graziano's, and it
+ace-exposed from 3 to 8. Those are exactly the weights an ablation over
+6,000 deals could not distinguish from zero. Almost all the character on offer is Graziano's, and it
 comes from the handful of weights that do move plays: the liscio bonus, the
 sure bonus, and the two terzi weights.
 

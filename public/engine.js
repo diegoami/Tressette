@@ -118,7 +118,7 @@ function puntiAccusi(list){
 // Draw one card into the first empty slot. Past the tallone a hand just thins
 // out, as in Discola.
 function pesca(state, who){
-  if (state.next >= 40) return null;
+  if (state.next >= state.cards.length) return null;
   const card = state.cards[state.next++];
   // What the opponent has seen. Its own cards enter here, on the draw and on
   // the deal; the human's enter when played, in gioca. Splitting it that way
@@ -127,7 +127,12 @@ function pesca(state, who){
   const hand = state.hands[who];
   for (let i = 0; i < hand.length; i++)
     if (hand[i] === null){ hand[i] = card; return card; }
-  return card;
+  // Unreachable in a deal — a player draws only just after playing, so there
+  // is always exactly one hole. It throws rather than returning quietly
+  // because the harness calls pesca directly, and a card that vanished
+  // between the tallone and a hand would show up as a mis-scored deal much
+  // later, somewhere else.
+  throw new Error("pesca into a full hand");
 }
 
 // §2.2. Shuffle, ten each, and the non-dealer leads. `state` is mutated, as in
@@ -155,7 +160,7 @@ function newDeal(state, rng){
   state.accusi = [accusi(state.hands[BASSO]), accusi(state.hands[ALTO])];
   state.detti = [false, false];
 
-  state.perPrimo = state.partitaPrimo;
+  state.perPrimo = state.partitaPrimo ?? BASSO;   // §3.3: BASSO on a cold start
   state.deveGiocare = state.perPrimo;
   // Whoever did not lead this deal leads the next.
   state.partitaPrimo = state.perPrimo === BASSO ? ALTO : BASSO;
@@ -185,7 +190,7 @@ function gioca(state, who, slot){
   // played on. Briscola never needed it.
   if (led !== null && card.s !== led.s) state.voids[who][led.s] = true;
 
-  const announced = state.detti[who] ? [] : state.accusi[who];
+  const announced = state.detti[who] ? [] : state.accusi[who].slice();
   state.detti[who] = true;
 
   if (who === state.perPrimo){

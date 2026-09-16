@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * UI check for Discola. Run it after any UI change.
+ * UI check for Tressette. Run it after any UI change.
  *
  *   node tools/check_ui.mjs [path-to-index.html]   # defaults to public/index.html
  *
@@ -72,42 +72,28 @@ const DECKS = ['Trevisane', 'Romagnole', 'Napoletane', 'Piacentine', 'Francesi']
 
 /* ---- getting to each screen ----------------------------------------------- */
 
-const seedHistory = async page => page.evaluate(() => {
-  const now = Date.now(), day = 864e5;
-  localStorage.setItem('discola.history', JSON.stringify([
-    { t: now - day,     o: 'Franco',   d: 'Trevisane',  y: 44, a: 76 },
-    { t: now - day,     o: 'Valerio',  d: 'Trevisane',  y: 68, a: 52 },
-    { t: now - 2 * day, o: 'Valerio',  d: 'Piacentine', y: 60, a: 60 },
-    { t: now - 3 * day, o: 'Graziano', d: 'Napoletane', y: 81, a: 39 },
-  ]));
-});
-
+// Iteration 3 has two screens: the start sheet and the table. Settings,
+// history, about, the confirm scrim and the result dialog arrive in iteration
+// 4, and each gets a row here when it does. Deleting the rows rather than
+// leaving them pointing at nothing is deliberate — a screen that cannot be
+// reached is a check that silently passes.
 const SCREENS = [
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
     // type pushed it past the fold once; a pinned footer is the fix, and this
     // is what stops it drifting back.
     check: () => {
-      const r = document.querySelector('#startPlay').getBoundingClientRect();
+      const r = document.querySelector('#play').getBoundingClientRect();
       return (r.bottom > window.innerHeight + 1 || r.top < -1)
         ? [`Gioca is off screen (bottom ${Math.round(r.bottom)} vs viewport ${window.innerHeight})`]
         : [];
     } },
-  { name: 'table',         open: async p => { await p.click('#startPlay'); } },
-  { name: 'settings',      open: async p => { await p.click('#startPlay'); await p.click('#btnSettings'); } },
-  { name: 'history empty', open: async p => { await p.click('#startPlay'); await p.click('#btnHistory'); } },
-  { name: 'history full',  open: async p => { await p.click('#startPlay'); await p.click('#btnHistory'); },
-                           seed: seedHistory },
-  { name: 'about',         open: async p => { await p.click('#startPlay'); await p.click('#btnAbout'); } },
-  { name: 'confirm',       open: async p => { await p.click('#startPlay'); await p.click('#btnNew'); } },
-  { name: 'result',        open: async p => {
-      await p.click('#startPlay');
-      // end the hand where it stands rather than playing forty cards
-      await p.evaluate(() => {
-        state.scores = [68, 52];
-        state.hands = [[null, null, null], [null, null, null]];
-        finish();
-      });
+  { name: 'table',  open: async p => { await p.click('#play'); } },
+  { name: 'table, a card raised', open: async p => {
+      await p.click('#play');
+      // Raise the first playable card the way a player does — by its visible
+      // strip, because everything right of that is under the next card.
+      await p.evaluate(() => { state.selected = 0; render(); });
     } },
 ];
 
@@ -238,7 +224,7 @@ async function checkScreens(browser) {
       page.on('console', m => { if (m.type() === 'error' && !noise(m.text())) errs.push('console: ' + m.text()); });
 
       await page.goto(URL_);
-      await page.evaluate(() => localStorage.removeItem('discola.history'));
+      await page.evaluate(() => localStorage.removeItem('tressette.history'));
       if (screen.seed) await screen.seed(page);
       await page.goto(URL_);
       await page.waitForTimeout(350);
@@ -275,7 +261,30 @@ const measure = () => {
   const gaps = [];
   for (let i = 1; i < boxes.length; i++) gaps.push(boxes[i].top - boxes[i - 1].bottom);
 
+  // --- the fan (§3.7) ------------------------------------------------------
+  // Ten cards overlap, so each one shows only a strip of itself. Three ways
+  // that goes wrong, all of them silent: the strips collapse and a card cannot
+  // be singled out; the last card runs under the table's edge; a raised card
+  // lifts off the screen.
+  const cards = [...document.querySelectorAll('.hand--you .card')].map(c => c.getBoundingClientRect());
+  const steps = cards.slice(1).map((c, i) => Math.round(c.left - cards[i].left));
+  const pad = parseFloat(getComputedStyle(document.querySelector('.table')).paddingLeft);
+
+  // Raise one, measure it, put it back. The raised card is the whole point of
+  // the two-tap interaction, and it is the one state that can leave the table.
+  const wasSelected = state.selected;
+  state.selected = 0; render();
+  const raised = document.querySelector('.hand--you .card[aria-pressed="true"]').getBoundingClientRect();
+  state.selected = wasSelected; render();
+
   return {
+    minStep: Math.min(...steps),
+    stepSpread: Math.max(...steps) - Math.min(...steps),
+    lastCardCut: Math.round(Math.max(0, cards[9].right - (table.right - pad))),
+    fanSpill: Math.round(Math.max(0, cards[9].right - (table.right - pad),
+                                     (table.left + pad) - cards[0].left)),
+    raisedAbove: Math.round(table.top - raised.top),
+    raisedBelowFold: Math.round(raised.bottom - window.innerHeight),
     gapTop: Math.round(trick.top - oppHand.bottom),
     gapBot: Math.round(youHand.top - Math.max(trick.bottom, tallone.bottom)),
     belowFold: Math.round(youHand.bottom - window.innerHeight),
@@ -299,6 +308,24 @@ const tableFaults = r => [
   // tall card is breathing room.
   (r.gapRatio > 0.25 && r.maxGap > 48) &&
     `rows drift apart: widest gap ${r.maxGap}px, ${r.gapRatio.toFixed(2)} of a card`,
+
+  // §3.7, assertion 1: every card shows a strip you can single out, and the
+  // last one is whole. 24px is not a tap-target floor — §3.7 accepts a 29px
+  // strip and pays for it with the two-tap raise. It is a the-fan-has-collapsed
+  // floor: 29px is the narrowest good value across all nineteen viewports, and
+  // a fan that has lost its margin arithmetic lands near 5px, as `--overlap:
+  // .08` does. Anything under 24 is the arithmetic, not the screen.
+  r.minStep < 24 && `the fan has collapsed: cards are ${r.minStep}px apart, so one cannot be singled out from the next`,
+  r.stepSpread > 1 && `the fan is uneven: steps differ by ${r.stepSpread}px`,
+  r.lastCardCut > 0 && `the last card of your hand is cut off by ${r.lastCardCut}px`,
+
+  // §3.7, assertion 3.
+  r.fanSpill > 0 && `the fan runs ${r.fanSpill}px past the table's edge`,
+
+  // §3.7, assertion 2: a raised card is what you are about to play, so it has
+  // to be wholly on the table and wholly on screen.
+  r.raisedAbove > 0 && `a raised card lifts ${r.raisedAbove}px above the table`,
+  r.raisedBelowFold > 0 && `a raised card sits ${r.raisedBelowFold}px below the fold`,
 ].filter(Boolean);
 
 async function checkTable(browser, only, inflate) {
@@ -308,14 +335,15 @@ async function checkTable(browser, only, inflate) {
     if (only && !only.includes(vname)) continue;
     const page = await browser.newPage({ viewport: { width, height } });
     const rows = [];
-    // The table only exists once a hand is dealt, so each deck goes through the
-    // real flow: pick it on the start screen, then press Gioca.
+    // The table only exists once a deal is dealt. The deck picker is iteration
+    // 4, so each deck is applied directly for now — applyDeck is the same call
+    // the picker will make, so this exercises the same code path.
     for (const deck of DECKS) {
       await page.goto(URL_);
       if (inflate) await page.addStyleTag({
         content: ':root{ --pad-block: 1.5rem; --step: 1.25rem; --slack: 16px; }' });
-      await page.click(`.deck-opt[data-deck="${deck}"]`);
-      await page.click('#startPlay');
+      await page.evaluate(d => applyDeck(d), deck);
+      await page.click('#play');
       await page.waitForTimeout(260);
       rows.push({ deck, ...(await page.evaluate(measure)) });
     }

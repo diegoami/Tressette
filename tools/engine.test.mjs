@@ -16,7 +16,7 @@ runInThisContext(TEXT);
 
 const {
   SUITS, BASSO, ALTO, rango, terzi, buildDeck, mescola, rngSeed,
-  prende, mosseLegali, accusi, puntiAccusi, newDeal, gioca, scoreDeal, vincitore
+  prende, mosseLegali, accusi, puntiAccusi, pesca, newDeal, gioca, scoreDeal, vincitore
 } = globalThis;
 
 const card = (s, n) => ({ s, n });
@@ -126,8 +126,15 @@ test("mosseLegali forces the suit, and answers in slots", () => {
 test("accusi are read from the ten dealt, and they stack", () => {
   const rest = [card(3, 4), card(3, 5), card(3, 6), card(3, 7)];
 
-  const napoletana = [card(0, 1), card(0, 2), card(0, 3), ...rest];
-  assert.deepEqual(accusi(napoletana), [{ kind: "napoletana", suit: 0, points: 3 }]);
+  // Every suit, because a loop over the suits is exactly the thing that can be
+  // narrowed without anything else noticing: the 10,000-deal invariant derives
+  // what was declared from state.accusi itself, so both sides of it move
+  // together and a napoletana of bastoni could go undeclared all game.
+  for (let s = 0; s < 4; s++){
+    const napoletana = [card(s, 1), card(s, 2), card(s, 3), ...rest.filter(c => c.s !== s)];
+    assert.deepEqual(accusi(napoletana), [{ kind: "napoletana", suit: s, points: 3 }],
+      `the napoletana of ${SUITS[s]}`);
+  }
 
   const treAssi = [card(0, 1), card(1, 1), card(2, 1), ...rest];
   assert.deepEqual(accusi(treAssi), [{ kind: "set", n: 1, count: 3, points: 3 }]);
@@ -414,11 +421,45 @@ test("a second deal clears the table, and the other player leads", () => {
   assert.equal(state.tricks, 0);
   assert.equal(state.over, false);
   assert.equal(state.next, 20, "a fresh tallone");
+  assert.equal(state.seen.length, 10,
+    "and it has forgotten the last deal — otherwise it starts the next one "
+    + "holding forty cards it has already seen, and nothing is outstanding");
   assert.equal(state.voids.flat().some(v => v), false, "and nothing inferred yet");
 
   playOut(state, rng);
   newDeal(state, rng);
   assert.equal(state.perPrimo, BASSO, "and it alternates back");
+});
+
+test("the tallone runs out rather than dealing cards that are not there", () => {
+  // position() stands on this guard, so it is worth pinning: with the deck
+  // size hard-coded to 40 instead of read from state.cards, a short deck does
+  // not stop the draw, it fills hands with undefined and the failure surfaces
+  // somewhere else entirely.
+  const state = position({ hands: [[card(0, 1)], [card(0, 5)]], tallone: [] });
+  gioca(state, BASSO, 0);
+  gioca(state, ALTO, 0);
+  assert.deepEqual(state.hands[BASSO], [null], "nothing to draw, so nothing drawn");
+  assert.deepEqual(state.hands[ALTO], [null]);
+});
+
+test("pesca refuses a full hand instead of dropping the card", () => {
+  // Unreachable in a deal — a player draws only just after playing — but the
+  // harness calls pesca directly, and a card that vanished between the tallone
+  // and a hand would surface much later as a deal that does not add up.
+  const full = position({ hands: [[card(0, 1)], [card(0, 5)]], tallone: [card(1, 1)] });
+  assert.throws(() => pesca(full, BASSO), /full hand/);
+});
+
+test("mescola can reach every arrangement, not just most of them", () => {
+  // §2.2 says plain Fisher-Yates, which is uniform. Stopping the loop one step
+  // early leaves a shuffle that is still a permutation and still passes every
+  // other assertion here, while never swapping the last two cards. Two cards
+  // and a spread of seeds says it deterministically, with no statistics.
+  const orders = new Set();
+  for (let seed = 1; seed <= 20; seed++)
+    orders.add(mescola([card(0, 1), card(0, 2)], rngSeed(seed)).map(c => c.n).join(""));
+  assert.deepEqual([...orders].sort(), ["12", "21"], "both orders come up");
 });
 
 test("newDeal starts a cold state with you leading", () => {

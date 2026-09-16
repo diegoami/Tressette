@@ -45,14 +45,17 @@ The contract, in one list. Everything else is detail.
   plates in the corners, the trick in the middle, the sheets for start,
   settings, history and about. The CSS is forked from Discola and changed
   where Tressette needs it, not restyled.
-- **One formula, four weight vectors, and one exception.** For eighteen
+- **One formula, four weight vectors, and one exception.** For thirteen
   tricks the opponent scores every legal card and plays the highest, and the
   four opponents differ only in their weights, which the settings sheet shows
-  as in Discola. For the last two tricks, where the information is perfect
-  and the only question is which card to keep for the ultima, all four play
-  the position out exactly and identically. Exact play beats a temperament
-  where the answer is knowable; the characters have eighteen tricks in twenty
-  to show themselves. §3.4 has the rule.
+  as in Discola. From trick fourteen, where the tallone is empty and the other
+  hand can be deduced rather than guessed at, all four play the rest of the
+  deal out exactly and identically. Exact play beats a temperament where the
+  answer is knowable, and it is worth about seven points of win rate.
+  Measured before it was chosen: two temperaments disagree on 14.8% of the
+  positions where they have a choice, and only 17% of those disagreements fall
+  in the tricks the search takes over — character lives in tricks eight to
+  twelve, not at the end. §3.4 has the rule.
 - **Player-facing text is Italian.** Comments, commits and documents are
   English.
 - **The UI check runs after every UI change**, and every threshold in it names
@@ -239,10 +242,10 @@ opponent, deck, felt, speed, showPoints, sound   settings
 
 **Shape.** Three branches. Leading and following are `CompGioca`'s shape:
 score every legal card in hand with the profile's weights, play the highest,
-ties to the lowest slot. The third, the last two tricks, scores nothing and
+ties to the lowest slot. The third, the last seven tricks, scores nothing and
 reads no weight; it enumerates the position and has no ancestor in
-`UGiocatore.pas`, because Briscola's last two tricks were never a position
-anyone needed to solve. `P` is
+`UGiocatore.pas`, because Briscola's endgame was never a position anyone
+needed to solve. `P` is
 the profile's weights; the features come from the hand, `seen`, `voids`, the
 tallone and the trick count.
 
@@ -300,33 +303,39 @@ The floor of 3 terzi in the spend-control line is an asso's worth. It is a
 constant, not a weight: there are eleven weights, and the settings sheet
 discloses eleven.
 
-**The last two tricks are played exactly, not weighed.** From trick eleven on
-the opponent has perfect information: the tallone is empty, `seen` holds
-every card played, so the cards it has not seen are exactly the human's hand.
-The formula plays that half heuristically anyway — a formula is the artefact,
-as `CompGioca` was — with one exception. With two cards each, the only choice
-left in the deal is which card to keep for the ultima, and no one-card score
-can express it: both branches above score the card played, never the card
-kept. So at `tricks == 18` `compGioca` enumerates instead, in whichever seat
-it finds itself:
+**The endgame is played exactly, not weighed.** From trick eleven on the
+opponent has perfect information: the tallone is empty, every card has been
+seen, so the cards it has not seen are exactly the human's hand. `compGioca`
+therefore stops scoring and starts searching — from **trick fourteen**
+(`CODA_FROM = 13`, counting completed tricks), in whichever seat it finds
+itself, deducing the other hand rather than reading it.
 
-- **Leading:** for each of its two cards, the human's best legal reply, then
-  the forced last trick. At most four lines of play.
-- **Following:** the human has already led; for each of its legal cards, one
-  or two depending on the suit led, the forced last trick. At most two lines.
+Thirteen is a budget, not a principle. At thirteen each side holds seven
+cards and a decision searches in about 2ms, 49ms at its worst; two tricks
+earlier the tree is an order of magnitude larger for about a point of
+strength. The search is plain minimax over the remaining tricks with a
+transposition table, the ultima's 3 terzi included, ties to the lower slot.
+"Their best reply" is well defined because the two totals over the rest of the
+deal add up to a constant: the terzi still in play plus the ultima's 3. So
+the reply that maximises theirs is the one that minimises the
+opponent's.
 
-Either way it sums its own terzi over both tricks with the ultima's 3
-included, plays the card that starts the best line, and ties to the lower
-slot. "Best reply" is well defined because the two players' totals over the
-two tricks add up to a constant — the four cards' terzi plus the ultima's 3 —
-so the reply that maximises the human's total is the one that minimises the
-opponent's, and that is the one assumed.
+It must refuse what it cannot deduce. If the cards it believes are outstanding
+do not come to a hand the size of the one they hold, the position is not the
+one it thinks it is, and it falls back to the formula rather than answering
+confidently from a deck that does not add up.
 
-The case that shows why: the opponent holds the Re di coppe and the 7 di
-spade and leads; the human holds the Fante di coppe and the asso di spade.
-Leading the Re wins one terzo now and loses the asso and the ultima after,
-2 to 6. Leading the 7 loses the asso now and wins the Fante and the ultima
-with the Re, 5 to 3. The formula would lead the Re, because it is sure.
+What this costs is stated in §1, and was measured before it was chosen: the
+four opponents play these seven tricks alike. What it buys, against the same
+baselines, is 79.8% → 86.8% against random-legal and 74.5% → 85.7% against
+greedy-take.
+
+The case that shows why the formula cannot do it: the opponent holds the Re di
+coppe and the Fante di spade and leads; the human holds the Fante di coppe and
+the asso di spade. Leading the Re wins two terzi and then loses the asso and
+the ultima, 2 to 7. Leading the Fante loses four terzi now and wins the last
+trick with the Re, 5 to 4. The formula leads the Re, because the Re is sure;
+only playing it out finds the Fante.
 
 There is no ultima weight. An earlier draft had one, applied on trick twenty,
 where both players hold a single card and nothing is chosen; it could be set
@@ -369,12 +378,21 @@ golden tests freeze the plays, and a formula change invalidates them.
 {profile, random-legal, greedy-take} with a seeded rng and reports win rate,
 mean points per deal and the noise floor. Discola's 40,000-hand comparison is
 the model. Acceptance for v1: every profile beats random-legal in at least
-95% of deals and greedy-take in at least 70%, and no profile beats another by
-more than 65% — they should be characters, not tiers. A small suite of
+**85%** of deals and greedy-take in at least **80%**, and no profile beats
+another by more than 65% — they should be characters, not tiers.
+
+Those two numbers were 95% and 70%, written from intuition because §0 decision
+1 leaves no 1997 opponent to calibrate against, and iteration 2 measured them
+instead. 95% was unreachable by anything: a player that cheats outright wins
+82.5%. 70% turned out to be a real bar — a first tuning pass failed it and a
+second cleared it — and then the endgame search cleared it by so much that it
+stopped being one. The numbers above sit about two points under what iteration
+2 measured on seeds no tuner had seen, which is margin, not a target fitted
+to the result. A small suite of
 *trap positions* asserts the obvious plays directly, because a win rate can
 hide a stupid habit: an asso on the table and the 3 in hand; forced to follow
-with only an asso and a figure; the Re and 7 position above at `tricks == 18`,
-where the 7 must be led first; and the 3, 2 and asso of a suit all gone with
+with only an asso and a figure; the Re and Fante position above, where the
+Fante must be led first; and the 3, 2 and asso of a suit all gone with
 a 7 and a Cavallo of that suit in hand, where the 7 must not be led as if it
 were sure. Every trap is a position with a real choice: a position where
 every legal play is forced asserts nothing.

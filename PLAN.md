@@ -179,6 +179,7 @@ Naming follows Discola's Pascal-flavoured Italian so the two read alike.
 // cards
 SUITS, rango(n), terzi(n)          // rank order and point value in thirds
 buildDeck(), mescola(cards, rng)   // rng: () => [0,1)
+rngSeed(seed)                      // a seeded rng, versioned with the engine
 
 // a deal
 newDeal(state, rng)                // shuffle, deal ten each, set who leads
@@ -199,6 +200,11 @@ compGioca(state, P)                // slot to play, given one profile's weights
 Nothing in this file touches `document`, `window`, timers or `Math.random`
 directly. That is what lets the same file run under Node.
 
+`rngSeed` is here for the same reason the profiles are: a fixture is only
+reproducible if the generator that recorded it ships with the engine. Put it in
+the harness and the golden test's guarantee becomes "as long as nobody edits
+`selfplay.mjs`", which is not a guarantee.
+
 The profiles live here, not in the page, because three callers need them: the
 page, the self-play harness and the golden test. Piero's roll takes the same
 injectable rng as `mescola`. The page calls `rollProfiles(Math.random)` once
@@ -216,7 +222,8 @@ next               index of the next card to draw; 40 − next is the tallone
 hands[2][10]       BASSO = 0 (you), ALTO = 1 (them); null = empty slot
 played[2]          the two cards on the table, or null
 terzi[2]           points taken this deal, in thirds
-accusi[2]          declarations, credited at first play
+accusi[2]          declarations, from the ten dealt; scored at the end
+detti[2]           whether each player's declarations have been announced yet
 perPrimo           who led this trick
 deveGiocare        whose turn it is
 partitaPrimo       who leads the next deal; BASSO on a cold start, then alternates
@@ -542,8 +549,17 @@ nothing else.
 trump; declarations detected in fixed hands; `vincitore` returns the higher
 total and null on the one kind of tie declarations can produce.
 
-Add `.github/workflows/check.yml`: on every push and pull request, run
-`node --test tools/` on the current Node LTS. No dependencies to install.
+Add `.github/workflows/check.yml`: on every pull request, and on pushes to
+`main`, run `node --test 'tools/**/*.test.mjs'` on the current Node LTS. No
+dependencies to install.
+
+Two details this plan had wrong before iteration 1 ran into them. `node --test
+tools/` does not work: Node 22 reads a bare directory as a module path and
+fails with `MODULE_NOT_FOUND`, so the tests need a glob (or a bare `node
+--test`, which searches from the root). And `on: push` with no branch filter
+runs the whole suite twice for every commit on a pull request branch, once for
+the push and once for the pull request — harmless while there is nothing to
+install, wasteful once iteration 3 adds Chromium.
 
 **Done when** the tests pass locally and in the Action, and the engine has no
 DOM reference.

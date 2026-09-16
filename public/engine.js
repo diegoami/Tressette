@@ -364,6 +364,11 @@ function presa(ledCard, followCard){
 // narrowing it, because it lifts a sound profile further than a loose one.
 const CODA_FROM = 13;
 
+// The last trick of the deal carries three terzi on top of its cards. One
+// definition, because the search needs it and so does the per-card value below,
+// and two copies of an arithmetic rule is one copy too many to keep in step.
+const ultimaTerzi = cardsLeft => cardsLeft <= 2 ? 3 : 0;
+
 // My terzi from here to the end of the deal, with both sides playing exactly.
 // `led` is the card already on the table, null if I am to lead.
 //
@@ -380,7 +385,7 @@ function codaValore(mine, theirs, led, myTurn, memo){
   const seen = memo.get(key);
   if (seen !== undefined) return seen;
 
-  const ultima = mine.length + theirs.length <= 2 ? 3 : 0;
+  const ultima = ultimaTerzi(mine.length + theirs.length);
   const hand = myTurn ? mine : theirs;
   const playable = led === null ? hand
     : (hand.some(c => c.s === led.s) ? hand.filter(c => c.s === led.s) : hand);
@@ -407,12 +412,12 @@ function codaValore(mine, theirs, led, myTurn, memo){
 
 // The other hand, deduced from what has been played. Only sound once the
 // tallone is empty, which is why CODA_FROM is past it.
-function manoDedotta(state, me, led){
+function manoDedotta(state, me){
   const still = fuori(state, me);
   const cards = [];
   for (let s = 0; s < 4; s++)
     for (let n = 1; n <= 10; n++)
-      if (still[s][n] && !(led && led.s === s && led.n === n)) cards.push({ s, n });
+      if (still[s][n]) cards.push({ s, n });
   return cards;
 }
 
@@ -421,12 +426,23 @@ function coda(state, me){
   const hand = state.hands[me];
   const slots = mosseLegali(hand, led);
   const mine = hand.filter(c => c !== null);
-  const theirs = manoDedotta(state, me, led);
+  // The led card needs no special case: it has been played, so fuori has
+  // already marked it gone. An earlier version subtracted it again here, which
+  // was dead code that only looked live in hand-built positions.
+  const theirs = manoDedotta(state, me);
 
-  // The deduction has to come out to a hand the size of the one they hold, or
-  // this is not the position we think it is. Falling back to the formula is
-  // the safe answer; it is unreachable from CODA_FROM on, and it is here so
-  // that a future caller cannot get a confidently wrong answer instead.
+  // The size check is exact, not a heuristic: fuori's set always contains their
+  // whole hand — their cards are held, so it never marks them played, and they
+  // are not mine, so they survive the subtraction — and it never contains mine.
+  // So the right size implies the right cards — for any position a deal can
+  // reach. The proof assumes the two hands are disjoint, which dealing
+  // guarantees; a hand-built position that puts one card in both hands and
+  // leaves another unaccounted for would deduce to the right size and the wrong
+  // cards, and nothing here can see that, because fuori is not allowed to look
+  // at the other hand. That is the precondition, stated rather than checked.
+  //
+  // Falling back to the formula is the safe answer, and it is unreachable from
+  // CODA_FROM on, where the tallone is empty.
   if (theirs.length !== (led === null ? mine.length : mine.length - 1)) return null;
 
   const memo = new Map();
@@ -434,11 +450,19 @@ function coda(state, me){
   for (const slot of slots){
     const c = hand[slot];
     const rest = mine.filter(x => x !== c);
-    const value = led === null
-      ? codaValore(rest, theirs, c, false, memo)
-      : (prende(c, led) ? terzi(c.n) + terzi(led.n) + (mine.length + theirs.length <= 2 ? 3 : 0) : 0)
-        + codaValore(rest, theirs, null, prende(c, led), memo);
-    if (value > bestValue){ bestValue = value; bestSlot = slot; }  // ties to the lower slot
+    let value;
+    if (led === null){
+      value = codaValore(rest, theirs, c, false, memo);
+    } else {
+      const takes = prende(c, led);
+      const won = takes ? terzi(c.n) + terzi(led.n)
+                          + ultimaTerzi(mine.length + theirs.length) : 0;
+      value = won + codaValore(rest, theirs, null, takes, memo);
+    }
+    // Ties to the lower slot. That is a determinism rule, not a strength one —
+    // it is what makes the golden fixture reproducible — and it costs about a
+    // point of win rate against the other convention. Do not "optimise" it.
+    if (value > bestValue){ bestValue = value; bestSlot = slot; }
   }
   return bestSlot;
 }
@@ -447,15 +471,16 @@ function coda(state, me){
 // except for the last two tricks, which are enumerated instead.
 function compGioca(state, P){
   const me = state.deveGiocare;
-  const them = me === BASSO ? ALTO : BASSO;
-  const hand = state.hands[me];
-  const led = me === state.perPrimo ? null : state.played[state.perPrimo];
-  const slots = mosseLegali(hand, led);
 
   if (state.tricks >= CODA_FROM){
     const exact = coda(state, me);
     if (exact !== null) return exact;
   }
+
+  const them = me === BASSO ? ALTO : BASSO;
+  const hand = state.hands[me];
+  const led = me === state.perPrimo ? null : state.played[state.perPrimo];
+  const slots = mosseLegali(hand, led);
 
   const still = fuori(state, me);
   const late = Math.min(1, state.tricks / 10);
@@ -520,5 +545,5 @@ Object.assign(globalThis, {
   rango, terzi, buildDeck, mescola, rngSeed,
   prende, mosseLegali, accusi, puntiAccusi,
   pesca, newDeal, gioca, scoreDeal, vincitore,
-  WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura, CODA_FROM, coda
+  WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura, CODA_FROM, coda, manoDedotta
 });

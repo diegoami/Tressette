@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { runInThisContext } from "node:vm";
+import { runInThisContext, runInContext, createContext } from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const here = rel => fileURLToPath(new URL(rel, import.meta.url));
@@ -20,7 +20,7 @@ runInThisContext(readFileSync(here("../public/engine.js"), "utf8"));
 
 const { BASSO, ALTO, SUITS, mosseLegali, rngSeed, newDeal, gioca, compGioca,
         scoreDeal, rollProfiles, fuori, sicura, controlli, WEIGHT_KEYS,
-        coda, CODA_FROM } = globalThis;
+        coda, CODA_FROM, manoDedotta } = globalThis;
 
 const P = rollProfiles(rngSeed(1)).Valerio;
 const card = (s, n) => ({ s, n });
@@ -38,7 +38,13 @@ function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [],
   // it refuses to search a position that does not, rather than answer
   // confidently from a 41-card deck.
   if (endgame){
-    const held = new Set([...alto, ...basso].map(c => c.s * 11 + c.n));
+    // The led card counts as played, not as held — it is face up on the table.
+    // Modelling it as still in hand made the deduced hand one card too big and
+    // sent the opponent back to the formula in a position built to test the
+    // search.
+    const held = new Set([...alto, ...basso]
+      .filter(c => !(led && c.s === led.s && c.n === led.n))
+      .map(c => c.s * 11 + c.n));
     gone = [];
     for (let su = 0; su < 4; su++)
       for (let n = 1; n <= 10; n++)
@@ -71,7 +77,16 @@ function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [],
   return state;
 }
 
+// Every trap asserts two things: that the opponent played the card it should,
+// and that it had a choice at all. The second used to be a separate test with a
+// hand-copied list of positions, which drifted to covering four of seven — so
+// it lives here now, where a new trap gets it whether or not anyone remembers.
+// The rule comes from iteration 1: a position where every legal play is forced
+// asserts nothing about how the opponent chooses.
 const chooses = (state, expected, why) => {
+  const led = state.deveGiocare === state.perPrimo ? null : state.played[state.perPrimo];
+  assert.ok(mosseLegali(state.hands[ALTO], led).length > 1,
+    `${why}\n   this position leaves only one legal card, so it tests nothing`);
   const slot = compGioca(state, P);
   const got = state.hands[ALTO][slot];
   assert.equal(`${got.s}-${got.n}`, `${expected.s}-${expected.n}`,
@@ -234,44 +249,26 @@ test("given a free discard, it keeps the asso's guard", () => {
   chooses(state, card(2, 7), "the spare card goes, not the asso's guard");
 });
 
-test("every trap has a real choice in it", () => {
-  // The rule iteration 1 learned the hard way: a position where the opponent
-  // has one legal card asserts nothing. This is the assertion that keeps the
-  // assertions honest.
-  const positions = [
-    table({ led: card(0, 1), basso: [card(0, 1), card(2, 4)],
-            alto: [card(0, 7), card(0, 3), card(1, 4)], tallone: [card(3,4), card(3,5)] }),
-    table({ led: card(0, 3), basso: [card(0, 3), card(2, 4)],
-            alto: [card(0, 1), card(0, 8), card(1, 4)], tallone: [card(3,4), card(3,5)] }),
-    table({ alto: [card(1, 10), card(2, 8)], basso: [card(1, 8), card(2, 1)],
-            tricks: 18, endgame: true }),
-    table({ led: card(0, 5), basso: [card(0, 5), card(0, 6)],
-            alto: [card(1, 1), card(1, 4), card(2, 7)], tallone: [card(3,4), card(3,5)] })
-  ];
-  for (const [i, state] of positions.entries()){
-    const led = state.deveGiocare === state.perPrimo ? null : state.played[state.perPrimo];
-    assert.ok(mosseLegali(state.hands[ALTO], led).length > 1,
-      `position ${i} leaves the opponent only one legal card, so it tests nothing`);
-  }
-});
-
 test("what it knows survives a copy of the state", () => {
   // fuori() used to key its set on card objects, so any state that had been
   // through JSON, structuredClone or a defensive copy in render() looked like
   // one where every held card had already been played — and every card would
   // then be sure. It threw nothing and logged nothing; it just led into cards
   // that were still out.
-  const state = table({
-    alto: [card(0, 10), card(1, 5)],
-    basso: [card(1, 4), card(1, 7)],
-    gone: [card(0, 3), card(0, 2), card(0, 1)],
-    tricks: 12
-  });
+  //
+  // This has to be a dealt position, not one built by table(). In a built one
+  // the hands and the deck are separate objects, so identity and value keying
+  // agree and the bug cannot show — which is how the first version of this test
+  // passed against the very code it was written for.
+  const rng = rngSeed(3);
+  const state = newDeal({ hands: [], partitaPrimo: BASSO }, rng);
+  for (let i = 0; i < 8; i++) gioca(state, state.deveGiocare, compGioca(state, P));
+
   const direct = fuori(state, ALTO);
   const copied = fuori(JSON.parse(JSON.stringify(state)), ALTO);
   assert.deepEqual(copied, direct, "a copy of the position is the same position");
-  assert.equal(sicura(copied, card(0, 10)), true, "the re is still sure through a copy");
-  assert.equal(sicura(copied, card(1, 5)), false, "and the 5 di coppe is still not");
+  assert.equal(direct.flat().filter(Boolean).length, copied.flat().filter(Boolean).length,
+    "and it knows the same number of cards are still out");
 });
 
 test("from CODA_FROM on it searches, and everywhere else it scores", () => {
@@ -293,8 +290,12 @@ test("from CODA_FROM on it searches, and everywhere else it scores", () => {
       gioca(state, state.deveGiocare, compGioca(state, P));
     }
   }
-  assert.equal(searched, 25 * 2 * (20 - CODA_FROM), "every play from CODA_FROM on is searched");
-  assert.equal(scored, 25 * 2 * CODA_FROM, "and every play before it is scored");
+  // Written against the numbers rather than against CODA_FROM: an assertion
+  // phrased in terms of the constant moves with it and cannot fail when it
+  // changes, which is the one change most worth noticing here.
+  assert.equal(CODA_FROM, 13, "if this moved, the two counts below have to move with it");
+  assert.equal(searched, 350, "seven tricks of search, both seats, 25 deals");
+  assert.equal(scored, 650, "and thirteen tricks of formula");
 });
 
 test("a position that does not add up is refused, not guessed at", () => {
@@ -309,6 +310,100 @@ test("a position that does not add up is refused, not guessed at", () => {
   });
   assert.equal(coda(half, ALTO), null, "it refuses a position it cannot deduce");
   assert.ok(compGioca(half, P) !== undefined, "and compGioca still answers, from the formula");
+});
+
+test("following, at three cards: it throws the liscio and keeps the re", () => {
+  // The following seat had no endgame trap at all, in three reviews. This one
+  // also pins the trick-to-trick hand-off inside the search — getting the next
+  // leader wrong is worth seventeen points of win rate, and until now only the
+  // golden fixture noticed, which is a file that gets re-recorded.
+  //
+  // They lead the 4 di coppe and the opponent is void, so it is a free discard
+  // and they take the trick either way. Throw the 7 di bastoni and the re di
+  // denari is still there to take their fante di denari, with the ultima on it:
+  // five terzi. Throw the re instead and it scores them a terzo now and hands
+  // over the card that would have taken the last trick: nothing.
+  const state = table({
+    led: card(1, 4),                                    // 4 di coppe
+    basso: [card(1, 4), card(2, 9), card(0, 8)],        // 4 di coppe, cavallo di spade, fante di denari
+    alto: [card(3, 7), card(0, 10), card(3, 8)],        // 7 di bastoni, re di denari, fante di bastoni
+    tricks: 17, endgame: true
+  });
+  chooses(state, card(3, 7), "the liscio goes; the re has a trick left in it");
+});
+
+test("leading, at three cards: it does not walk into the suit they hold", () => {
+  // Found by searching for a position where a search that forgets follow-suit
+  // answers differently — the filter is in the search as well as in
+  // mosseLegali, and nothing but the fixture was checking it.
+  //
+  // Leading the 4 di bastoni runs into their 7, and they then keep the tre di
+  // coppe to take the last trick: nothing. Leading the re di denari, which they
+  // cannot follow, wins a terzo and leaves the 4 to lose harmlessly later.
+  const state = table({
+    alto: [card(3, 4), card(0, 10), card(1, 10)],       // 4 di bastoni, re di denari, re di coppe
+    basso: [card(3, 7), card(1, 9), card(1, 3)],        // 7 di bastoni, cavallo and tre di coppe
+    tricks: 17, endgame: true
+  });
+  chooses(state, card(0, 10), "lead the suit they cannot follow, not into their 7");
+});
+
+test("the hand it deduces is exactly the hand they hold", () => {
+  // The guard checks a count, and the claim is that the count is enough: fuori's
+  // set always contains their whole hand and never contains mine, so the right
+  // size implies the right cards. That is an argument; this is the measurement.
+  // A test may look at both hands, which is the one thing the engine may not.
+  let checked = 0;
+  for (let seed = 1; seed <= 60; seed++){
+    const rng = rngSeed(seed);
+    const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rng);
+    while (!state.over){
+      const me = state.deveGiocare, them = me === BASSO ? ALTO : BASSO;
+      if (state.tricks >= CODA_FROM){
+        const key = c => c.s * 11 + c.n;
+        const deduced = manoDedotta(state, me).map(key).sort((a, b) => a - b);
+        const actual = state.hands[them].filter(c => c).map(key).sort((a, b) => a - b);
+        assert.deepEqual(deduced, actual,
+          `seed ${seed}, trick ${state.tricks}: the deduction is not their hand`);
+        checked++;
+      }
+      gioca(state, me, compGioca(state, P));
+    }
+  }
+  assert.ok(checked > 800, `only ${checked} deductions checked`);
+});
+
+test("the transposition table changes the speed and not the answer", () => {
+  // The memo is the only part of the search that can be wrong while the search
+  // looks right: a key that loses the led card, or whose turn it is, returns a
+  // real answer to a different question. Ask the same positions with the memo
+  // doing nothing and compare.
+  const naked = readFileSync(here("../public/engine.js"), "utf8")
+    .replace("  const seen = memo.get(key);\n  if (seen !== undefined) return seen;", "");
+  assert.notEqual(naked, readFileSync(here("../public/engine.js"), "utf8"),
+    "the memo lookup has to be the thing that was removed");
+  const bare = createContext({});
+  runInContext(naked, bare);
+
+  // From trick 16 on, where an un-memoised search is still cheap. The key is
+  // the same key at every depth, so four cards exercises it as well as seven
+  // and finishes in a second rather than a minute.
+  let compared = 0;
+  for (let seed = 1; seed <= 25; seed++){
+    const rng = rngSeed(seed);
+    const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rng);
+    while (!state.over){
+      if (state.tricks >= 16){
+        const mine = coda(state, state.deveGiocare);
+        const theirs = bare.coda(JSON.parse(JSON.stringify(state)), state.deveGiocare);
+        assert.equal(mine, theirs,
+          `seed ${seed}, trick ${state.tricks}: memoised and un-memoised disagree`);
+        compared++;
+      }
+      gioca(state, state.deveGiocare, compGioca(state, P));
+    }
+  }
+  assert.ok(compared >= 200, `only ${compared} positions compared`);
 });
 
 /* --- the fixture ------------------------------------------------------------ */

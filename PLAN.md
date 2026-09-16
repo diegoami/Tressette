@@ -21,12 +21,12 @@ and the sections below say what moves.
 | 1 | Is there a 1997 original to transcribe? | **No.** No Tressette source exists among the repos; the opponent is designed here and tuned by self-play. | If one exists, §3.3 becomes a transcription and the fidelity contract in §1 applies to it, exactly as in Discola. |
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
 | 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
-| 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
+| 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** Confirmed by the owner before iteration 4. | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
 | 5 | The opponents | **The same four names — Valerio, Graziano, Piero, Franco — with Tressette temperaments.** | New names cost nothing technically; the four are kept because they are the house. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
 
-Decisions 1, 2, 3 and 6 were confirmed by the owner; 4 and 5 are defaults
-still open to change.
+Decisions 1, 2, 3, 4 and 6 were confirmed by the owner; 5 is a default still
+open to change, and §7.6 asks for it before iteration 5.
 
 ## 1. What "in the spirit of Discola" means here
 
@@ -451,13 +451,21 @@ The same five views and the same two scrims. Discola's screen map holds
 exactly.
 
 ```
-start ──Gioca──► table ──┬─ reload icon ─► confirm ─► start
+start ──Gioca──► table ──┬─ reload icon ─► confirm ─► table (new deal)
                          ├─ history icon ─► history ─back─► table
                          ├─ settings icon ─► settings ─back─► table
                          └─ about icon ────► about ───back─► table
 table ──20 tricks──► result ──┬─ Ancora ────► table (new deal)
                               └─ Cambia ────► start
+settings ──Cambia avversario──► confirm ─► start
 ```
+
+The reload icon is labelled *nuova mano*, so it deals one: the confirm guards
+throwing the deal in progress away, not leaving the table. Leaving the table is
+"cambia avversario", on the settings sheet and in the result. Iteration 4 had
+this map's first line and the button's label pointing in different directions,
+and built something that did both — discard, go to the start sheet, then deal a
+hand behind it.
 
 - **start** — opponent chips and dossier, deck row, Gioca pinned in the
   footer. Unchanged in structure.
@@ -815,13 +823,122 @@ ever put the page into the state that shows them. A new state — a finished
 trick, a declaration, a hand that is not yours to play — needs its own row or
 its own pass, and adding the state is the harder half of adding the assertion.
 
-### 4 — Result and sheets (1 day)
+### 4 — Result and sheets (1 day) — done
 
 The result dialog, the declarations line, the start, settings, history and
 about sheets, the confirm scrim, keys, sound, the easter egg.
 
 **Done when** a deal can be played end to end, abandoned with the confirm,
 and shows up in history with the right score.
+
+Decision 4 was confirmed by the owner before this iteration started: accusi
+stay as §0 has them, from the ten dealt and announced automatically.
+
+The sheets are Discola's, forked with the stylesheet in iteration 3 — the CSS
+for chips, decks, fields, prose, tally, log, scrim and result was already in
+the sheet and only the markup and the plumbing were missing. What changed for
+this game: the history counts *mani* rather than *partite*, because a partita
+here is one deal (§0, decision 3); the result dialog gained a line for the
+declarations, since they are scored on top of the eleven points and the two
+numbers alone cannot say where the extra came from; and the settings sheet
+discloses eleven weights, with a note that the last seven tricks use none of
+them: `CODA_FROM` is 13, so the search takes over at trick fourteen, and three
+documents and the settings sheet all still said "the last two" from before
+iteration 2 moved it.
+
+**The result's note is computed, not chosen from a list.** It scores the deal
+again without the last trick's point, and again without the declarations, and
+says whichever one changed hands — "L'ultima presa ha deciso la mano", "Hanno
+deciso gli accusi, non le prese" — falling back to the margin. A phrase that
+can be wrong about the deal it describes is worse than no phrase.
+
+**The easter egg had to move.** `6winouj64ie` has four digits in it, and at
+this table every digit from 1 to 9 and 0 plays a card: in Discola the three
+card keys left 6, 4, 9 and 0 free to fall through to the buffer, and here
+nothing falls through. Letting the digits do both would play cards while you
+typed the word, and a misplay costs the deal — the same reason a tap raises a
+card rather than playing it. So it is typed away from the table, on the start
+sheet or over a sheet, and `state.cheat` survives into the deal. The check row
+that types it is what found this: it failed on the good page, which is the
+only reason anyone knew.
+
+**What the review found: ten defects, and none of them in a break.** Every one
+of the ten new assertions fired when its defect was constructed, and the review
+still found four paths into a broken table, three ways a dialog could sit over
+the wrong thing, and a stale claim in four documents. The pattern held: they
+live in states nothing rendered.
+
+- *"Nuova mano" plus "Abbandona" dealt a hand behind the start sheet.* The
+  discard went to the start sheet and **then** dealt, so a live deal ran behind
+  it with the opponent leading into a table nobody could see or play. Worse,
+  the new assertion for it demanded the start sheet from a button labelled
+  *nuova mano* — it passed *because of* the bug. Discarding a deal and leaving
+  the table are two things now: `discard()` throws the deal away wherever you
+  are going, and the caller decides where that is.
+- *A deal abandoned during the 420ms sweep left the sweep behind.* Its two
+  classes animate `both`, so their end state — transparent, 70px away — is held
+  until something removes them, and the removal was one of the callbacks the
+  epoch bump cancels. Every trick of the next deal drew into two invisible
+  boxes, for twenty tricks, while follow-suit dimming forbade cards nobody
+  could see. It is iteration 3's "the trick was never drawn" coming back
+  through a door the check did not open.
+- *The card keys reached the table through the abandon dialog.* `Enter` is what
+  you press to answer a dialog whose safe button has focus — and on the way
+  through it played the raised card. That is the exact misplay the two-tap
+  design exists to prevent.
+- *The result dialog opened over whichever sheet was in front*, and "Ancora"
+  dealt the next hand behind it: a deal running under a history list still
+  saying no hand had ever been played. It also left the abandon confirm open
+  underneath, asking whether to throw away a deal that was over and had just
+  been written down — the one state where that dialog's promise, that nothing
+  is recorded, is false.
+- *A play that landed before the sweep ran cancelled it*, because `later` owns
+  one timer and you are on turn the moment you win a trick. Sixteen plays in
+  twenty left the table painting the **previous** trick. The assertion that was
+  supposed to own this asked only that both slots were full — which the stale
+  pair satisfies. It asks for the card you just played now.
+- *The result's note claimed things the code never looks at.* Two of its five
+  branches described how the opponent had played his cards — "ha tenuto i tre e
+  i due fino in fondo" — from nothing but the margin, and one of them was the
+  default in 312 of 400 deals. The table counts tricks taken now, one per
+  sweep, so the note can say the one true thing the two totals do not: that you
+  took more tricks and lost anyway.
+- *The settings row opened the weights disclosure after the audit had run*, so
+  the state it existed to render was never audited. A row's `check` runs after
+  the rules, not before them.
+- *A history entry written by something else took the sheet down* — and with
+  it the button that clears the history, so there was no way out from inside
+  the game. `loadHistory` drops what it cannot draw.
+- *`CODA_FROM` moved to 13 in iteration 2 and four texts did not follow it*:
+  `CLAUDE.md`, this document, the settings sheet and Valerio's dossier all said
+  the opponent solves "the last two tricks". It is the last seven, from trick
+  fourteen.
+
+**And two of the assertions written for those fixes passed their own breaks
+first time**, which is the iteration-3 rule in a third shape. One *waited*: it
+asked that the trick show the card just played, with a four-second
+`waitForFunction` — and the stale trick clears itself when the opponent
+answers, half a second later, so the wait watched the defect go by and called
+it a pass. It does not wait at all now: the card is on the table the moment you
+play it, or it is a defect. The other measured *after the page had healed*: it
+looked at the abandoned sweep after playing a card into the new deal, and
+playing flushes the sweep, so it was watching the repair rather than the fault.
+It measures the freshly dealt table, before anything lands on it.
+
+So: **an assertion that waits, or that looks after the page has had a chance to
+put itself right, passes on the defect it was written for.** Both of these were
+written *with* their fixes, by someone who knew exactly what the defect was.
+
+**And the same lesson as iteration 3, immediately.** The face-up table had
+never been rendered by the check before this iteration; the row that renders
+it found `#cheatNote` sitting at 11.2px, under the 12.5px floor, where it had
+been since iteration 3. Six new assertions, six breaks, all caught: no
+recorded deal, no confirm before abandoning, an abandon that stays on the
+table, a result dialog whose numbers disagree with `scoreDeal`, a history log
+at 11px, and dialog buttons 20px tall. The abandon-confirm screen row needed a
+check of its own on top of the audit — a page that never asks just deals
+again, and a fresh table is a perfectly good screen to audit. Eight more went
+in with the review's fixes, each against its own break.
 
 ### 5 — The four opponents (1 day)
 

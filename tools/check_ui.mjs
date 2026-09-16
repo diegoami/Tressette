@@ -25,8 +25,9 @@
  *    those shipped once. They are assertions now.
  *
  * 3. DEAL — one whole deal against Valerio, played through the fan by tapping,
- *    at one viewport in one deck. It asserts the game can be finished, not how
- *    it looks.
+ *    at one viewport in one deck, then a second deal abandoned through the
+ *    confirm. It asserts the game can be finished, recorded and walked away
+ *    from, not how it looks.
  *
  * Every threshold below is calibrated against a real defect, not taste. If you
  * relax one, check it still fails the commit that introduced the bug it names.
@@ -93,12 +94,20 @@ const STILL = '*, *::before, *::after{ transition: none !important; animation: n
 
 /* ---- getting to each screen ----------------------------------------------- */
 
-// Iteration 3 has two screens: the start sheet and the table. Settings,
-// history, about, the confirm scrim and the result dialog arrive in iteration
-// 4, and each gets a row here when it does. Deleting the rows rather than
-// leaving them pointing at nothing is deliberate — a screen that cannot be
-// reached is a check that silently passes.
+// Every screen and dialog the page has, and the states worth looking at inside
+// them. A row that cannot reach its screen is a check that silently passes, so
+// rows arrive with their screens — these five came with iteration 4.
 const SCREENS = [
+  { name: 'start, after a hand', open: async p => {
+      // #lastResult only exists once something has been played, and the screens
+      // pass clears the history before every row, so this line had never been
+      // on screen when any rule ran.
+      await p.evaluate(() => {
+        localStorage.setItem('tressette.history', JSON.stringify(
+          [{ t: Date.now(), o: 'Graziano', d: 'Trevisane', y: 11, a: 4 }]));
+        renderLastResult();
+      });
+    } },
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
     // type pushed it past the fold once; a pinned footer is the fix, and this
@@ -133,6 +142,106 @@ const SCREENS = [
           && `the declaration is outside the table (${Math.round(a.top)}…${Math.round(a.bottom)} `
              + `vs ${Math.round(t.top)}…${Math.round(t.bottom)})`,
         a.bottom > you.top && `the declaration covers your own seat by ${Math.round(a.bottom - you.top)}px`,
+      ].filter(Boolean);
+    } },
+  { name: 'settings', open: async p => {
+      await p.click('#play');
+      await p.click('#btnSettings');
+      // The disclosure is shut by default, and the weights table is the state
+      // somebody reading their opponent is in. It has to be opened here rather
+      // than in `check`: the audit has already run by the time a row's own
+      // check is called, so a table of weights opened there was never audited.
+      await p.evaluate(() => { document.querySelector('#viewSettings details').open = true; });
+    } },
+  { name: 'history, empty', open: async p => { await p.click('#play'); await p.click('#btnHistory'); } },
+  { name: 'history, a hundred hands', open: async p => {
+      // The cap, so the tally, the per-opponent table and the log are all at
+      // their widest: three-figure counts and four names.
+      await p.evaluate(() => {
+        const now = Date.now();
+        localStorage.setItem('tressette.history', JSON.stringify(
+          Array.from({ length: 100 }, (_, i) => ({
+            t: now - i * 36e5, o: ['Valerio', 'Graziano', 'Piero', 'Franco'][i % 4],
+            d: 'Trevisane', y: 15 - (i % 16), a: i % 16 }))));
+      });
+      await p.click('#play');
+      await p.click('#btnHistory');
+    } },
+  { name: 'history, written by something else', open: async p => {
+      // Entries from another shape — an older build, a null, a number. They
+      // used to throw mid-render and leave the sheet without its log and
+      // without the button that clears it, so there was no way out from inside
+      // the game.
+      await p.evaluate(() => {
+        localStorage.setItem('tressette.history', JSON.stringify(
+          [null, 7, { o: 'Valerio' }, { t: Date.now(), o: 'Valerio', d: 'Trevisane', y: 6, a: 5 }]));
+      });
+      await p.click('#play');
+      await p.click('#btnHistory');
+    },
+    check: () => [...document.querySelectorAll('#historyBody button')]
+      .some(b => /Cancella/.test(b.textContent))
+      ? [] : ['the history has no way to clear itself'] },
+  { name: 'about', open: async p => { await p.click('#play'); await p.click('#btnAbout'); } },
+  { name: 'the abandon confirm', open: async p => { await p.click('#play'); await p.click('#again'); },
+    // Without this the row passes on a page that never asks: a new deal is a
+    // perfectly good screen, and the audit has nothing to object to.
+    check: () => document.querySelector('#confirmScrim').hidden
+      ? ['the confirm did not open over a deal in play'] : [] },
+  { name: 'the result, with declarations', open: async p => {
+      await p.click('#play');
+      // The dialog at its longest: both players declaring, which is where the
+      // extra line and the widest numbers are.
+      await p.evaluate(() => {
+        state.over = true;
+        state.terzi = [17, 15];
+        // A hand the deck can deal: the opponent holds the napoletana di denari
+        // and three 2s, you hold the three 3s that are left. Four assi against
+        // a napoletana di denari needs the asso di denari twice.
+        state.accusi[BASSO] = [{ kind: 'set', n: 3, count: 3, points: 3 }];
+        state.accusi[ALTO] = [{ kind: 'napoletana', suit: 0, points: 3 },
+                              { kind: 'set', n: 2, count: 3, points: 3 }];
+        state.prese = [11, 9];
+        finish();
+      });
+    } },
+  { name: 'the result, reached from a sheet', open: async p => {
+      await p.click('#play');
+      await p.click('#btnHistory');
+      await p.evaluate(() => { state.over = true; state.terzi = [17, 15]; state.prese = [12, 8]; finish(); });
+    },
+    // The deal ends while you are reading the history: the dialog used to open
+    // over the sheet, and "Ancora" dealt the next hand behind it, under a list
+    // still saying no hand had ever been played.
+    check: () => [
+      screen !== 'table' && `the result opened over the ${screen} sheet`,
+      ...[...document.querySelectorAll('.view')].filter(v => !v.hidden && v.id !== 'viewTable')
+        .map(v => `${v.id} is still on screen under the result`),
+    ].filter(Boolean) },
+  { name: 'the result, over the abandon confirm', open: async p => {
+      await p.click('#play');
+      await p.click('#again');
+      await p.evaluate(() => { state.over = true; state.terzi = [12, 20]; state.prese = [8, 12]; finish(); });
+    },
+    // The hand ends while the confirm is up. The question is about a deal that
+    // no longer exists, and its promise that nothing is written down stopped
+    // being true the moment finish() recorded it.
+    check: () => document.querySelector('#confirmScrim').hidden ? []
+      : ['the abandon confirm is still open under the result dialog'] },
+  { name: "table, the opponent's hand face up", open: async p => {
+      // The 1997 easter egg, typed the way it is typed — on the start sheet,
+      // because at the table every digit is a card key and the word has four
+      // of them in it. It is also the only row that drives the page entirely
+      // through the keyboard.
+      await p.keyboard.type('6winouj64ie');
+      await p.click('#play');
+    },
+    check: () => {
+      const backs = [...document.querySelectorAll('.hand--opp .card')]
+        .filter(c => c.style.getPropertyValue('--col') === '10').length;
+      return [
+        document.querySelector('#cheatNote').hidden && 'the face-up note is not shown',
+        backs > 0 && `${backs} of the opponent's cards are still face down`,
       ].filter(Boolean);
     } },
   { name: 'table, a card raised', open: async p => {
@@ -188,6 +297,10 @@ const audit = () => {
 
   for (const el of document.querySelectorAll('body *')) {
     if (!shown(el)) continue;
+    // A closed <details> still hands out live geometry for what it is hiding,
+    // so without this the rules below measure text nobody is looking at — and
+    // report a defect in a state that cannot be reached.
+    if (el.closest('details:not([open])') && !el.closest('summary')) continue;
     const cs = getComputedStyle(el);
     const r = el.getBoundingClientRect();
 
@@ -528,11 +641,50 @@ async function checkDeal(browser) {
   // boxes: the player never sees what the trick was. That shipped in this
   // iteration and nothing else here could see it, because the other two passes
   // only ever render a table that has just been dealt.
+  // Your own card, on the table, the moment you play it. Not "eventually": a
+  // play that lands before the sweep has run used to cancel it, and the table
+  // went on painting the *previous* trick until the opponent answered — about
+  // half a second, sixteen plays in twenty. Anything that waits for this waits
+  // that out and calls it a pass, so this one does not wait at all.
+  const yourCardShows = card => page.evaluate(c => {
+    const n = document.querySelector('#slotYou');
+    return n.dataset.empty === 'false'
+        && n.style.getPropertyValue('--col') === String(c.n - 1)
+        && n.style.getPropertyValue('--row') === String(c.s);
+  }, card);
+
+  // Both slots at once, which only the answer to a lead has to wait for.
   const bothShown = () => page.waitForFunction(
-    () => [...document.querySelectorAll('.trick .card')].every(c => c.dataset.empty === 'false'),
+    () => [...document.querySelectorAll('.trick .card')].every(n => n.dataset.empty === 'false'),
     null, { timeout: 4000 });
 
   const issues = [];
+
+  // One legal card, tapped the way a player taps it. Returns a message when
+  // something goes wrong and nothing when it does not, so the stages below can
+  // play a card without repeating any of this.
+  const playOne = async () => {
+    // Who leads alternates from deal to deal, so a new deal may open with the
+    // opponent: wait for the turn rather than assuming it.
+    try {
+      await page.waitForFunction(() => !state.over && state.deveGiocare === BASSO,
+                                 null, { timeout: 8000 });
+    } catch { return 'your turn never came'; }
+    const move = await page.evaluate(() => {
+      const led = state.perPrimo === BASSO ? null : state.played[state.perPrimo];
+      const legal = mosseLegali(state.hands[BASSO], led);
+      return legal.length ? { slot: legal[0], card: state.hands[BASSO][legal[0]] } : null;
+    });
+    if (!move) return 'no legal card to play';
+    const card = page.locator('.hand--you .card').nth(move.slot);
+    try {
+      await card.click({ position: { x: 6, y: 20 }, timeout: 4000 });
+      const box = await card.boundingBox();
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    } catch { return `card ${move.slot} could not be tapped`; }
+    return null;
+  };
+
   let plays = 0;
   let keyTried = false;
   for (let i = 0; i < 600 && plays < 20; i++) {
@@ -546,6 +698,7 @@ async function checkDeal(browser) {
       const held = state.hands[BASSO].map((c, i) => c && i).filter(i => i !== null && i !== false);
       return legal.length
         ? { slot: legal[0], answering: state.perPrimo !== BASSO,
+            card: state.hands[BASSO][legal[0]],
             illegal: held.find(i => !legal.includes(i)) ?? null }
         : null;
     });
@@ -577,6 +730,11 @@ async function checkDeal(browser) {
     }
     plays++;
 
+    if (!await yourCardShows(move.card)) {
+      issues.push('the card you played was not on the table the moment you played it: ' +
+                  'the trick before it is still there');
+      break;
+    }
     try { await bothShown(); }
     catch {
       issues.push(move.answering
@@ -590,18 +748,137 @@ async function checkDeal(browser) {
   else {
     try {
       await page.waitForFunction(
-        () => state.over && /vinto|perso|Pari/.test(document.querySelector('.announce').textContent),
+        () => state.over && !document.querySelector('#scrim').hidden &&
+              /Hai vinto|Hai perso|Pareggio/.test(document.querySelector('#resultTitle').textContent),
         null, { timeout: 15000 });
-    } catch { issues.push('the deal never announced a result'); }
+    } catch { issues.push('the deal never reached its result dialog'); }
   }
-  const end = await page.evaluate(() => ({ tricks: state.tricks, over: state.over,
-                                           line: document.querySelector('.announce').textContent }));
+
+  const end = await page.evaluate(() => ({
+    tricks: state.tricks, over: state.over,
+    line: [document.querySelector('#resultTitle').textContent,
+           document.querySelector('#resultYou').textContent + '\u2013' +
+           document.querySelector('#resultOpp').textContent].join(' '),
+    you: Number(document.querySelector('#resultYou').textContent),
+    them: Number(document.querySelector('#resultOpp').textContent),
+    score: scoreDeal(state),
+    // §4's "Done when": the deal shows up in history with the right score.
+    history: JSON.parse(localStorage.getItem('tressette.history') || '[]'),
+    opponent: state.opponent,
+  }));
   if (end.tricks !== 20) issues.push(`${end.tricks} tricks played, not 20`);
+  if (end.you !== end.score[0] || end.them !== end.score[1])
+    issues.push(`the dialog says ${end.you}\u2013${end.them}, the deal scored ${end.score.join('\u2013')}`);
+  const [logged] = end.history;
+  if (!logged) issues.push('the deal was not written to the history');
+  else if (logged.y !== end.you || logged.a !== end.them || logged.o !== end.opponent)
+    issues.push(`the history says ${logged.o} ${logged.y}\u2013${logged.a}, ` +
+                `the dialog says ${end.opponent} ${end.you}\u2013${end.them}`);
+
+  // And the other half of §4's "Done when": a deal abandoned through the
+  // confirm is not recorded, and the two buttons that abandon one leave you
+  // where their labels say. The history count has to be read again afterwards —
+  // an abandoned deal that quietly logs itself would look exactly like one that
+  // did not.
+  //
+  // The new-hand button is the one that had this wrong: it discarded the deal,
+  // went to the start sheet, and *then* dealt a new hand, which ran behind the
+  // start sheet with the opponent leading into a table nobody could see. An
+  // assertion that asked for the start sheet here passed on that bug.
+  await page.click('#playAgain');
+  await page.waitForTimeout(200);
+
+  // A trick first, and then the discard has to happen while the sweep is
+  // actually on the cards: its two classes animate `both`, so one left behind
+  // paints every later trick transparent for the whole of the next deal. The
+  // window is the 420ms the sweep lasts — waiting for the classes rather than
+  // for a trick is what puts the discard inside it.
+  const first = await playOne();
+  if (first) issues.push(first);
+  try {
+    await page.waitForFunction(
+      () => document.querySelector('#slotYou').className.includes('card--won'),
+      null, { timeout: 8000 });
+  } catch { issues.push('no trick was ever swept off the table'); }
+
+  try { await page.click('#again', { timeout: 4000 }); }
+  catch { issues.push('the new-hand button could not be clicked'); }
+  const asked = await page.evaluate(() => !document.querySelector('#confirmScrim').hidden);
+  if (!asked) issues.push('the new-hand button did not ask before throwing a deal away');
+
+  // Through the dialog if it is there, through discard() if it is not, so a
+  // page that never asks still reaches the assertions below.
+  if (asked) await page.click('#confirmYes', { timeout: 4000 }); else await page.evaluate(() => discard());
+  await page.waitForTimeout(400);
+
+  const after = await page.evaluate(() => ({
+    screen, tricks: state.tricks, dealt: state.dealt,
+    logged: JSON.parse(localStorage.getItem('tressette.history') || '[]').length,
+  }));
+  if (after.screen !== 'table') issues.push(`the new-hand button landed on ${after.screen}, not the table`);
+  if (!after.dealt || after.tricks !== 0) issues.push('the new-hand button did not deal a new hand');
+  if (after.logged !== end.history.length)
+    issues.push(`the abandoned deal was written to the history (${end.history.length} \u2192 ${after.logged})`);
+
+  // The new deal's trick, before anything is played into it. Measured here and
+  // not after a play, because playing flushes the sweep too: the leak is on
+  // screen from the deal until the first card lands on it, and a check that
+  // plays first watches the page repair itself and calls that a pass.
+  await page.waitForTimeout(500);       // the sweep's own animation is .45s
+  const swept = await page.evaluate(() => {
+    const o = getComputedStyle(document.querySelector('#slotYou'));
+    return { opacity: Number(o.opacity), transform: o.transform,
+             classes: document.querySelector('#slotYou').className };
+  });
+  if (swept.opacity < 1 || swept.transform !== 'none')
+    issues.push(`the abandoned deal left its sweep on the table: the new deal's trick ` +
+                `draws at opacity ${swept.opacity}, transform ${swept.transform} (${swept.classes})`);
+
+  const second = await playOne();
+  if (second) issues.push(second);
+
+  // With a dialog up, the card keys are not the player's — and `Enter` least of
+  // all, because it is what you press to answer a dialog whose safe button has
+  // the focus. It has to be your turn for this to prove anything: `tapped`
+  // refuses when it is not, so a stage that asks while the opponent is thinking
+  // passes whether the guard is there or not.
+  try {
+    await page.waitForFunction(() => !state.over && state.deveGiocare === BASSO
+                                     && !document.querySelector('#slotYou').className.includes('card--won'),
+                               null, { timeout: 8000 });
+    await page.click('#again', { timeout: 4000 });
+    const playedBefore = await page.evaluate(() => JSON.stringify(state.played));
+    await page.keyboard.press('3');
+    await page.keyboard.press('Enter');
+    const raised = await page.evaluate(() => state.selected);
+    const moved = await page.evaluate(b => JSON.stringify(state.played) !== b, playedBefore);
+    if (moved) issues.push('a card was played through the abandon dialog');
+    if (raised !== null) issues.push('a card was raised through the abandon dialog');
+    // Enter answered the dialog, which is the safe button; make sure of it.
+    if (await page.evaluate(() => !document.querySelector('#confirmScrim').hidden))
+      await page.click('#confirmNo');
+  } catch { issues.push('the abandon dialog could not be opened on a turn of your own'); }
+
+  // "Cambia avversario" is the one that does go to the start sheet.
+  try {
+    await page.click('#btnSettings', { timeout: 4000 });
+    await page.click('#changeOpponent', { timeout: 4000 });
+    if (await page.evaluate(() => !document.querySelector('#confirmScrim').hidden))
+      await page.click('#confirmYes', { timeout: 4000 });
+    await page.waitForTimeout(300);
+    const left = await page.evaluate(() => ({ screen, dealt: state.dealt }));
+    if (left.screen !== 'start') issues.push(`changing opponent landed on ${left.screen}, not the start sheet`);
+    if (left.dealt) issues.push('changing opponent left the deal in play');
+  } catch {
+    issues.push('the settings sheet could not be reached from the table to change opponent');
+  }
+
   thrown.forEach(t => issues.push(`the page threw: ${t}`));
   await page.close();
 
   console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${plays} cards played against ` +
-              `Valerio, ${end.tricks} tricks — ${end.line || 'no result'}`);
+              `Valerio, ${end.tricks} tricks — ${end.line || 'no result'}, ` +
+              `then one thrown away and one walked out of`);
   issues.forEach(i => console.log(`        ${i}`));
   return issues.length ? 1 : 0;
 }

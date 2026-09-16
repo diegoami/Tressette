@@ -1,0 +1,23 @@
+# The engine tests, on every push and every pull request. There is nothing to
+# install: the engine and its tests have no dependencies, which is the point.
+#
+# The UI check gains a second job in iteration 3, when there is a table to
+# check; it needs playwright-core and a Chromium, and it is the one thing here
+# that will not be dependency-free.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      # Not `--test tools/`: Node 22 reads a bare directory as a module path and
+      # fails with MODULE_NOT_FOUND. A glob is what the current LTS discovers.
+      - run: node --test 'tools/**/*.test.mjs'

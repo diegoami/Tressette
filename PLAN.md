@@ -656,7 +656,24 @@ install, wasteful once iteration 3 adds Chromium.
 **Done when** the tests pass locally and in the Action, and the engine has no
 DOM reference.
 
-### 2 — Opponent v1 and the self-play harness (1–2 days)
+### 2 — Opponent v1 and the self-play harness (1–2 days) — done
+
+Pull request #3, over three fresh-context reviews. The first overturned this
+iteration's central claim — that 95% against random-legal was unreachable,
+argued from a "cheating oracle" that turned out to be shallower than an honest
+deep-searching player. The formula changed as a result: the opponent searches
+the last seven tricks exactly, and §3.4's acceptance numbers are measured
+rather than intuited.
+
+**What it cost to learn, for iteration 3 and after.** The second and third
+reviews were almost entirely about tests that could not fail. Four of them, in
+three iterations, were written against a position where the bug they named
+could not appear — including one written to catch a bug found in the review
+before. The rule that came out of it: **a position built by hand to be
+convenient is built to be wrong in the way that matters.** Every assertion
+here is now checked by breaking the thing it protects and watching it fail,
+and the real-choice check is folded into the assertion itself so a new trap
+gets it whether or not anyone remembers.
 
 The formula in §3.4 with one profile; `tools/selfplay.mjs` with the two
 baselines; the trap suite. Tune until the acceptance numbers hold. Then the

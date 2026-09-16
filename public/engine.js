@@ -327,9 +327,16 @@ function rollProfiles(rng){
     // Tuned by coordinate ascent on seeds 1..250 and chosen between candidates
     // on seeds 7001..8000, which the tuner never saw. LEAD_INTO_VOID_PENALTY is
     // negative on purpose: see below.
+    //
+    // LEAD_LONG_SUIT is 0 because the endgame search made it harmful. It was
+    // tuned to 1.0 when the opponent scored every trick, and measured +1.9 and
+    // +2.1 points better at 0 on two fresh seed ranges once the search took the
+    // last seven. Every trick the search gains or gives back revalues the late
+    // weights, silently — moving CODA_FROM means re-measuring these, not just
+    // re-recording the fixture.
     Valerio: weights([
       //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
-           4.0,   12.0,  1.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
+           4.0,   12.0,  0.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
     ])
   };
 }
@@ -394,20 +401,33 @@ function codaValore(mine, theirs, led, myTurn, memo){
   for (const c of playable){
     const rest = hand.filter(x => x !== c);
     let value;
-    if (led === null){
-      value = myTurn ? codaValore(rest, theirs, c, false, memo)
-                     : codaValore(mine, rest, c, true, memo);
+    if (myTurn){
+      value = valoreDellaCarta(mine, theirs, led, c, memo);
+    } else if (led === null){
+      value = codaValore(mine, rest, c, true, memo);
     } else {
       const takes = prende(c, led);
-      const pot = terzi(c.n) + terzi(led.n) + ultima;
-      value = myTurn
-        ? (takes ? pot : 0) + codaValore(rest, theirs, null, takes, memo)
-        : (takes ? 0 : pot) + codaValore(mine, rest, null, !takes, memo);
+      value = (takes ? 0 : terzi(c.n) + terzi(led.n) + ultima)
+            + codaValore(mine, rest, null, !takes, memo);
     }
     best = myTurn ? Math.max(best, value) : Math.min(best, value);
   }
   memo.set(key, best);
   return best;
+}
+
+// What playing `c` is worth to me: this trick if I take it, plus everything
+// after. `coda` needs it per card so it can pick a slot and break ties; the
+// search needs it for every card of mine. One definition, so the ultima's
+// arithmetic lives in one place — it was written out twice, and the second
+// copy could only ever run where the play was forced, which is a duplicate
+// no test could reach.
+function valoreDellaCarta(mine, theirs, led, c, memo){
+  const rest = mine.filter(x => x !== c);
+  if (led === null) return codaValore(rest, theirs, c, false, memo);
+  const takes = prende(c, led);
+  const pot = terzi(c.n) + terzi(led.n) + ultimaTerzi(mine.length + theirs.length);
+  return (takes ? pot : 0) + codaValore(rest, theirs, null, takes, memo);
 }
 
 // The other hand, deduced from what has been played. Only sound once the
@@ -448,17 +468,7 @@ function coda(state, me){
   const memo = new Map();
   let bestSlot = slots[0], bestValue = -Infinity;
   for (const slot of slots){
-    const c = hand[slot];
-    const rest = mine.filter(x => x !== c);
-    let value;
-    if (led === null){
-      value = codaValore(rest, theirs, c, false, memo);
-    } else {
-      const takes = prende(c, led);
-      const won = takes ? terzi(c.n) + terzi(led.n)
-                          + ultimaTerzi(mine.length + theirs.length) : 0;
-      value = won + codaValore(rest, theirs, null, takes, memo);
-    }
+    const value = valoreDellaCarta(mine, theirs, led, hand[slot], memo);
     // Ties to the lower slot. That is a determinism rule, not a strength one —
     // it is what makes the golden fixture reproducible — and it costs about a
     // point of win rate against the other convention. Do not "optimise" it.

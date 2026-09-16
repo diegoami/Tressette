@@ -373,6 +373,48 @@ test("the hand it deduces is exactly the hand they hold", () => {
   assert.ok(checked > 800, `only ${checked} deductions checked`);
 });
 
+test("following, it takes with the card that banks the most", () => {
+  // The capture term: §3.4 scores a trick it takes as the cards on it. Drop it
+  // and both winning cards look alike, and it takes with the wrong one. Only
+  // the fixture noticed, and the fixture is re-recorded whenever a weight moves.
+  //
+  // They lead the 4 di bastoni. Both the asso and the re of bastoni take it.
+  // The asso banks its own three terzi; the re banks one and leaves the asso
+  // in hand for a trick it may not get.
+  const state = table({
+    led: card(3, 4),                                            // 4 di bastoni
+    basso: [card(3, 4), card(2, 5), card(2, 7), card(3, 5)],
+    alto: [card(1, 5), card(3, 1), card(3, 10), card(0, 2)],    // asso and re di bastoni
+    tricks: 16, endgame: true
+  });
+  chooses(state, card(3, 1), "take with the asso, not the re");
+});
+
+test("the ultima is worth three terzi, not one and not six", () => {
+  // Its presence and its timing are trapped; its size was not, and a last trick
+  // priced at one or at six changes which card is kept for it. Here the 4 di
+  // bastoni is the discard at three terzi and the due di bastoni is the discard
+  // at one.
+  const tooCheap = table({
+    led: card(3, 9),                                            // cavallo di bastoni
+    basso: [card(3, 9), card(0, 9), card(3, 1), card(0, 5)],
+    alto: [card(2, 8), card(3, 2), card(3, 4), card(2, 9)],
+    tricks: 16, endgame: true
+  });
+  chooses(tooCheap, card(3, 4), "priced at three terzi, the 4 is the card to give");
+
+  // And one that goes the other way, because a single position only ever
+  // catches the error on one side of the right answer: this one changes its
+  // mind if the last trick is priced at six.
+  const tooDear = table({
+    led: card(1, 5),                                            // 5 di coppe
+    basso: [card(1, 5), card(2, 2), card(2, 3), card(1, 10)],
+    alto: [card(1, 2), card(0, 2), card(1, 4), card(0, 3)],
+    tricks: 16, endgame: true
+  });
+  chooses(tooDear, card(1, 2), "priced at three, the due di coppe takes this trick");
+});
+
 test("the transposition table changes the speed and not the answer", () => {
   // The memo is the only part of the search that can be wrong while the search
   // looks right: a key that loses the led card, or whose turn it is, returns a

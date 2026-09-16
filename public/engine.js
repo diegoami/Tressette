@@ -263,19 +263,25 @@ function vincitore(state){
 //
 // A card still in the tallone is unknown, so it counts as outstanding. That is
 // the conservative side to be on: sure() must never call a card safe that can
-// still be beaten, and it is better to think a card might be against you than
-// to lead into it.
+// still be beaten, and the word sure should mean what it says wherever it is
+// read. It is not worth points — the optimistic variant is a dead heat over
+// 6,000 deals — it is worth the invariant.
 function fuori(state, me){
   const still = [];
   for (let s = 0; s < 4; s++) still.push(new Array(11).fill(true));
 
+  // Keyed by suit and number, not by object: a state that has been through
+  // JSON, structuredClone or any defensive copy in render() is a different
+  // object graph, and identity would make every held card look played — so
+  // every card would look sure and the opponent would lead into cards that are
+  // still out. It would fail silently, which is the worst way to fail.
   const held = new Set();
   for (const who of [BASSO, ALTO])
-    for (const c of state.hands[who]) if (c) held.add(c);
+    for (const c of state.hands[who]) if (c) held.add(c.s * 11 + c.n);
 
   for (let i = 0; i < state.next; i++){          // dealt or drawn, so seen by someone
     const c = state.cards[i];
-    if (!held.has(c)) still[c.s][c.n] = false;   // no longer held: it was played
+    if (!held.has(c.s * 11 + c.n)) still[c.s][c.n] = false;   // played
   }
   for (const c of state.hands[me]) if (c) still[c.s][c.n] = false;   // and mine are mine
   return still;
@@ -423,6 +429,11 @@ function compGioca(state, P){
         score += P.LEAD_LISCIO_BONUS;
         score += (inSuit(c.s) - 1) * P.LEAD_LONG_SUIT;
       }
+      // §3.4: "× |controls(s) above the asso|". The filter is unreachable and
+      // kept for the reader: this branch only runs when c is the asso, so the
+      // asso is in hand, so it is not outstanding, so controlli never returns
+      // it. Removing it changes no play in 6,000 deals — which is a reason to
+      // leave it alone rather than to tidy it away and wonder later.
       if (c.n === 1 && !sicura(still, c))
         score -= P.LEAD_ACE_EXPOSED_PENALTY * controlli(still, c.s).filter(n => n !== 1).length;
       if ((c.n === 3 || c.n === 2) && !sicura(still, c)) score -= P.LEAD_CONTROL_PENALTY * k;

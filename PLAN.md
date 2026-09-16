@@ -976,7 +976,7 @@ rather than a replacement, and a fan of ten overlapping cards is a poor drag
 source. Both halves are asserted — the lift is at least .3 of a card, and the
 line says what the next tap will do — and both fail on the page as it was.
 
-### 5 — The four opponents (1 day)
+### 5 — The opponents (1 day) — done
 
 Four weight vectors, tuned by self-play to the acceptance numbers and to feel
 different. Dossier text. The weights disclosure. The README table.
@@ -1024,6 +1024,63 @@ pair is the measurement that settles it.
 has a one-line character you can recognise across a few deals — or, if the
 measurement above says that is not reachable with eleven weights, when the
 decision taken instead is written into §0 and the dossier tells the truth.
+
+---
+
+**What happened: the roster is three, and character is bought with one weight.**
+
+Dropping Valerio (§0, decision 5, taken by the owner during iteration 4) removed the pair that was 1.0% apart, and Franco kept his
+weights, so the house standard is the same player under the name that stayed.
+That left the real question: can Graziano be told apart from Franco without
+being a worse player?
+
+The answer is measured rather than argued. One weight at a time, moved off
+Franco's value, 100 seeds mirrored against greedy-take:
+
+| `LEAD_LISCIO_BONUS` | vs greedy | choices differing from Franco |
+|---|---|---|
+| 12 (Franco) | 90.0% | — |
+| 9 | 88.0% | 2.6% |
+| 7 | 74.0% | 15.9% |
+| 5 | 69.5% | 23.7% |
+| 3 | 64.0% | 24.4% |
+
+| other weights, at their extremes | vs greedy | differing |
+|---|---|---|
+| `TAKE_TERZI_WEIGHT` 5 (from 1.5) | 85.5% | 3.0% |
+| `SPEND_CONTROL_PENALTY` 0 (from 2) | 82.0% | 6.8% |
+| `DISCARD_GUARD_PENALTY` 0 **or** 3 (from 1.5) | 90.0% | **0.1%** |
+
+So: **character in this formula is bought almost entirely with the liscio
+bonus, and it is paid for in win rate at about a point per percent.** The
+guard penalty moves 2 choices in 3,437 at any value, which is iteration 2's
+ablation confirmed a second way. There is no free temperament to find, and
+tuning for difference cannot invent one — it can only choose a point on that
+curve.
+
+The owner chose the point: a Graziano who differs on one choice in ten and
+wins a little less. Held out on seeds 5001+, which the tuning never saw:
+
+| | vs random-legal | vs greedy-take | differing from Franco |
+|---|---|---|---|
+| Franco | 88.6% | 88.2% | — |
+| Graziano | 88.8% | 80.8% | 11.1% |
+| Piero (this session's roll) | 86.8% | 78.6% | 22.7% |
+
+Piero is rolled per session, so his strength is a distribution and not a
+number: over six sessions, 73.1% to 83.8% against greedy-take, differing from
+Franco by 12.3% to 30.1%. His ranges keep the liscio bonus at 7 or above,
+because that is the cliff — below it a rolled player stops playing Tressette.
+The §3.4 acceptance numbers are Franco's contract; Graziano meets both, and a
+rolled Piero can land a point or two under the greedy-take floor, which is
+what "you never play the same Piero twice" costs and the dossier says so.
+
+**The fixture grew with the roster.** Twenty deals each for the two tuned
+players, forty in all, plus every weight of all three — Piero's rolled eleven
+included, so a change to his ranges or to the order they are drawn in moves
+numbers nobody wrote by hand and the test says so. Re-recording is a command
+now rather than a script someone writes twice:
+`node tools/selfplay.mjs --golden > tools/golden.json`.
 
 ### 6 — Ship (½ day)
 

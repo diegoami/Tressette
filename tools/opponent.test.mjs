@@ -22,7 +22,7 @@ const { BASSO, ALTO, SUITS, mosseLegali, rngSeed, newDeal, gioca, compGioca,
         scoreDeal, rollProfiles, fuori, sicura, controlli, WEIGHT_KEYS,
         coda, CODA_FROM, manoDedotta } = globalThis;
 
-const P = rollProfiles(rngSeed(1)).Valerio;
+const P = rollProfiles(rngSeed(1)).Franco;
 const card = (s, n) => ({ s, n });
 const name = c => `${["asso","due","tre","4","5","6","7","fante","cavallo","re"][c.n - 1]} di ${SUITS[c.s]}`;
 
@@ -458,13 +458,19 @@ test("the golden fixture: twenty deals, play for play", () => {
   // the fixture is re-recorded in the same commit, which is the point at which
   // someone has to say out loud that the opponent now plays differently.
   const golden = JSON.parse(readFileSync(here("./golden.json"), "utf8"));
-  const P = rollProfiles(rngSeed(1)).Valerio;
+  const profiles = rollProfiles(rngSeed(1));
 
-  assert.deepEqual(P, golden.profile,
-    "the weights have moved: re-record the fixture in the same commit, and say so");
+  // Every weight of every player, Piero's rolled eleven included: a change to
+  // his ranges, or to the order they are drawn in, moves numbers nobody wrote
+  // by hand and this is what notices.
+  assert.deepEqual(profiles, golden.profiles,
+    "the weights have moved: re-record the fixture in the same commit " +
+    "(node tools/selfplay.mjs --golden > tools/golden.json), and say so");
 
   const short = c => `${["A","2","3","4","5","6","7","F","C","R"][c.n - 1]}${"dcsb"[c.s]}`;
   for (const deal of golden.deals){
+    const P = profiles[deal.who];
+    assert.ok(P, `the fixture records ${deal.who}, who is no longer on the roster`);
     const rng = rngSeed(deal.seed);
     const state = newDeal({ hands: [], partitaPrimo: deal.seed % 2 ? BASSO : ALTO }, rng);
     const plays = [];
@@ -474,8 +480,8 @@ test("the golden fixture: twenty deals, play for play", () => {
       plays.push(`${who === BASSO ? "B" : "A"}${short(state.hands[who][slot])}`);
       gioca(state, who, slot);
     }
-    assert.equal(plays.join(" "), deal.plays, `seed ${deal.seed}: the plays have changed`);
-    assert.deepEqual(scoreDeal(state), deal.score, `seed ${deal.seed}: the score has changed`);
+    assert.equal(plays.join(" "), deal.plays, `${deal.who}, seed ${deal.seed}: the plays have changed`);
+    assert.deepEqual(scoreDeal(state), deal.score, `${deal.who}, seed ${deal.seed}: the score has changed`);
   }
 });
 
@@ -483,18 +489,89 @@ test("the fixture covers both seats and enough of the deal to be worth freezing"
   // A fixture that only ever recorded one seat, or only the first few tricks,
   // would freeze very little while looking thorough.
   const golden = JSON.parse(readFileSync(here("./golden.json"), "utf8"));
-  assert.equal(golden.deals.length, 20);
-  assert.deepEqual(Object.keys(golden.profile).sort(), [...WEIGHT_KEYS].sort(),
-    "the fixture records every weight, so a new one cannot slip in unrecorded");
+
+  // Twenty deals each for the two tuned players. Piero's weights are frozen
+  // above but his deals are not: he is rolled, so freezing his plays would
+  // freeze one session of a player whose whole point is that he changes.
+  assert.equal(golden.deals.length, 40);
+  for (const who of ["Franco", "Graziano"])
+    assert.equal(golden.deals.filter(d => d.who === who).length, 20,
+      `${who} should have twenty deals in the fixture`);
+  for (const P of Object.values(golden.profiles))
+    assert.deepEqual(Object.keys(P).sort(), [...WEIGHT_KEYS].sort(),
+      "the fixture records every weight, so a new one cannot slip in unrecorded");
   for (const deal of golden.deals){
     const plays = deal.plays.split(" ");
-    assert.equal(plays.length, 40, `seed ${deal.seed}: a full deal is forty plays`);
-    assert.ok(plays.some(p => p[0] === "B"), `seed ${deal.seed}: no plays from the lower seat`);
-    assert.ok(plays.some(p => p[0] === "A"), `seed ${deal.seed}: no plays from the upper seat`);
+    assert.equal(plays.length, 40, `${deal.who}, seed ${deal.seed}: a full deal is forty plays`);
+    assert.ok(plays.some(p => p[0] === "B"), `${deal.who}, seed ${deal.seed}: no plays from the lower seat`);
+    assert.ok(plays.some(p => p[0] === "A"), `${deal.who}, seed ${deal.seed}: no plays from the upper seat`);
   }
   for (const deal of golden.deals)
     assert.equal(deal.plays.split(" ")[0][0], deal.lead,
       `seed ${deal.seed}: the recorded leader is not who played first`);
   assert.ok(golden.deals.some(d => d.lead === "B") && golden.deals.some(d => d.lead === "A"),
     "the deals should not all be led by the same seat");
+});
+
+/* --- the roster -------------------------------------------------------------- */
+
+test("three players, and each one plays a different game", () => {
+  // §4 iteration 5's "done when", made checkable. A roster where two names
+  // choose the same card is what dropped Valerio: iteration 2 measured him and
+  // Franco agreeing on 99% of choices, and a table cannot carry two names for
+  // one player.
+  //
+  // Counted over dealt positions with more than one legal card, because a
+  // forced move is not a temperament: about half of all decisions in this game
+  // have one legal card, and counting those buries the difference under the
+  // follow-suit rule.
+  const P3 = rollProfiles(rngSeed(1));
+  assert.deepEqual(Object.keys(P3).sort(), ["Franco", "Graziano", "Piero"]);
+
+  const pairs = [["Franco", "Graziano"], ["Franco", "Piero"], ["Graziano", "Piero"]];
+  const differ = Object.fromEntries(pairs.map(p => [p.join(" vs "), 0]));
+  let decisions = 0;
+
+  for (let seed = 1; seed <= 8; seed++){
+    const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rngSeed(seed));
+    while (!state.over){
+      const who = state.deveGiocare;
+      const led = who === state.perPrimo ? null : state.played[state.perPrimo];
+      if (mosseLegali(state.hands[who], led).length > 1){
+        decisions++;
+        const chose = Object.fromEntries(Object.keys(P3).map(k => [k, compGioca(state, P3[k])]));
+        for (const [a, b] of pairs) if (chose[a] !== chose[b]) differ[`${a} vs ${b}`]++;
+      }
+      gioca(state, who, compGioca(state, P3.Franco));
+    }
+  }
+
+  // The floor is 5%, against measured values of about 10% and 31% on ten times
+  // this many deals. It is a floor against sameness, not a target: what the
+  // roster is worth is measured by tools/selfplay.mjs --differ, not here.
+  for (const [pair, count] of Object.entries(differ))
+    assert.ok(count / decisions >= 0.05,
+      `${pair} choose the same card ${(100 * (1 - count / decisions)).toFixed(1)}% of the time: ` +
+      `that is one player with two names`);
+});
+
+test("Piero is rolled once per session, and the same roll twice is the same Piero", () => {
+  // The 1997 behaviour §0 keeps: SetProfiles ran from FormCreate. Two sessions
+  // get two Pieros; one seed gets one Piero, which is what makes the fixture
+  // and these tests possible at all.
+  const a = rollProfiles(rngSeed(1)).Piero;
+  const b = rollProfiles(rngSeed(1)).Piero;
+  const c = rollProfiles(rngSeed(2)).Piero;
+  assert.deepEqual(a, b, "the same seed has to give the same Piero");
+  assert.notDeepEqual(a, c, "two sessions have to give two Pieros");
+
+  // And every Piero is still playing Tressette: the ranges are what keeps a
+  // rolled player off the floor, and the liscio bonus is the one that matters —
+  // below about 7 the win rate against greedy-take falls off a cliff.
+  for (const seed of [1, 2, 3, 17, 99, 1234]){
+    const P = rollProfiles(rngSeed(seed)).Piero;
+    assert.ok(P.LEAD_LISCIO_BONUS >= 7, `seed ${seed}: a Piero with nothing to lead with`);
+    assert.equal(Object.keys(P).length, WEIGHT_KEYS.length);
+    for (const key of WEIGHT_KEYS) assert.ok(Number.isFinite(P[key]), `${key} is not a number`);
+  }
 });

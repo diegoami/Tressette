@@ -24,7 +24,7 @@
  *    rows drift apart until the table stops reading as one surface. Each of
  *    those shipped once. They are assertions now.
  *
- * 3. DEAL — one whole deal against Valerio, played through the fan by tapping,
+ * 3. DEAL — one whole deal against the house opponent, played through the fan by tapping,
  *    at one viewport in one deck, then a second deal abandoned through the
  *    confirm. It asserts the game can be finished, recorded and walked away
  *    from, not how it looks.
@@ -161,7 +161,7 @@ const SCREENS = [
         const now = Date.now();
         localStorage.setItem('tressette.history', JSON.stringify(
           Array.from({ length: 100 }, (_, i) => ({
-            t: now - i * 36e5, o: ['Valerio', 'Graziano', 'Piero', 'Franco'][i % 4],
+            t: now - i * 36e5, o: ['Franco', 'Graziano', 'Piero'][i % 3],
             d: 'Trevisane', y: 15 - (i % 16), a: i % 16 }))));
       });
       await p.click('#play');
@@ -174,7 +174,7 @@ const SCREENS = [
       // the game.
       await p.evaluate(() => {
         localStorage.setItem('tressette.history', JSON.stringify(
-          [null, 7, { o: 'Valerio' }, { t: Date.now(), o: 'Valerio', d: 'Trevisane', y: 6, a: 5 }]));
+          [null, 7, { o: 'Franco' }, { t: Date.now(), o: 'Franco', d: 'Trevisane', y: 6, a: 5 }]));
       });
       await p.click('#play');
       await p.click('#btnHistory');
@@ -640,7 +640,7 @@ async function checkTable(browser, only, inflate) {
 
 /* ---- pass 3: a whole deal, through the table ------------------------------- */
 
-// Iteration 3 is done when a full deal can be played against Valerio, and that
+// Iteration 3 is done when a full deal can be played against the opponent, and that
 // is a wiring claim the two passes above cannot make: they measure a table that
 // has just been dealt. This plays one deal the way a player does — tap the
 // strip to raise a card, tap the raised card to play it, twenty times — and
@@ -794,7 +794,7 @@ async function checkDeal(browser) {
     issues.push(`only ${plays} of 20 cards could be played`);
     thrown.forEach(t => issues.push(`the page threw: ${t}`));
     await page.close();
-    console.log(`  FAIL  ${plays} cards played against Valerio, then the deal stopped`);
+    console.log(`  FAIL  ${plays} cards played against Franco, then the deal stopped`);
     issues.forEach(i => console.log(`        ${i}`));
     return 1;
   }
@@ -931,7 +931,7 @@ async function checkDeal(browser) {
   await page.close();
 
   console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${plays} cards played against ` +
-              `Valerio, ${end.tricks} tricks — ${end.line || 'no result'}, ` +
+              `Franco, ${end.tricks} tricks — ${end.line || 'no result'}, ` +
               `then one thrown away and one walked out of`);
   issues.forEach(i => console.log(`        ${i}`));
   return issues.length ? 1 : 0;

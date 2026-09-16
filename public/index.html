@@ -942,7 +942,7 @@ button.card:disabled{ cursor: default; }
       <div class="plate" id="plateOpp">
         <span class="turn-dot"></span>
         <span>
-          <span class="plate__who" id="oppName">Valerio</span>
+          <span class="plate__who" id="oppName">Franco</span>
           <span class="plate__role">avversario</span>
         </span>
         <span class="plate__score" id="oppScore">0</span>
@@ -1193,11 +1193,13 @@ const nomeDi = card => `${NOMI[card.n - 1]} di ${SUITS[card.s]}`;
 
 const PROFILES = rollProfiles(Math.random);   // §3.2: the page rolls, the engine does not
 
-// One line each, in the same shape as Discola's. The other three arrive with
-// their weights in iteration 5, and the chips are built from PROFILES, so they
-// appear here the moment the engine has them.
+// One line each, in the same shape as Discola's, and each one says something a
+// player can check across a few deals. The chips are built from PROFILES, so
+// this map and the engine's roster stay in step.
 const DOSSIER = {
-  Valerio: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte."
+  Franco: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte.",
+  Graziano: "Sciolto e veloce. Tira fuori le carte grosse presto e spende volentieri un controllo per prendere: gioca diverso da Franco una volta su dieci, e lo batti un po' più spesso.",
+  Piero: "Si tira i pesi a caso a ogni sessione, come nel '97. Non giochi mai due volte contro lo stesso Piero."
 };
 
 const state = {
@@ -1210,7 +1212,7 @@ const state = {
   // Tricks taken, counted by the table as it sweeps them: the engine scores
   // terzi and has no reason to count prese, and the result's note does.
   prese: [0, 0],
-  opponent: "Valerio", deck: "Trevisane", felt: "#1e5140",
+  opponent: "Franco", deck: "Trevisane", felt: "#1e5140",
   speed: 900, showPoints: true, sound: true
 };
 
@@ -1963,7 +1965,7 @@ function boot(){
   state.sound = saved.sound !== false;
   el.soundSel.checked = state.sound;
 
-  selectOpponent(PROFILES[saved.opponent] ? saved.opponent : "Valerio");
+  selectOpponent(PROFILES[saved.opponent] ? saved.opponent : "Franco");
 
   // Nothing is dealt yet: you pick an opponent and a deck first.
   show("start");

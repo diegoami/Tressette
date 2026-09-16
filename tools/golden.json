@@ -1,0 +1,197 @@
+{
+ "profile": {
+  "LEAD_SURE_BONUS": 4,
+  "LEAD_LISCIO_BONUS": 12,
+  "LEAD_LONG_SUIT": 1,
+  "LEAD_ACE_EXPOSED_PENALTY": 3,
+  "LEAD_CONTROL_PENALTY": 2.5,
+  "LEAD_INTO_VOID_PENALTY": -4,
+  "TAKE_TERZI_WEIGHT": 1.5,
+  "GIVE_TERZI_WEIGHT": 1.5,
+  "SPEND_CONTROL_PENALTY": 2,
+  "DISCARD_GUARD_PENALTY": 1.5,
+  "LATE_FACTOR": 1
+ },
+ "deals": [
+  {
+   "seed": 1,
+   "lead": "A",
+   "score": [
+    1,
+    10
+   ],
+   "plays": "B7s A5s B7c A4b B6c A2c A5d B7d B3c A4d B5c A6b BFc A4c B4s AFs A6d B2d B7b ARb AAd B6s ARd B2s A3d BRs AFd BCc ACd B3s A2b B5b A3b BAb AFb BCs ACb BAc AAs BRc"
+  },
+  {
+   "seed": 2,
+   "lead": "A",
+   "score": [
+    6,
+    5
+   ],
+   "plays": "A7s BCs B7b A7d B6b A4b B5d A3d A6c B4c A5s B4s A6d BAd B6s AAs A7c B2c BFb A5b B2b A5c BCb A4d BAb AFc BRb AFs B3b A2s B3c ACc BCd A2d AAc BRc A3s BRd ARs BFd"
+  },
+  {
+   "seed": 3,
+   "lead": "A",
+   "score": [
+    6,
+    5
+   ],
+   "plays": "B4b A6b A4s B7s B6c AAc A5d B7d B5s ARs A5c BCc B4d AAd A6d B5b A4c B3c BFb A7b B2d AFd BAb A6s B2b A7c BRb ACs B3b ACd BCb AFc B3d ARd B2c ARc BAs A3s A2s BFs"
+  },
+  {
+   "seed": 4,
+   "lead": "A",
+   "score": [
+    1,
+    10
+   ],
+   "plays": "A6d BRd B4b A6b A5d B2d B5b A7c B5s AAs A6c BCc B4s AFs A4c B5c B7s A6s B4d AAd A7d B3d B7b AFb A3c BFc AAc BRb ARc B2s A2c BCs AFd BRs ACd B2b A3s BAb A3b BCb"
+  },
+  {
+   "seed": 5,
+   "lead": "A",
+   "score": [
+    4,
+    7
+   ],
+   "plays": "B4c A5c A5d BRd B7c A6s B4b ARb A6d B7d B5b A6b A7b BCb B6c A3c A7s BCs B4s AAs A5s BFs BCc A3d BAc A3s BRc A2d BFc A2b B4d AAd AAb BFb AFd B2s A3b BRs ACd B2c"
+  },
+  {
+   "seed": 6,
+   "lead": "A",
+   "score": [
+    1,
+    10
+   ],
+   "plays": "A5c BCc B7b A4c B5b A6c B6b A7c B4d ARd A5s BFs B7d ACd A4b BCb B6d A3s B5d A6s B4s AAs AAc B7s A3c B3d A2c B3b ARc BCs AFc BFd A2s BRb ARs BFb AAb BAd A2b B2d"
+  },
+  {
+   "seed": 7,
+   "lead": "B",
+   "score": [
+    12,
+    2
+   ],
+   "plays": "B4b ARb A5s BFs B5b ACb A4s B7s B7d ARd A7c B4c A5d BCd B7b A6b B5c AAc A6s B6d A6c BFc B3b A4d B2b A3d BAb ARs BFb A2s B2d ARc BAd ACc BFd A3s B2c AAs B3c ACs"
+  },
+  {
+   "seed": 8,
+   "lead": "A",
+   "score": [
+    7,
+    4
+   ],
+   "plays": "A5c BAc B4b ACb A7s B7b A4s B5d A4d BAd B6b ARb A6d BRd B7c AFc A5b BAb B6s AAs A5s BRs B7d ACd A6c BRc B2b AFb B3c A4c B3d A2d BFd ACs B3b A2c BCc AFs B2s A3s"
+  },
+  {
+   "seed": 9,
+   "lead": "B",
+   "score": [
+    9,
+    2
+   ],
+   "plays": "B7c AAc A4s BRs B6b AFb A5c B4c A6s BFs B7d AAd A6c BFc B7b A5b B5d ACd A7s B5s A4b BCb B6d A4d B3c ARc B2c ACc B3b AAb BRb A3d B2b A2s BFd A3s B2d AAs BRd ACs"
+  },
+  {
+   "seed": 10,
+   "lead": "B",
+   "score": [
+    9,
+    2
+   ],
+   "plays": "A6d B5b A5d B6s A5s B2s B4b A5c B7b A4c B4s ACs A3s B4d A3d B7d A6c BRc B7c AAc A7s BAs B3b A6b B2b AAb BRb A2c BFb ACc BCb ACd B3c ARd BFc AFs B2d AAd BRs AFd"
+  },
+  {
+   "seed": 11,
+   "lead": "A",
+   "score": [
+    6,
+    5
+   ],
+   "plays": "B6b A4b B6d ARd A6c B7b A7c B6s A5d BAd B5s AFs A5c BRc B7s A3s A4c BFc B3b A5b B2s A4s BFb A2b A4d BFd BCb A7d BRb A3d BAb A3c B2d ACd B2c ACc BRs AAs AAc BCs"
+  },
+  {
+   "seed": 12,
+   "lead": "A",
+   "score": [
+    2,
+    9
+   ],
+   "plays": "A4d BCd B4b ARb A6s BFs B7c ACc A4c BAc B6b A7b A5s BCs B5c ARc A7d BRd B5b AFb A4s B7s B5d AAd A6c BFc B6d AFd A3d B2c A2d B2b A3b BCb A3s B2s ARs B3c AAs BAb"
+  },
+  {
+   "seed": 13,
+   "lead": "A",
+   "score": [
+    4,
+    10
+   ],
+   "plays": "B5s AFs A5b BFb B6s A4s B6d A7d A6b B4b A6c BAc B7s A4c BCs A4d BRs A7b BAs A7c B5c AFc A5d BAd BRc A3c A3d BFd AAb B2c A2b BCc A3b BCd ARb BRd A3s B2s ACb B2d"
+  },
+  {
+   "seed": 14,
+   "lead": "B",
+   "score": [
+    7,
+    4
+   ],
+   "plays": "A4d BRd B6b ARb A7s B5s A6d B5d A5b BFb B6c AAc A4s BRs B7b AAb A5c BCc B4c ARc A7c BFc B7d ACd A3d B2d A3s B6s A3b B4b ACs B2s B2b ACb BAd AFd B2c AAs B3c AFs"
+  },
+  {
+   "seed": 15,
+   "lead": "A",
+   "score": [
+    5,
+    6
+   ],
+   "plays": "B5c A4d B4c A7s B7b A4b B6s AAs A5s BCs B5d AFd A5b BAb B6d A7d A4s B2s B7c ARc A6b BRb B3c A6c B3d A2d BRd A3s BAd ACb BCd ARs BCc A2c A2b BFb A3b BFc AFs BAc"
+  },
+  {
+   "seed": 16,
+   "lead": "B",
+   "score": [
+    9,
+    5
+   ],
+   "plays": "A6b BCb B5s AFs A4b B3b B4s A7s A6c BRc B4d ARd A4c B7d A7c B5d A7b B5b A5c B3c B6d AAd AAc B2s AFc B3s ACc B2b A2c B3d A6s BAs BCs A2d BRs ARb BCd AAb BFd AFb"
+  },
+  {
+   "seed": 17,
+   "lead": "A",
+   "score": [
+    2,
+    9
+   ],
+   "plays": "B6b ARb A5c BFc B6c AAc A5b BAb B7c ARc A7b BFb B4s A6s A5d BRd B7s A3s A4d B6d B5s AFs A7d BFd B4c ACc A3c B2c ACb B4b A3b B3d A2b BRs ACd BCs AAd BAs A2d B2s"
+  },
+  {
+   "seed": 18,
+   "lead": "B",
+   "score": [
+    10,
+    1
+   ],
+   "plays": "A5b B7b B7s A6s B3b A6b B3d A4d B3c A4c B5c A2c A4b BRb B5d ARd A5s BAs B7d A6d B4s A3s A7c BAc BAd A6c BCd AFb B2d A2s BFd ACc BCs ACb BFs ARc BFc A2b BRs AAb"
+  },
+  {
+   "seed": 19,
+   "lead": "A",
+   "score": [
+    11,
+    3
+   ],
+   "plays": "B7d ARd A7s BAs B6d A5d B5b A4b B4c ACc A5s B2s B4d A2d A7b BAb B6c ARc A6b BCb B6s AFs A4s B3s BFc A7c B3c A5c BAc A2b B2c A3d BAd ACs BCd AFb BFd ARs BRb A3b"
+  },
+  {
+   "seed": 20,
+   "lead": "A",
+   "score": [
+    1,
+    10
+   ],
+   "plays": "A7c BCc B5b A4b B7b A3b A6s BFs B6d A4d B5d AFd A7s B6b A4s B5s B7d A3d A5c BFc B6c AAc ARb BFb A2b B4c AAb BCd ACb B3s A2s B3c ARs B2d ACs B2c ARc BAd AAs BRd"
+  }
+ ]
+}

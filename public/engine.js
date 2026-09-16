@@ -251,6 +251,206 @@ function vincitore(state){
   return basso > alto ? BASSO : ALTO;
 }
 
+/* --- what the player to move knows ------------------------------------------ */
+
+// §3.4 derives the opponent's knowledge from `seen`, which is kept from ALTO's
+// side of the table. The harness seats a profile in both chairs, so this is
+// computed per seat instead, from facts either player can see: my own hand,
+// and every card that has been put on the table. For ALTO it is the same set
+// `seen` gives — 40 minus seen equals 40 minus my hand minus what has been
+// played — and for BASSO it is the set `seen` would give if it were kept from
+// the other side.
+//
+// A card still in the tallone is unknown, so it counts as outstanding. That is
+// the conservative side to be on: sure() must never call a card safe that can
+// still be beaten, and it is better to think a card might be against you than
+// to lead into it.
+function fuori(state, me){
+  const still = [];
+  for (let s = 0; s < 4; s++) still.push(new Array(11).fill(true));
+
+  const held = new Set();
+  for (const who of [BASSO, ALTO])
+    for (const c of state.hands[who]) if (c) held.add(c);
+
+  for (let i = 0; i < state.next; i++){          // dealt or drawn, so seen by someone
+    const c = state.cards[i];
+    if (!held.has(c)) still[c.s][c.n] = false;   // no longer held: it was played
+  }
+  for (const c of state.hands[me]) if (c) still[c.s][c.n] = false;   // and mine are mine
+  return still;
+}
+
+// Which of the 3, the 2 and the asso of a suit are still against me — the
+// cards that decide who captures the asso.
+function controlli(still, s){
+  return [3, 2, 1].filter(n => still[s][n]);
+}
+
+// Nothing outstanding in its suit outranks it, so leading it wins the trick.
+// Tested over the whole rank order, not over the three control cards: once the
+// 3, the 2 and the asso of bastoni are gone the Re of bastoni is sure and the
+// 7 of bastoni is not, because the Re, the Cavallo and the Fante still beat it.
+function sicura(still, card){
+  for (let n = 1; n <= 10; n++)
+    if (still[card.s][n] && rango(n) > rango(card.n)) return false;
+  return true;
+}
+
+/* --- the opponent ----------------------------------------------------------- */
+
+// §3.4's eleven, in the order the settings sheet discloses them.
+const WEIGHT_KEYS = [
+  "LEAD_SURE_BONUS", "LEAD_LISCIO_BONUS", "LEAD_LONG_SUIT",
+  "LEAD_ACE_EXPOSED_PENALTY", "LEAD_CONTROL_PENALTY", "LEAD_INTO_VOID_PENALTY",
+  "TAKE_TERZI_WEIGHT", "GIVE_TERZI_WEIGHT", "SPEND_CONTROL_PENALTY",
+  "DISCARD_GUARD_PENALTY", "LATE_FACTOR"
+];
+
+function weights(values){
+  const P = {};
+  WEIGHT_KEYS.forEach((key, i) => { P[key] = values[i]; });
+  return P;
+}
+
+// Iteration 2 tunes one profile. Graziano, Franco and Piero are iteration 5,
+// which is also where `rng` starts doing something: Piero is rolled from it,
+// once per session, as in Discola.
+function rollProfiles(rng){
+  return {
+    // Tuned by coordinate ascent on seeds 1..250 and chosen between candidates
+    // on seeds 7001..8000, which the tuner never saw. LEAD_INTO_VOID_PENALTY is
+    // negative on purpose: see below.
+    Valerio: weights([
+      //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+           4.0,   12.0,  1.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
+    ])
+  };
+}
+
+// The trick two cards make: does the follower take it, and what is it worth.
+function presa(ledCard, followCard){
+  return { leaderKeeps: !prende(followCard, ledCard),
+           terzi: terzi(ledCard.n) + terzi(followCard.n) };
+}
+
+// §3.4's last two tricks, played out exactly rather than scored. `mine` and
+// `theirs` are the cards still in hand; `led` is their card if they have
+// already led, null if I am leading. Returns my terzi across both tricks with
+// the ultima's 3 included.
+//
+// Their best reply is the one that minimises my total, which is the same as
+// the one that maximises theirs: the two sum to the four cards' terzi plus 3,
+// a constant, so there is nothing else for "best" to mean.
+function codaValore(mine, theirs, led){
+  const ultima = 3;
+
+  if (led !== null){                       // I follow, then the last trick is forced
+    const t19 = presa(led, mine[0]);
+    const iWon19 = !t19.leaderKeeps;
+    const myLast = mine[1], theirLast = theirs[0];
+    const t20 = iWon19 ? presa(myLast, theirLast) : presa(theirLast, myLast);
+    const iWon20 = iWon19 ? t20.leaderKeeps : !t20.leaderKeeps;
+    return (iWon19 ? t19.terzi : 0) + (iWon20 ? t20.terzi + ultima : 0);
+  }
+
+  const t19 = presa(mine[0], theirs[0]);   // I lead, they answer
+  const iWon19 = t19.leaderKeeps;
+  const myLast = mine[1], theirLast = theirs[1];
+  const t20 = iWon19 ? presa(myLast, theirLast) : presa(theirLast, myLast);
+  const iWon20 = iWon19 ? t20.leaderKeeps : !t20.leaderKeeps;
+  return (iWon19 ? t19.terzi : 0) + (iWon20 ? t20.terzi + ultima : 0);
+}
+
+function coda(state, me){
+  const them = me === BASSO ? ALTO : BASSO;
+  const mySlots = mosseLegali(state.hands[me],
+    me === state.perPrimo ? null : state.played[state.perPrimo]);
+  const theirCards = state.hands[them].filter(c => c !== null);
+  const led = me === state.perPrimo ? null : state.played[state.perPrimo];
+
+  let bestSlot = mySlots[0], bestValue = -Infinity;
+  for (const slot of mySlots){
+    const mine = [state.hands[me][slot],
+                  ...state.hands[me].filter((c, i) => c !== null && i !== slot)];
+    let value;
+    if (led !== null){
+      value = codaValore(mine, theirCards, led);
+    } else {
+      // Their reply is theirs to choose, so assume the worst one for me.
+      const replies = mosseLegali(state.hands[them], mine[0]);
+      value = Infinity;
+      for (const r of replies){
+        const theirs = [state.hands[them][r],
+                        ...state.hands[them].filter((c, i) => c !== null && i !== r)];
+        value = Math.min(value, codaValore(mine, theirs, null));
+      }
+    }
+    if (value > bestValue){ bestValue = value; bestSlot = slot; }   // ties to the lower slot
+  }
+  return bestSlot;
+}
+
+// §3.4. Score every legal card and play the highest, ties to the lowest slot —
+// except for the last two tricks, which are enumerated instead.
+function compGioca(state, P){
+  const me = state.deveGiocare;
+  const them = me === BASSO ? ALTO : BASSO;
+  const hand = state.hands[me];
+  const led = me === state.perPrimo ? null : state.played[state.perPrimo];
+  const slots = mosseLegali(hand, led);
+
+  if (state.tricks === 18) return coda(state, me);
+
+  const still = fuori(state, me);
+  const late = Math.min(1, state.tricks / 10);
+  const k = 1 + late * P.LATE_FACTOR;
+  const inSuit = s => hand.filter(c => c !== null && c.s === s).length;
+
+  let bestSlot = slots[0], bestScore = -Infinity;
+  for (const slot of slots){
+    const c = hand[slot];
+    const v = terzi(c.n);
+    let score = 0;
+
+    if (led === null){
+      if (sicura(still, c)) score += P.LEAD_SURE_BONUS * k;
+      // §3.4 indents the long-suit line under the liscio case, and the
+      // harness agrees with the indentation: applied to every card it is worth
+      // about a point and a half less against random-legal. Leading from length
+      // is a thing you do with a liscio; with a point card it just leads points.
+      if (v === 0){
+        score += P.LEAD_LISCIO_BONUS;
+        score += (inSuit(c.s) - 1) * P.LEAD_LONG_SUIT;
+      }
+      if (c.n === 1 && !sicura(still, c))
+        score -= P.LEAD_ACE_EXPOSED_PENALTY * controlli(still, c.s).filter(n => n !== 1).length;
+      if ((c.n === 3 || c.n === 2) && !sicura(still, c)) score -= P.LEAD_CONTROL_PENALTY * k;
+      // §3.4 wrote this as a penalty, reasoning that they discard for free.
+      // That is Briscola's reasoning: there, a void lets them trump. Here there
+      // is no trump, so a suit they cannot follow is a trick they cannot take —
+      // leading into it wins for certain. The weight tunes negative, which is
+      // the formula saying the same thing. Left as a penalty that happens to be
+      // negative rather than renamed, because §3.4 names the eleven and the
+      // settings sheet shows them.
+      if (state.voids[them][c.s]) score -= P.LEAD_INTO_VOID_PENALTY;
+    } else {
+      const takes = prende(c, led);
+      const L = terzi(led.n);
+      score = takes ? (L + v) * P.TAKE_TERZI_WEIGHT : -v * P.GIVE_TERZI_WEIGHT;
+      if (takes && (c.n === 3 || c.n === 2) && L + v < 3)
+        score -= P.SPEND_CONTROL_PENALTY * k;
+      // Discarding the only card that stands between an asso and a discard.
+      if (c.s !== led.s && c.n !== 1 && inSuit(c.s) === 2
+          && hand.some(x => x !== null && x.s === c.s && x.n === 1))
+        score -= P.DISCARD_GUARD_PENALTY * k;
+    }
+
+    if (score > bestScore){ bestScore = score; bestSlot = slot; }
+  }
+  return bestSlot;
+}
+
 /* --- the surface ------------------------------------------------------------ */
 
 // The page gets these from the classic script; Node's vm.runInThisContext does
@@ -259,5 +459,6 @@ Object.assign(globalThis, {
   SUITS, BASSO, ALTO,
   rango, terzi, buildDeck, mescola, rngSeed,
   prende, mosseLegali, accusi, puntiAccusi,
-  pesca, newDeal, gioca, scoreDeal, vincitore
+  pesca, newDeal, gioca, scoreDeal, vincitore,
+  WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura
 });

@@ -167,9 +167,9 @@ build, no bundler, no import syntax. Everything the page needs to open from a
 folder still holds.
 
 If the owner prefers the strict single file (decision 6), the harness instead
-reads `index.html`, slices the script between the `cards` banner and the
-`sound` banner, and runs that. It works; it is just a regex holding the tuner
-together.
+reads `public/index.html`, slices the script between the `cards` banner and
+the `sound` banner, and runs that. It works; it is just a regex holding the
+tuner together.
 
 ### 3.2 The engine (`engine.js`)
 

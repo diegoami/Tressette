@@ -250,12 +250,20 @@ button, select, input{ font: inherit; color: inherit; }
 /* A raised card lifts clear of the fan and shows its whole face: it is the
    selected state, and on a pointer it is the hover state too, so the second
    click is what a mouse user does anyway. Raising it above its neighbours
-   needs the stacking order as well as the transform. */
+   needs the stacking order as well as the transform.
+
+   The lift is 40% of a card and not the 18% it started at. Issue #6: at 18%
+   the card moved less than the width of the strip it came out of, so the
+   second tap read as a repeat of the first rather than as the confirmation it
+   is. The target was never the problem — z-index 3 frees the whole face — the
+   state was; so it lifts clear, brightens, and the line above the hand says
+   what the next tap will do. */
 .hand--you > .card{ z-index: 1; }
 .hand--you > .card[aria-pressed="true"]{
   z-index: 3;
-  transform: translateY(-18%);
-  box-shadow: 0 12px 20px rgba(0,0,0,.55), 0 0 0 2px var(--brass);
+  transform: translateY(-40%) scale(1.04);
+  box-shadow: 0 18px 30px rgba(0,0,0,.6), 0 0 0 2px var(--brass),
+              0 0 26px rgba(200,162,74,.38);
 }
 /* A card the follow-suit rule forbids. Dimmed and inert, so the rule is taught
    by the table rather than by an error message after the fact — but only while
@@ -288,6 +296,16 @@ button, select, input{ font: inherit; color: inherit; }
 .card[data-empty="true"]{
   background-image: none;
   box-shadow: inset 0 0 0 1px rgba(242,235,220,.11);
+  /* An empty slot is the shape of a card that has been played, and nothing
+     else: it must not take a tap. Issue #7 — the hand keeps its holes all
+     deal, and each slot overlaps the one before it, so an empty slot sits on
+     top of the card to its left and swallowed every tap aimed at the part of
+     that card it covers. As the hand thinned the cards looked more and more
+     reachable and were less and less tappable: a card with empty slots to its
+     right looks entirely free, and could only be touched on its leftmost
+     strip. A disabled button eats the click rather than passing it on, so this
+     has to be pointer-events, not the disabled attribute. */
+  pointer-events: none;
 }
 
 /* a card you can actually play */
@@ -1351,8 +1369,11 @@ function render(){
   el.oppScore.hidden = !state.showPoints;
   el.youScore.hidden = !state.showPoints;
 
+  // The strip says what the next tap does, not just which card is up: the two
+  // taps are one decision and one confirmation, and the line is where that is
+  // said. It matches the card's aria-label, which has always read this way.
   const sel = state.selected !== null ? state.hands[BASSO][state.selected] : null;
-  el.selName.textContent = sel ? nomeDi(sel) : "";
+  el.selName.textContent = sel ? `Gioca il ${nomeDi(sel)}` : "";
   el.selName.hidden = !sel;
 
   el.plateYou.classList.toggle("plate--turn", yourTurn);

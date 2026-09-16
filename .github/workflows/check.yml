@@ -1,14 +1,13 @@
 # The engine tests, on every push and every pull request. There is nothing to
 # install: the engine and its tests have no dependencies, which is the point.
 #
-# The UI check gains a second job in iteration 3, when there is a table to
-# check; it needs playwright-core and a Chromium, and it is the one thing here
-# that will not be dependency-free.
+# The UI check is the second job. It is the one thing here that is not
+# dependency-free: it needs playwright-core and a Chromium.
 name: check
 
 # push is filtered to main: without the filter every commit on a pull request
-# branch runs the suite twice, once for the push and once for the pull request.
-# Harmless now, but iteration 3 adds a Chromium job to this file.
+# branch runs the suite twice, once for the push and once for the pull request,
+# and one of those runs downloads a Chromium.
 on:
   push:
     branches: [main]
@@ -25,3 +24,18 @@ jobs:
       # Not `--test tools/`: Node 22 reads a bare directory as a module path and
       # fails with MODULE_NOT_FOUND. A glob is what the current LTS discovers.
       - run: node --test 'tools/**/*.test.mjs'
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      # playwright-core is deliberately not committed — the game has no
+      # dependencies and a package.json would say otherwise — so it is
+      # installed here rather than restored from a lockfile. --with-deps is
+      # what makes Chromium start on a bare runner.
+      - run: npm i --no-save playwright-core
+      - run: npx playwright-core install --with-deps chromium
+      - run: node tools/check_ui.mjs

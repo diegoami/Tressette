@@ -17,10 +17,8 @@ clone it beside this repo if it is not already there.
 node tools/check_ui.mjs
 ```
 
-Not optional, and not only when something looks wrong — **from iteration 3 on,
-when `public/index.html` has a table**. Until then the check and its skill sit here
-dormant: they drive screens that do not exist yet, so the check fails, and
-nothing should be softened to make it pass.
+Not optional, and not only when something looks wrong. It runs in CI on every
+pull request as well, and a red check does not merge.
 
 Every UI defect Discola shipped was invisible in the diff and threw no error:
 cards overlapping the hand, the player's own hand pushed below the fold, the
@@ -30,8 +28,7 @@ game forks that table, so it inherits every one of those ways to fail, plus the
 fan's own. Reading the diff catches none of them; the check catches all of
 them.
 
-The `ui-check` skill explains what it covers, what is dormant, and how to read
-a failure.
+The `ui-check` skill explains what it covers and how to read a failure.
 
 ## The card size is a budget, and it has two terms
 
@@ -54,6 +51,11 @@ side by side on a phone, so the hand is a fan, each card showing a strip of
 makes a card unreachable, and a misplay costs the deal. That is why a tap
 raises a card and a second tap plays it, and why the fan assertions in §3.7 of
 `PLAN.md` are written against a broken fan before the good one.
+
+Anything that appears on the table while a deal is running — the line that
+names the raised card, a declaration — is in the budget too, and is in the flow
+whether or not it has something to say. A row that costs nothing while empty
+moves every card below it the moment it fills.
 
 ## The engine is ours, and then it is frozen
 

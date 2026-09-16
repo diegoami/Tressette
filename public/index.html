@@ -9,9 +9,10 @@
 
 <style>
 /* ---------------------------------------------------------------------------
-   Discola — a card table, lit from above.
-   One committed visual world (green baize under warm light), so no theme swap:
-   the felt colour is a player control, inherited from the original's Colore menu.
+   Tressette — a card table, lit from above. Forked from Discola's sheet, and
+   the same committed visual world: green baize under warm light, so no theme
+   swap. The felt becomes a player control with the settings sheet in iteration
+   4; until then it is what these tokens say it is.
    Every colour is painted explicitly so the page holds on any host ground.
    --------------------------------------------------------------------------- */
 :root{
@@ -48,9 +49,17 @@
   --slack: 8px;                              /* never land exactly on zero   */
   --pad-inline: clamp(16px, 3vw, 2rem);      /* .table, left and right        */
   --rows: 3;                                 /* card rows down the table     */
+  /* The line above your hand that names the raised card and carries a
+     declaration. It is always in flow and always this tall, empty or not:
+     while it was `hidden` until it had something to say, showing it moved
+     every card below it down 31px — past the fold in landscape, where there
+     is no spare height to absorb it. Reserving the space costs those pixels
+     honestly, in the budget, and it rides inside your seat rather than as a
+     table row of its own so that it costs no extra row gap. */
+  --say: calc(var(--t-label) * 1.5 + 4px);
   --chrome: calc(var(--topbar) + 2*var(--pad-block) + 2*var(--step)
                  + 2*var(--trick-pad) + var(--extra-gap) + var(--plates)
-                 + var(--slack));
+                 + var(--say) + var(--slack));
   /* §3.7: two terms, and no vw cap. Discola's clamp carried 9vw in landscape
      and 22vw in portrait; those numbers were chosen while the page had no
      viewport meta and every phone reported a phantom 980px, and here the width
@@ -278,10 +287,25 @@ button.card:not(:disabled):focus-visible{
 }
 button.card:disabled{ cursor: default; }
 
-/* The transient line for a declaration, and the name of the raised card. */
+/* The strip that holds the transient line for a declaration and the name of
+   the raised card. It spans your seat, directly above the cards it talks
+   about. The strip itself never leaves the flow — see --say — so neither line
+   can move the cards; only its contents come and go. Its row gap is zero
+   because --say already carries the 4px that separates it from the hand. */
+.seat--you{ row-gap: 0; }
+.say{
+  grid-column: 1 / -1;
+  height: var(--say);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5ch;
+  overflow: hidden;
+}
 .announce, .sel-name{
   margin: 0;
   text-align: center;
+  line-height: 1.5;
   font-family: var(--font-label);
   text-transform: uppercase;
   letter-spacing: .1em;
@@ -850,10 +874,11 @@ button.card:disabled{ cursor: default; }
       </div>
     </section>
 
-    <p class="announce" id="announce" hidden></p>
-    <p class="sel-name" id="selName" hidden></p>
-
     <section class="seat seat--you">
+      <div class="say">
+        <p class="announce" id="announce" hidden></p>
+        <p class="sel-name" id="selName" hidden></p>
+      </div>
       <div class="hand hand--you" id="youHand"></div>
       <div class="plate" id="plateYou">
         <span class="turn-dot"></span>

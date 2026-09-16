@@ -696,7 +696,7 @@ committed.
 merely legal is no fun, and one that is only strong is no fun either. Budget
 a second day and play it yourself before moving on.
 
-### 3 — The table (2 days)
+### 3 — The table (2 days) — done
 
 Fork Discola's CSS and table markup **from a named commit, `22c4b9c` or
 later**, and write the commit into the pull request. Before forking, check
@@ -722,6 +722,42 @@ it here, so no pull request can merge with a layout the check rejects.
 
 **Done when** a full deal can be played against Valerio and both jobs are
 green.
+
+**What the fan assertions caught, which is not what they were written for.**
+They were written against two deliberate breaks — `--overlap: .08`, which
+collapses the strips to 5px, and a `--cw` with the width term removed, which
+runs the fan up to 227px past the table's edge — and both breaks fail loudly at
+every viewport in every deck. The defect they actually found was in the good
+page: the line that names the raised card was `hidden` until it had something
+to say, so it took no space while empty, and raising a card added a row and a
+row gap and moved every card below it down 31px. In landscape there is no spare
+height to absorb that, so the card you were about to play sat 5 to 10px below
+the fold at five of the nineteen viewports. Nothing threw, nothing looked wrong
+in the diff, and the raised state is exactly the state a player is in when they
+are about to commit.
+
+The fix is the budget's own rule applied to a line of text: `--say` is derived
+from the type it reserves room for, it enters `--chrome`, and the strip is
+always in flow. It rides inside your seat rather than as a table row of its
+own, which is worth 20px of inflated row gap — enough that 980x385 with the
+spacing inflated still fits. Three assertions came out of it: the strip is
+never zero-height, its contents are never clipped by it, and the strip counts
+as content when the drift metric measures the gaps between rows.
+
+**Two calibrations worth keeping.** A 24px absolute floor for the fan's step is
+wrong on its own: at 980x385 with the spacing inflated the card sits on its
+32px clamp floor, and 70% of a 32px card is a 22px strip — a good fan on a
+small card, not a collapsed one. The floor is `min(24px, .4 of a card)`, so the
+second term asks what share of the card shows: .08 of it is the arithmetic gone
+wrong at any size, .7 of it is a small screen. And the two assertions for "the
+last card is whole" and "the fan stays inside the table" were the same
+subtraction on the right-hand edge, reporting every defect twice; they are one
+measurement per edge now.
+
+The check gained a third pass as well. Both of its passes measure a table that
+has just been dealt, and iteration 3 is done when a deal can be *played*, so
+the third plays one: twenty cards, tapped through the fan the way a player
+taps them, failing if the deal never reaches a result or if anything throws.
 
 ### 4 — Result and sheets (1 day)
 
@@ -928,7 +964,7 @@ iteration that forks checks for movement first.
 | Forked | From Discola at | By |
 |---|---|---|
 | decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
-| CSS and table markup | to be recorded | iteration 3 |
+| CSS and table markup | `22c4b9c`, still Discola's head when iteration 3 forked | iteration 3 |
 
 ### 7.6 The owner's part
 

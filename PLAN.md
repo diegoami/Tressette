@@ -328,6 +328,15 @@ near 70ms instead of near two seconds — a hang of that length once a deal,
 worse on a phone, is not a trade this game should make. It is a good trade
 honestly argued, which is not what it was when the numbers were guessed.
 
+**`CODA_FROM` and the weight vector are coupled**, which is worth knowing
+before anyone moves either. Every trick the search gains or gives back
+revalues the weights that were doing work there, silently and without anyone
+touching them. Two of the eleven moved when the search took the last seven:
+`LEAD_SURE_BONUS` went from changing 15.3% of late leads to 2.9%, and
+`LEAD_LONG_SUIT` went from neutral to about two points harmful and was
+re-tuned to 0. So moving `CODA_FROM` means re-measuring the weights, not
+just re-recording the fixture.
+
 **The named next move on the formula**, while §3.4's contract still allows
 one: the search is plain minimax with a transposition table, no move
 ordering and no alpha-beta. Alpha-beta on a tree this shape typically buys
@@ -336,8 +345,6 @@ decision inside the budget and put `CODA_FROM = 12` — and most of those four
 points — within reach without the hang. That is a lead, not a measurement.
 It belongs before v1.0 freezes the fixture rather than after.
 
-The search is plain minimax over the remaining tricks with a
-transposition table, the ultima's 3 terzi included, ties to the lower slot.
 "Their best reply" is well defined because the two totals over the rest of the
 deal add up to a constant: the terzi still in play plus the ultima's 3. So
 the reply that maximises theirs is the one that minimises the
@@ -349,9 +356,8 @@ one it thinks it is, and it falls back to the formula rather than answering
 confidently from a deck that does not add up.
 
 What this costs is stated in §1, and was measured before it was chosen: the
-four opponents play these seven tricks alike. What it buys, against the same
-baselines, is 79.8% → 86.8% against random-legal and 74.5% → 85.7% against
-greedy-take.
+four opponents play these seven tricks alike. What it buys, against the same baselines and on seeds no tuner saw, is 79.8%
+to 86.7% against random-legal and 74.5% to 86.7% against greedy-take.
 
 The case that shows why the formula cannot do it: the opponent holds the Re di
 coppe and the Fante di spade and leads; the human holds the Fante di coppe and
@@ -412,9 +418,9 @@ instead. 95% was unreachable by anything: a player that cheats outright wins
 82.5%. 70% turned out to be a real bar — a first tuning pass failed it and a
 second cleared it — and then the endgame search cleared it by so much that it
 stopped being one. The numbers above sit about two points under what iteration
-2 measured on seeds no tuner had seen — two points of margin against
-random-legal and nearly six against greedy-take, rather than a target fitted
-to the result. A small suite of
+2 measured on seeds no tuner had seen — 86.7% against both baselines, so
+nearly two points of margin on one bar and nearly seven on the other, rather
+than a target fitted to the result. A small suite of
 *trap positions* asserts the obvious plays directly, because a win rate can
 hide a stupid habit: an asso on the table and the 3 in hand; forced to follow
 with only an asso and a figure; the Re and Fante position above, where the

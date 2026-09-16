@@ -696,7 +696,7 @@ committed.
 merely legal is no fun, and one that is only strong is no fun either. Budget
 a second day and play it yourself before moving on.
 
-### 3 — The table (2 days)
+### 3 — The table (2 days) — done
 
 Fork Discola's CSS and table markup **from a named commit, `22c4b9c` or
 later**, and write the commit into the pull request. Before forking, check
@@ -722,6 +722,98 @@ it here, so no pull request can merge with a layout the check rejects.
 
 **Done when** a full deal can be played against Valerio and both jobs are
 green.
+
+**What the fan assertions caught, which is not what they were written for.**
+They were written against two deliberate breaks — `--overlap: .08`, which
+collapses the strips to 5px, and a `--cw` with the width term removed, which
+runs the fan up to 227px past the table's edge. The first fails all 24 table
+rows; the second fails the ten portrait ones and no landscape one, and must,
+because the width term cannot bind on a screen where the height term does. The
+defect they actually found was in the good page: the line that names the raised card was `hidden` until it had something
+to say, so it took no space while empty, and raising a card added a row and a
+row gap and moved every card below it down 31px. In landscape there is no spare
+height to absorb that, so the card you were about to play sat 5 to 10px below
+the fold at five of the nineteen viewports. Nothing threw, nothing looked wrong
+in the diff, and the raised state is exactly the state a player is in when they
+are about to commit.
+
+The fix is the budget's own rule applied to a line of text: `--say` is derived
+from the type it reserves room for, it enters `--chrome`, and the strip is
+always in flow. It rides inside your seat rather than as a table row of its
+own, which is worth 20px of inflated row gap — enough that 980x385 with the
+spacing inflated still fits. Three assertions came out of it: the strip is
+never zero-height, its contents are never clipped by it, and the strip counts
+as content when the drift metric measures the gaps between rows.
+
+**Two calibrations worth keeping.** A 24px absolute floor for the fan's step is
+wrong on its own: at 980x385 with the spacing inflated the card sits on its
+32px clamp floor, and 70% of a 32px card is a 22px strip — a good fan on a
+small card, not a collapsed one. The floor is `min(24px, .4 of a card)`, so the
+second term asks what share of the card shows: .08 of it is the arithmetic gone
+wrong at any size, .7 of it is a small screen. And the two assertions for "the
+last card is whole" and "the fan stays inside the table" were the same
+subtraction on the right-hand edge, reporting every defect twice; they are one
+measurement per edge now.
+
+The check gained a third pass as well. Both of its passes measure a table that
+has just been dealt, and iteration 3 is done when a deal can be *played*, so
+the third plays one: twenty cards, tapped through the fan the way a player
+taps them, failing if the deal never reaches a result or if anything throws.
+
+**What the review found, and the rule that comes out of it.** Every new
+assertion fired when its defect was constructed — and the review still found
+four defects in the page, three of them serious. All three were in **states the
+check never rendered**:
+
+- *A completed trick was never drawn.* `gioca` resolves a trick and clears
+  `state.played` in the same call, so a table that renders straight from the
+  engine blanks both cards the instant the second one lands, and the sweep
+  animates two empty boxes. You could never see what your opponent answered
+  with, for twenty tricks. The table keeps its own copy of the pair until the
+  sweep is over now, and the deal pass waits for both slots to be full after
+  every play.
+- *A declaration was clipped, half a line off the top and half off the bottom,
+  at every phone width* — and set at 13px, under the check's own 14.5px floor
+  for a sentence. Two assertions would have caught it and neither ever ran,
+  because no pass ever showed an announcement. It is a toast over the top of the
+  table now, out of the card budget entirely, free to wrap; the strip holds the
+  raised card's name, which is three words. There is a screen row for it, and
+  the audit gained a vertical clipping rule — the horizontal one could not see
+  it, because the element that clips is not the element that holds the text.
+- *Your own name plate hung 15px below the fold at 770x1475*, one of the
+  check's own nineteen viewports, while the table pass printed `pass`: it
+  measured your hand, and in portrait the plate is *below* your hand. The cause
+  was the last hand-set number in the budget — `--plates: 76px`, carried over
+  from Discola — against two plates that cost 120px there, because `--t-pick`
+  is expressed in vw. It is derived from the plate's own type now, the plate's
+  height is set from the same token, and the fold is measured from your whole
+  seat.
+- *The keyboard could raise a card the follow-suit rule forbids, and throw on
+  the second press.* The pointer cannot: an illegal card is a disabled button.
+  The rule lives in `tapped` now, where both paths meet.
+
+Two of the new assertions were also blind in ways only a break could show. The
+step floor was `min(24px, .4 of a card)`, which is inert below a 60px card:
+landscape cut from `.7` to `.42` — a 40% loss of the strip at the tightest
+viewport — passed the whole check. And every raised-card measurement was taken
+on the tick that *starts* the transition, so it read the unraised box; a raised
+card that hung off the bottom of the screen passed too. The floor is two terms
+now (the step matches `--strip`, and the strip is either 24px or at least the
+`.45` the design gives portrait), and the measuring passes run with motion off.
+
+The same trap caught the fix for the dimming. The assertion written with it —
+dimmed cards must be exactly the forbidden ones — passed against the very break
+it was written for, because the table pass measures a freshly dealt hand and the
+first deal of a session is always yours to lead: nothing is forbidden, and it is
+never the opponent's turn. It asks for both states now, the way it already asked
+for a raised card.
+
+**So the rule iteration 3 adds to the two from iterations 1 and 2:** an
+assertion only ever sees the states the check renders. Three of these four
+defects were invisible not because the assertions were weak but because nothing
+ever put the page into the state that shows them. A new state — a finished
+trick, a declaration, a hand that is not yours to play — needs its own row or
+its own pass, and adding the state is the harder half of adding the assertion.
 
 ### 4 — Result and sheets (1 day)
 
@@ -928,7 +1020,7 @@ iteration that forks checks for movement first.
 | Forked | From Discola at | By |
 |---|---|---|
 | decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
-| CSS and table markup | to be recorded | iteration 3 |
+| CSS and table markup | `22c4b9c`, still Discola's head when iteration 3 forked | iteration 3 |
 
 ### 7.6 The owner's part
 

@@ -489,11 +489,11 @@ test("the fixture covers both seats and enough of the deal to be worth freezing"
   // would freeze very little while looking thorough.
   const golden = JSON.parse(readFileSync(here("./golden.json"), "utf8"));
 
-  // Twenty deals each for the two tuned players. Piero's weights are frozen
+  // Twenty deals each for the three tuned players. Piero's weights are frozen
   // above but his deals are not: he is rolled, so freezing his plays would
   // freeze one session of a player whose whole point is that he changes.
-  assert.equal(golden.deals.length, 40);
-  for (const who of ["Franco", "Graziano"])
+  assert.equal(golden.deals.length, 60);
+  for (const who of ["Franco", "Valerio", "Graziano"])
     assert.equal(golden.deals.filter(d => d.who === who).length, 20,
       `${who} should have twenty deals in the fixture`);
   for (const P of Object.values(golden.profiles))
@@ -514,7 +514,7 @@ test("the fixture covers both seats and enough of the deal to be worth freezing"
 
 /* --- the roster -------------------------------------------------------------- */
 
-test("three players, and each one plays a different game", () => {
+test("four players, and each one plays a different game", () => {
   // §4 iteration 5's "done when", made checkable. A roster where two names
   // choose the same card is what dropped Valerio: iteration 2 measured him and
   // Franco agreeing on 99% of choices, and a table cannot carry two names for
@@ -524,15 +524,21 @@ test("three players, and each one plays a different game", () => {
   // forced move is not a temperament: about half of all decisions in this game
   // have one legal card, and counting those buries the difference under the
   // follow-suit rule.
-  const P3 = rollProfiles(rngSeed(1));
-  assert.deepEqual(Object.keys(P3).sort(), ["Franco", "Graziano", "Piero"]);
+  const P4 = rollProfiles(rngSeed(1));
+  const names = ["Franco", "Valerio", "Graziano", "Piero"];
+  assert.deepEqual(Object.keys(P4).sort(), [...names].sort());
 
-  const pairs = [["Franco", "Graziano"], ["Franco", "Piero"], ["Graziano", "Piero"]];
+  const pairs = names.flatMap((a, i) => names.slice(i + 1).map(b => [a, b]));
   const differ = Object.fromEntries(pairs.map(p => [p.join(" vs "), 0]));
   let decisions = 0;
 
-  for (let seed = 1; seed <= 16; seed++){
+  for (let seed = 1; seed <= 24; seed++){
     const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rngSeed(seed));
+    // A different profile drives each deal. One driver's positions are one
+    // player's positions — a loose player reaches different hands from a tight
+    // one — and asking every question about Franco's hands flattered the pairs
+    // that play like Franco.
+    const driver = P4[names[seed % names.length]];
     while (!state.over){
       const who = state.deveGiocare;
       const led = who === state.perPrimo ? null : state.played[state.perPrimo];
@@ -543,25 +549,29 @@ test("three players, and each one plays a different game", () => {
       // figure 1.45 times too small.
       if (mosseLegali(state.hands[who], led).length > 1 && state.tricks < CODA_FROM){
         decisions++;
-        const chose = Object.fromEntries(Object.keys(P3).map(k => [k, compGioca(state, P3[k])]));
+        const chose = Object.fromEntries(names.map(k => [k, compGioca(state, P4[k])]));
         for (const [a, b] of pairs) if (chose[a] !== chose[b]) differ[`${a} vs ${b}`]++;
       }
-      gioca(state, who, compGioca(state, P3.Franco));
+      gioca(state, who, compGioca(state, driver));
     }
   }
 
-  // Sixteen seeds and a 6% floor, both measured rather than picked. Over 40
-  // disjoint sixteen-seed windows the tightest pair — Franco and Graziano —
-  // ran 8.3% to 13.6%, so the floor sits 2.3 points under the worst window
-  // anyone is likely to hit. The first version of this test used eight seeds
-  // and a 5% floor on a metric that included the endgame, where the same pair
-  // ran as low as 4.5%: it passed because seeds 1 to 8 happened to be a lucky
-  // window, which is the review's finding and the reason for both numbers here.
+  // Twenty-four seeds and a 5% floor, both measured rather than picked. Over 40
+  // disjoint twenty-four-seed windows the tightest pair — Graziano and Piero,
+  // who share a corner's long suit and differ on the lisci — ran 6.4% to 12.3%,
+  // so the floor sits 1.4 points under the worst window seen. Pooled over
+  // 19,000 decisions that pair is 11.6%.
+  //
+  // The first version of this test used eight seeds and a 5% floor on a metric
+  // that counted the endgame, where every profile plays alike by construction:
+  // there the same statistic ran as low as 4.5% and the suite passed only
+  // because seeds 1 to 8 are a lucky window. That is the review's finding, and
+  // the reason every number in this comment says where it came from.
   //
   // It is a floor against sameness, not a target: what the roster is worth is
   // measured by tools/selfplay.mjs --differ, not here.
   for (const [pair, count] of Object.entries(differ))
-    assert.ok(count / decisions >= 0.06,
+    assert.ok(count / decisions >= 0.05,
       `${pair} choose the same card ${(100 * (1 - count / decisions)).toFixed(1)}% of the time: ` +
       `that is one player with two names`);
 });

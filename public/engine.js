@@ -330,14 +330,37 @@ function weights(values){
 // Iteration 2 tunes one profile. Graziano, Franco and Piero are iteration 5,
 // which is also where `rng` starts doing something: Piero is rolled from it,
 // once per session, as in Discola.
-// §0 decision 5: three players, not four. Valerio was dropped during iteration
-// 4 — iteration 2 measured him and Franco choosing the same card 99 times in a
-// hundred, and a table cannot carry two names for one player — and Franco keeps
-// his weights, so the house standard is the same player under the name that
-// stayed.
+// §0 decision 5, in its final form: four players, one to a corner. Two weights
+// decide the game a profile plays — whether it opens its longest suit, and what
+// a liscio is worth leading — and those two make four corners:
+//
+//                     opens the long suit   keeps its lisci
+//   Franco                    no                  yes         the house standard
+//   Graziano                 yes                   no
+//   Piero                    yes                  yes         rolled per session
+//   Valerio                   no                   no         the loosest
+//
+// Valerio was dropped in iteration 4 and is back here. The reason he went was
+// that iteration 2's sketch of him chose the same card as Franco 99 times in a
+// hundred; the reason he is back is that this corner is a different player by
+// measurement, not by intention.
 const FRANCO_WEIGHTS = weights([
   //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
        4.0,   12.0,  0.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
+]);
+
+// The fourth corner: no long suit and no patience with lisci. He leads his big
+// cards and takes what is there, which is the loosest of the four and the
+// weakest — 80.8% against greedy-take where the others are 84.8% to 86.8%.
+//
+// This is the vector iteration 5 shipped as Graziano, under the name iteration
+// 4 retired. Valerio was dropped for being Franco under a second name: they
+// chose the same card 99 times in a hundred. He comes back because the corner
+// is real — he differs from all three of the others on one lever or both — and
+// because the house has four names.
+const VALERIO_WEIGHTS = weights([
+  //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+       4.0,    8.0,  0.0,   1.0,   2.5,  -4.0,   2.5,   1.5,   1.0,   1.5,  1.0
 ]);
 
 const GRAZIANO_WEIGHTS = weights([
@@ -358,6 +381,7 @@ function rollProfiles(rng){
     // weights, silently — moving CODA_FROM means re-measuring these, not just
     // re-recording the fixture.
     Franco: FRANCO_WEIGHTS,
+    Valerio: VALERIO_WEIGHTS,
 
     // He opens his long suit and keeps fewer lisci back: two weights away from
     // Franco, and a different game. On seeds 5001+, 1,200 mirrored deals, he
@@ -402,11 +426,11 @@ function rollProfiles(rng){
 // two Pieros: measured over ten sessions of him, 17.6% to 22.8% of his choices
 // differ from Franco's, and every one of them beat greedy-take by 86% or more.
 //
-// The fourth corner — neither lever — was in here for one round and came out
-// again. Rolled ten times it gave a Piero 33.1% away from Franco and a Piero
+// Piero does not roll between corners. He tried it for one round: rolled ten
+// times across two corners it gave a Piero 33.1% away from Franco and a Piero
 // 7.1% away, and a 7.1% Piero is Franco under another name. A corner of weight
 // space is not a promise about plays, which is this project's own lesson
-// arriving one more time.
+// arriving one more time. The corner he was borrowing is Valerio's now.
 const PIERO_STANCE = {
   LEAD_LONG_SUIT: [0.3, 1.0],
   LEAD_LISCIO_BONUS: [12, 14],

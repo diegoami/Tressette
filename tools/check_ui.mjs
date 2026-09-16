@@ -187,7 +187,7 @@ const SCREENS = [
         const now = Date.now();
         localStorage.setItem('tressette.history', JSON.stringify(
           Array.from({ length: 100 }, (_, i) => ({
-            t: now - i * 36e5, o: ['Franco', 'Graziano', 'Piero'][i % 3],
+            t: now - i * 36e5, o: ['Franco', 'Valerio', 'Graziano', 'Piero'][i % 4],
             d: 'Trevisane', y: 15 - (i % 16), a: i % 16 }))));
       });
       await p.click('#play');

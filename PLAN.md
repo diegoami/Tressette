@@ -22,7 +22,7 @@ and the sections below say what moves.
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
 | 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
 | 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** Confirmed by the owner before iteration 4. | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
-| 5 | The opponents | **Three: Graziano, Piero and Franco.** Decided by the owner during iteration 4. Valerio is dropped — iteration 2 measured him and Franco choosing the same card 99% of the time, and a roster cannot carry two names for one player — and Franco inherits his tuned weights, so the house standard survives under the name that stays. | Four names would need a fourth character the eleven weights cannot express; see iteration 5. |
+| 5 | The opponents | **Four: Franco, Valerio, Graziano and Piero — one to each corner of the two weights that decide the game a profile plays.** Taken in two steps. Iteration 4 dropped Valerio, because iteration 2 had measured him and Franco choosing the same card 99% of the time, and Franco inherited his tuned weights. The review of iteration 5 then found that the formula has two levers rather than one, so the corner Valerio had failed to occupy by intention exists by measurement: he is back in it, 15–20% away from all three of the others. | A fifth name would need a lever the eleven weights do not have. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
 
 All six were confirmed by the owner; 5 was decided during iteration 4, and the
@@ -1079,39 +1079,51 @@ choices in 3,437 at 0 and none at all at 3, which is iteration 2's ablation
 confirmed a second way; seven of the eleven weights are like that.
 
 The owner chose from the corrected curve: a Graziano who plays another game
-rather than a worse one. The roster as it ships, on seeds 5001+ which the
-tuning never saw, 500 mirrored deals each:
+rather than a worse one. And once the corrected curve had two levers on it,
+**the roster went back to four**: two weights make four corners, and there is a
+player in each.
+
+| | opens the long suit | keeps its lisci | |
+|---|---|---|---|
+| Franco | no | yes | the house standard |
+| Graziano | yes | no | |
+| Piero | yes | yes | rolled per session |
+| Valerio | no | no | the loosest |
+
+Valerio is the vector this iteration first shipped as Graziano, under the name
+iteration 4 retired. He went because iteration 2's sketch of him chose Franco's
+card 99 times in a hundred; he is back because this corner is a different
+player by measurement — 15.0% from Franco and 26–28% from the other two.
+
+On seeds 5001+, which the tuning never saw, 500 mirrored deals each:
 
 | | vs random-legal | vs greedy-take |
 |---|---|---|
 | Franco | 86.6% | 84.8% |
+| Valerio | 87.6% | 80.6% |
 | Graziano | 88.4% | 86.8% |
 | Piero (this session) | 86.8% | 81.8% |
 
 | pair | choices that differ |
 |---|---|
-| Franco vs Piero | 24.8% |
-| Franco vs Graziano | 21.4% |
-| Graziano vs Piero | 12.3% |
+| Valerio vs Piero | 28.0% |
+| Valerio vs Graziano | 26.2% |
+| Franco vs Piero | 25.2% |
+| Franco vs Graziano | 21.6% |
+| Franco vs Valerio | 15.0% |
+| Graziano vs Piero | 11.6% |
 
 and §3.4's second clause, which nothing had measured until the review asked:
-head to head they are 42.2%, 56.2% and 59.6% — characters, not tiers. Every
+head to head the six pairs run 42.2% to 59.6% — characters, not tiers. Every
 profile clears both acceptance floors, which the first version of this
 iteration did not: a quarter of its rolled Pieros came out under the
 greedy-take floor and the plan answered that by reinterpreting the contract in
-a distant paragraph rather than amending it. **Two weights decide the game a
-profile plays**, and the corners they make are the roster:
+a distant paragraph rather than amending it.
 
-| | leads the long suit | hoards its lisci |
-|---|---|---|
-| Franco | no | yes |
-| Graziano | yes | no |
-| Piero | yes | yes |
-
-Piero's two levers are therefore not rolled at all — he stands in the corner
-the other two leave empty — and his other nine are. The fourth corner was tried
-and dropped: rolled ten times it gave a Piero 33.1% from Franco and a Piero
-7.1% from Franco, and a 7.1% Piero is Franco with another name.
+Piero's two levers are not rolled at all — he stands in his corner and his
+other nine weights are drawn — because rolling him *between* corners put him
+98.4% onto Graziano's card once and 7.1% from Franco another time. A corner of
+weight space is not a promise about plays.
 
 **What that costs, measured rather than claimed:** the weights Piero still
 rolls are mostly the inert ones, so his sessions vary less than the dossier
@@ -1272,6 +1284,12 @@ with goes to the owner, in the pull request, not into a silent merge.
   how every threshold in Discola's check got its story.
 - **No project board, no milestones, no issue per iteration.** This document
   holds the plan; a second copy goes stale.
+- **A pull request does not merge while its review is still running.** Added
+  after iteration 5 merged with its review in flight and the review then found
+  the iteration's central conclusion wrong — a table with a hole in it, which
+  the next pull request had to undo and redo. If the owner asks to merge and a
+  review is out, say so and what the last reviews found, and let them decide
+  with that in hand. The review is part of the work, not a formality after it.
 - **Commit messages** as in Discola's history: one line saying what changed
   and why, in English, imperative mood, no ticket numbers.
 

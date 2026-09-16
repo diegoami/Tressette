@@ -59,6 +59,7 @@ const profile = P => state => compGioca(state, P);
 
 const PLAYERS = {
   franco:   profile(PROFILES.Franco),
+  valerio:  profile(PROFILES.Valerio),
   graziano: profile(PROFILES.Graziano),
   piero:    profile(PROFILES.Piero),
   flat:     profile({ ...PROFILES.Franco, LATE_FACTOR: 0 }),   // k === 1 everywhere
@@ -222,7 +223,7 @@ function differ(n, names, driver = "greedy"){
 const cap = s => s[0].toUpperCase() + s.slice(1);
 
 function differTable(n){
-  const names = ["franco", "graziano", "piero"];
+  const names = ["franco", "valerio", "graziano", "piero"];
   const { decisions, endgame, pairs } = differ(n, names);
   console.log(`\nchoices that differ, over ${decisions} decisions the weights actually made\n`);
   for (const p of pairs.sort((x, y) => y.share - x.share))
@@ -342,7 +343,7 @@ function pieroSpread(rolls, n){
 // the test is the thing that says so out loud.
 function goldenFixture(){
   const short = c => `${["A","2","3","4","5","6","7","F","C","R"][c.n - 1]}${"dcsb"[c.s]}`;
-  const recorded = ["Franco", "Graziano"];
+  const recorded = ["Franco", "Valerio", "Graziano"];
   const deals = [];
 
   for (const who of recorded){
@@ -389,7 +390,7 @@ if (argv[0] === "--probe"){
   const n = Number(argv[0] ?? 1000);
   console.log(`\nseeds ${SEED_FROM}..${SEED_FROM + n - 1}, each played from both sides\n`);
   const rates = {};
-  for (const who of ["franco", "graziano", "piero"]){
+  for (const who of ["franco", "valerio", "graziano", "piero"]){
     rates[who] = [report(match(n, who, "random")), report(match(n, who, "greedy"))];
     console.log("");
   }
@@ -398,7 +399,8 @@ if (argv[0] === "--probe"){
   // §3.4's second clause, which nothing measured until the review of iteration
   // 5 asked for it: characters, not tiers.
   console.log("");
-  const head = [["franco", "graziano"], ["franco", "piero"], ["graziano", "piero"]]
+  const head = [["franco", "valerio"], ["franco", "graziano"], ["franco", "piero"],
+                ["valerio", "graziano"], ["valerio", "piero"], ["graziano", "piero"]]
     .map(([a, b]) => [a, b, report(match(n, a, b))]);
 
   console.log("\nacceptance (§3.4): random-legal ≥ 85%, greedy-take ≥ 80%");

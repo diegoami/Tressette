@@ -494,7 +494,10 @@ button.card:disabled{ cursor: default; }
   font-family: var(--font-label);
   text-transform: uppercase;
   letter-spacing: .16em;
-  font-size: .7rem;
+  /* --t-tiny, not a number of its own: this line sat at 11.2px, under the
+     check's 12.5px floor for a label, for as long as nothing ever rendered the
+     face-up table. */
+  font-size: var(--t-tiny);
   color: var(--brass);
   z-index: 3;
 }
@@ -783,6 +786,17 @@ button.card:disabled{ cursor: default; }
 }
 .result__sep{ color: var(--ivory-dim); }
 .result__note{ font-size: .95rem; color: var(--ivory-dim); line-height: 1.5; margin: 0; }
+/* The declarations, when there were any: they are scored on top of the eleven
+   points, so the dialog has to say where the extra points came from. */
+.result__accusi{
+  margin: 0;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .92rem;
+  color: var(--brass);
+  line-height: 1.4;
+}
 .result__actions{ display: grid; gap: .5rem; }
 
 /* ---- portrait ------------------------------------------------------------- */
@@ -891,6 +905,15 @@ button.card:disabled{ cursor: default; }
       <button class="tool" id="again" type="button" title="Nuova mano" aria-label="Nuova mano">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-.7 3.3"/><path d="M20 5.5V11h-5.5"/></svg>
       </button>
+      <button class="tool" id="btnHistory" type="button" title="Storico mani" aria-label="Storico mani">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/></svg>
+      </button>
+      <button class="tool" id="btnSettings" type="button" title="Impostazioni" aria-label="Impostazioni">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="16" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
+      </button>
+      <button class="tool" id="btnAbout" type="button" title="Informazioni" aria-label="Informazioni">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.3"/><path d="M12 7.6v1"/></svg>
+      </button>
     </nav>
   </header>
 
@@ -952,18 +975,171 @@ button.card:disabled{ cursor: default; }
       <div class="hero">
         <h1>Tressette</h1>
         <p>Tressette a due. Una mano, venti prese, undici punti più gli accusi.</p>
+        <p class="last-result" id="lastResult" hidden></p>
       </div>
 
       <div class="group">
         <div class="group-head"><span class="eyebrow">Avversario</span></div>
-        <p class="dossier">Valerio. Lo standard della casa: equilibrato, e non
-          spreca un tre per una presa che non lo vale.</p>
+        <div class="chips" id="opponents"></div>
+        <p class="dossier" id="dossier" aria-live="polite"></p>
+      </div>
+
+      <div class="group">
+        <div class="group-head">
+          <span class="eyebrow">Mazzo</span><span class="pick" id="deckName">Trevisane</span>
+        </div>
+        <div class="decks" id="decks"></div>
       </div>
     </div>
   </div>
   <footer class="start-foot">
     <button class="btn btn--primary btn--big" id="play" type="button">Gioca</button>
   </footer>
+</div>
+
+<!-- ============================ settings ============================ -->
+<div class="view" id="viewSettings" hidden>
+  <header class="sheet-head">
+    <button class="tool" type="button" data-back aria-label="Indietro">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Impostazioni</h2>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-inner">
+      <div class="group">
+        <span class="eyebrow">Tavolo</span>
+        <label class="field" for="deckSel">Mazzo
+          <select id="deckSel">
+            <option value="Trevisane">Trevisane</option>
+            <option value="Piacentine">Piacentine</option>
+            <option value="Napoletane">Napoletane</option>
+            <option value="Romagnole">Romagnole</option>
+            <option value="Francesi">Francesi</option>
+          </select>
+        </label>
+        <label class="field" for="feltSel">Panno
+          <input type="color" id="feltSel" value="#1e5140">
+        </label>
+        <label class="field" for="speedSel">Ritmo
+          <input type="range" id="speedSel" min="200" max="2000" step="100" value="1300">
+        </label>
+        <label class="toggle" for="pointsSel">Mostra i punti
+          <input type="checkbox" id="pointsSel" checked>
+        </label>
+        <label class="toggle" for="soundSel">Suono
+          <input type="checkbox" id="soundSel" checked>
+        </label>
+      </div>
+
+      <div class="group">
+        <span class="eyebrow">Mano</span>
+        <button class="btn" id="changeOpponent" type="button">Cambia avversario</button>
+      </div>
+
+      <details class="group">
+        <summary class="eyebrow" style="cursor:pointer;list-style:revert">Pesi della strategia</summary>
+        <p class="prose">Gli undici pesi con cui <code>compGioca</code> sceglie la
+        carta, per l&rsquo;avversario scelto. Le ultime due prese non ne usano
+        nessuno: lì la posizione si risolve per intero.</p>
+        <table class="weights" id="weightsTable"><tbody></tbody></table>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ history ============================ -->
+<div class="view" id="viewHistory" hidden>
+  <header class="sheet-head">
+    <button class="tool" type="button" data-back aria-label="Indietro">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Storico mani</h2>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-inner" id="historyBody"></div>
+  </div>
+</div>
+
+<!-- ============================ about ============================ -->
+<div class="view" id="viewAbout" hidden>
+  <header class="sheet-head">
+    <button class="tool" type="button" data-back aria-label="Indietro">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <h2>Tressette</h2>
+  </header>
+  <div class="sheet-body">
+    <div class="sheet-inner prose">
+      <p><strong>Tressette a due</strong>, con il tallone: dieci carte a testa,
+      venti prese, e si pesca dopo ogni presa finché il tallone dura.</p>
+
+      <p>L&rsquo;ordine delle carte è quello del tressette: <strong>3, 2, asso, re,
+      cavallo, fante, 7, 6, 5, 4</strong>. Non c&rsquo;è briscola. L&rsquo;asso vale
+      un punto intero, il 3, il 2 e le figure un terzo di punto ciascuno, le
+      cartine niente. L&rsquo;ultima presa vale un punto. Sono undici punti in
+      tutto, più gli accusi.</p>
+
+      <p>Gli <strong>accusi</strong> valgono solo dalle dieci carte servite:
+      napoletana (asso, 2 e 3 dello stesso seme) tre punti, tre carte uguali fra
+      assi, 2 e 3 tre punti, quattro uguali quattro punti. Si annunciano da soli
+      quando chi li ha gioca la prima carta.</p>
+
+      <p>È obbligatorio <strong>rispondere a colore</strong>: se hai il seme
+      giocato devi giocarlo. Le carte che la regola vieta restano spente e non
+      si possono toccare.</p>
+
+      <p>Una carta si sceglie con un tocco e si gioca con il secondo, o con i
+      tasti <strong>1</strong>–<strong>9</strong> e <strong>0</strong> e
+      <strong>Invio</strong>. Lo storico delle mani resta in questo browser, su
+      questo dispositivo.</p>
+
+      <p>Le carte sono le immagini originali del <strong>Discola</strong> del
+      1997, in cinque mazzi: Trevisane, Piacentine, Napoletane, Romagnole e
+      Francesi. L&rsquo;avversario invece è di questo gioco: il tressette non
+      c&rsquo;era nell&rsquo;originale.</p>
+
+      <p style="margin:0">
+        <a href="https://github.com/diegoami/Tressette">Sorgente di questo gioco</a> &middot;
+        <a href="https://github.com/diegoami/discola-web">Discola, la briscola del 1997</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="confirmScrim" hidden>
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Abbandonare la mano?</h2>
+    <p class="result__note">La mano in corso va persa e non viene registrata
+    nello storico.</p>
+    <div class="result__actions">
+      <button class="btn btn--primary" id="confirmNo" type="button">Continua a giocare</button>
+      <button class="btn btn--quiet" id="confirmYes" type="button">Abbandona</button>
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <h2 id="resultTitle">Hai vinto</h2>
+    <div class="result__tally">
+      <div>
+        <div class="result__n" id="resultYou">6</div>
+        <div class="eyebrow">tu</div>
+      </div>
+      <div class="result__sep">&mdash;</div>
+      <div>
+        <div class="result__n" id="resultOpp">5</div>
+        <div class="eyebrow" id="resultOppName">valerio</div>
+      </div>
+    </div>
+    <p class="result__accusi" id="resultAccusi" hidden></p>
+    <p class="result__note" id="resultNote"></p>
+    <div class="result__actions">
+      <button class="btn btn--primary" id="playAgain" type="button">Ancora</button>
+      <button class="btn" id="backToStart" type="button">Cambia avversario o mazzo</button>
+    </div>
+  </div>
 </div>
 
 <script src="engine.js"></script>
@@ -997,6 +1173,13 @@ const nomeDi = card => `${NOMI[card.n - 1]} di ${SUITS[card.s]}`;
 /* --- state ------------------------------------------------------------------ */
 
 const PROFILES = rollProfiles(Math.random);   // §3.2: the page rolls, the engine does not
+
+// One line each, in the same shape as Discola's. The other three arrive with
+// their weights in iteration 5, and the chips are built from PROFILES, so they
+// appear here the moment the engine has them.
+const DOSSIER = {
+  Valerio: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime due prese le gioca esatte."
+};
 
 const state = {
   cards: [], next: 0, hands: [[], []], played: [null, null],
@@ -1067,7 +1250,13 @@ function blip(cut){
 const el = {};
 for (const id of ["table","oppHand","youHand","slotOpp","slotYou","pile","stockCard",
   "stockCount","lastHand","oppName","oppScore","youScore","plateYou","plateOpp",
-  "cheatNote","viewTable","viewStart","announce","selName"])
+  "cheatNote","viewTable","viewStart","viewSettings","viewHistory","viewAbout",
+  "announce","selName","play","again","btnHistory","btnSettings","btnAbout",
+  "opponents","dossier","decks","deckName","lastResult",
+  "deckSel","feltSel","speedSel","pointsSel","soundSel","changeOpponent","weightsTable",
+  "historyBody","confirmScrim","confirmNo","confirmYes",
+  "scrim","resultTitle","resultYou","resultOpp","resultOppName","resultAccusi",
+  "resultNote","playAgain","backToStart"])
   el[id] = document.getElementById(id);
 
 function faceOf(node, card){
@@ -1236,11 +1425,57 @@ function resolve(trick){
   }, 420);
 }
 
+// §2.5: eleven points plus the declarations, and the two floors always sum to
+// eleven, so a draw is only possible when declarations are in play.
 function finish(){
   const [you, them] = scoreDeal(state);
-  el.announce.textContent = you > them ? `Hai vinto ${you}\u2013${them}`
-    : you < them ? `Hai perso ${you}\u2013${them}` : `Pari ${you}\u2013${them}`;
-  el.announce.hidden = false;
+  recordDeal(you, them);
+
+  el.resultTitle.textContent = you > them ? "Hai vinto" : you < them ? "Hai perso" : "Pareggio";
+  el.resultYou.textContent = you;
+  el.resultOpp.textContent = them;
+  el.resultOppName.textContent = state.opponent.toLowerCase();
+
+  const righe = [BASSO, ALTO]
+    .filter(who => state.accusi[who].length)
+    .map(who => `${who === BASSO ? "Tu" : state.opponent}: ` +
+                `${accusiInParole(state.accusi[who])} — ${puntiAccusi(state.accusi[who])} punti`);
+  el.resultAccusi.textContent = righe.join(" · ");
+  el.resultAccusi.hidden = !righe.length;
+
+  el.resultNote.textContent = notaFinale(you, them);
+  el.scrim.hidden = false;
+  el.playAgain.focus();
+}
+
+// What actually decided the hand, told from the deal rather than from a table
+// of phrases: play the score again without the last trick's point, and again
+// without the declarations, and see which one changes hands.
+function notaFinale(you, them){
+  const terzi = [state.terzi[BASSO], state.terzi[ALTO]];
+  const punti = (t, a) => Math.floor(t / 3) + a;
+  const accusi = [puntiAccusi(state.accusi[BASSO]), puntiAccusi(state.accusi[ALTO])];
+
+  const senzaUltima = [punti(terzi[BASSO], accusi[BASSO]), punti(terzi[ALTO], accusi[ALTO])];
+  const senzaAccusi = [punti(terzi[BASSO] + (state.perPrimo === BASSO ? 3 : 0), 0),
+                       punti(terzi[ALTO] + (state.perPrimo === ALTO ? 3 : 0), 0)];
+  const segno = ([a, b]) => Math.sign(a - b);
+  const finale = segno([you, them]);
+
+  if (finale === 0) return "Pari. Senza gli accusi gli undici punti non si dividono.";
+  if (segno(senzaUltima) !== finale) return "L'ultima presa ha deciso la mano.";
+  if (segno(senzaAccusi) !== finale) return "Hanno deciso gli accusi, non le prese.";
+  if (Math.abs(you - them) <= 1) return "Decisa per un punto.";
+  if (you > them) return `${state.opponent} ha lasciato andare troppi terzi.`;
+  return `${state.opponent} ha tenuto i tre e i due fino in fondo.`;
+}
+
+// The same words the table announces, without the "chi — quanti punti" around
+// them, so the dialog can list both players' declarations on one line.
+function accusiInParole(list){
+  return list.map(a => a.kind === "napoletana"
+    ? `napoletana di ${SUITS[a.suit]}`
+    : `${a.count === 4 ? "quattro" : "tre"} ${PLURALI[a.n - 1]}`).join(", ");
 }
 
 function newDealHere(){
@@ -1257,40 +1492,389 @@ function newDealHere(){
 
 /* --- screens ---------------------------------------------------------------- */
 
-const VIEWS = { table: el.viewTable, start: el.viewStart };
+const VIEWS = {
+  table: el.viewTable, start: el.viewStart, settings: el.viewSettings,
+  history: el.viewHistory, about: el.viewAbout
+};
 let screen = "start";
+
 function show(name){
   screen = name;
   for (const [key, node] of Object.entries(VIEWS)) node.hidden = key !== name;
+  if (name === "history") renderHistory();
+  if (name === "start") renderLastResult();
+  // The clock keeps running behind a sheet, as it does in Discola: the
+  // opponent does not wait for you to close the settings.
 }
 
-function startGame(){
-  show("table");
-  newDealHere();
+// Back from a sheet: to the table if a hand is in play, otherwise to the start.
+function back(){ show(state.dealt && !state.over ? "table" : "start"); }
+
+// Abandoning has to cancel what is already queued. Bumping the epoch makes
+// every pending `later` a no-op — without it the opponent plays on behind the
+// start screen, and a hand that ends there pops its result over it and records
+// a deal nobody was watching.
+function abandon(){
+  epoch++;
+  clearTimeout(timer);
+  clearTimeout(sayTimer);
+  state.dealt = false;
+  el.scrim.hidden = true;
+  el.confirmScrim.hidden = true;
+  show("start");
+}
+
+// Only worth asking while a hand is in play; once it is over there is nothing
+// left to lose.
+function askAbandon(after){
+  if (!state.dealt || state.over){ after(); return; }
+  pendingAbandon = after;
+  el.confirmScrim.hidden = false;
+  el.confirmNo.focus();       // the safe choice is the default
+}
+let pendingAbandon = null;
+
+/* --- history (this browser, this device) ------------------------------------ */
+
+const HKEY = "tressette.history";
+const HCAP = 100;
+
+function loadHistory(){
+  try{
+    const raw = localStorage.getItem(HKEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (e){ return []; }
+}
+
+function recordDeal(you, them){
+  const list = loadHistory();
+  list.unshift({ t: Date.now(), o: state.opponent, d: state.deck, y: you, a: them });
+  try{
+    localStorage.setItem(HKEY, JSON.stringify(list.slice(0, HCAP)));
+  } catch (e){ /* storage blocked: the hand simply is not remembered */ }
+}
+
+function clearHistory(){
+  try{ localStorage.removeItem(HKEY); } catch (e){}
+  renderHistory();
+}
+
+const WHEN = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" });
+
+function renderLastResult(){
+  const [last] = loadHistory();
+  if (!last){ el.lastResult.hidden = true; return; }
+  const verbo = last.y > last.a ? "vinto" : last.y < last.a ? "perso" : "pareggiato";
+  el.lastResult.textContent =
+    `Ultima mano: hai ${verbo} ${last.y}\u2013${last.a} contro ${last.o}`;
+  el.lastResult.hidden = false;
+}
+
+function renderHistory(){
+  const list = loadHistory();
+  el.historyBody.replaceChildren();
+
+  if (!list.length){
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Nessuna mano ancora. Lo storico resta in questo browser.";
+    el.historyBody.append(p);
+    return;
+  }
+
+  const vinte = list.filter(m => m.y > m.a).length;
+  const perse = list.filter(m => m.y < m.a).length;
+
+  const tally = document.createElement("div");
+  tally.className = "tally";
+  for (const [n, label] of [[list.length, "mani"], [vinte, "vinte"], [perse, "perse"],
+                            [list.length - vinte - perse, "pari"]]){
+    const cell = document.createElement("div");
+    const b = document.createElement("b");
+    b.textContent = n;
+    const s = document.createElement("span");
+    s.className = "eyebrow";
+    s.textContent = label;
+    cell.append(b, s);
+    tally.append(cell);
+  }
+  el.historyBody.append(tally);
+
+  // How you do against each of them, which is the interesting question — and
+  // the reason the opponent's name is in every row.
+  const per = {};
+  for (const m of list){
+    const riga = per[m.o] || (per[m.o] = { n: 0, v: 0 });
+    riga.n++;
+    if (m.y > m.a) riga.v++;
+  }
+  const nomi = Object.keys(per).sort((a, b) => per[b].n - per[a].n);
+  if (nomi.length > 1){
+    const group = document.createElement("div");
+    group.className = "group";
+    const head = document.createElement("span");
+    head.className = "eyebrow";
+    head.textContent = "Vinte contro";
+    group.append(head);
+    for (const nome of nomi){
+      const line = document.createElement("div");
+      line.className = "field";
+      const chi = document.createElement("span");
+      chi.textContent = nome;
+      const n = document.createElement("span");
+      n.className = "score";
+      n.textContent = `${per[nome].v}/${per[nome].n}`;
+      line.append(chi, n);
+      group.append(line);
+    }
+    el.historyBody.append(group);
+  }
+
+  const ul = document.createElement("ul");
+  ul.className = "log";
+  for (const m of list){
+    const vinta = m.y > m.a, pari = m.y === m.a;
+    const li = document.createElement("li");
+
+    const res = document.createElement("span");
+    res.className = "res " + (pari ? "res--d" : vinta ? "res--w" : "res--l");
+    res.textContent = pari ? "P" : vinta ? "V" : "S";
+
+    const chi = document.createElement("span");
+    chi.textContent = m.o;
+
+    const score = document.createElement("span");
+    score.className = "score";
+    score.textContent = `${m.y}\u2013${m.a}`;
+
+    const when = document.createElement("span");
+    when.className = "when";
+    when.textContent = WHEN.format(new Date(m.t));
+
+    li.append(res, chi, score, when);
+    ul.append(li);
+  }
+  el.historyBody.append(ul);
+
+  const wipe = document.createElement("button");
+  wipe.type = "button";
+  wipe.className = "btn btn--quiet";
+  wipe.textContent = "Cancella lo storico";
+  wipe.addEventListener("click", clearHistory);
+  el.historyBody.append(wipe);
+}
+
+/* --- settings --------------------------------------------------------------- */
+
+function applyDeck(name){
+  state.deck = name;
+  const root = document.documentElement;
+  root.style.setProperty("--sheet", `url("decks/${SHEET[name]}.png")`);
+  root.style.setProperty("--ratio", DECK_RATIO[name]);
+  if (el.deckSel) el.deckSel.value = name;
+  if (el.deckName) el.deckName.textContent = name;
+  if (el.decks) for (const b of el.decks.children)
+    b.setAttribute("aria-pressed", String(b.dataset.deck === name));
+}
+
+function applyFelt(hex){
+  state.felt = hex;
+  const root = document.documentElement;
+  root.style.setProperty("--felt", hex);
+  root.style.setProperty("--felt-lit", shade(hex, 0.16));
+  root.style.setProperty("--edge", shade(hex, -0.42));
+  el.feltSel.value = hex;
+}
+
+function shade(hex, amount){
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(amount >= 0 ? v + (255 - v) * amount : v * (1 + amount))))
+  );
+  return "#" + ch.map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+function buildOpponents(){
+  el.opponents.replaceChildren(...Object.keys(PROFILES).map(name => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.dataset.name = name;
+    b.textContent = name;
+    b.addEventListener("click", () => selectOpponent(name));
+    return b;
+  }));
+}
+
+// Each option shows a real card from its deck — the asso, the most
+// characteristic card in all five. The name goes beside the section label, not
+// under the swatch, so all five fit one row on a phone.
+function buildDecks(){
+  el.decks.replaceChildren(...Object.keys(SHEET).map(name => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "deck-opt";
+    b.dataset.deck = name;
+    b.title = name;
+    b.setAttribute("aria-label", `Mazzo ${name}`);
+    b.style.setProperty("--sheet", `url("decks/${SHEET[name]}.png")`);
+    b.style.setProperty("--ratio", DECK_RATIO[name]);
+    const c = document.createElement("span");
+    c.className = "card";
+    c.style.setProperty("--col", 0);
+    c.style.setProperty("--row", 0);
+    b.append(c);
+    b.addEventListener("click", () => { applyDeck(name); save(); });
+    return b;
+  }));
+}
+
+function selectOpponent(name){
+  state.opponent = name;
+  el.dossier.textContent = DOSSIER[name];
+  for (const b of el.opponents.children)
+    b.setAttribute("aria-pressed", String(b.dataset.name === name));
+
+  const P = PROFILES[name];
+  el.weightsTable.tBodies[0].replaceChildren(...WEIGHT_KEYS.map(k => {
+    const tr = document.createElement("tr");
+    const label = document.createElement("td");
+    label.textContent = k.toLowerCase().replace(/_/g, " ");
+    const value = document.createElement("td");
+    value.textContent = String(P[k]);
+    tr.append(label, value);
+    return tr;
+  }));
+
+  render();
+  save();
+}
+
+/* --- persistence ------------------------------------------------------------ */
+
+const KEY = "tressette.settings";
+
+function save(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify({
+      opponent: state.opponent, deck: state.deck, felt: state.felt,
+      speed: state.speed, showPoints: state.showPoints, sound: state.sound
+    }));
+  } catch (e){ /* private window or blocked storage: settings just will not stick */ }
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e){ return {}; }
 }
 
 /* --- keys ------------------------------------------------------------------- */
 
-// 1-9 and 0 raise a card, Enter plays the raised one.
+// The 1997 easter egg, kept as it is typed: turn the opponent's hand face up.
+//
+// It is typed away from the table — on the start sheet, or over settings,
+// history or about — because at the table every digit is a card. Discola had
+// three cards and three card keys, so 6, 4, 9 and 0 fell through to this
+// buffer; here 1-9 and 0 all play, and a hand of ten cannot give four of its
+// keys away to a word. Letting the digits do both would play cards while you
+// typed, and a misplay costs the deal — the same reason a tap raises a card
+// rather than playing it. `state.cheat` survives a new deal, so typing it
+// before you start is the way in.
+const CHEAT = "6winouj64ie";
+let buffer = "";
+
 document.addEventListener("keydown", e => {
-  if (screen !== "table") return;
-  if (e.key === "Enter" && state.selected !== null){ tapped(state.selected); return; }
-  const n = e.key === "0" ? 10 : Number(e.key);
-  if (n >= 1 && n <= 10) tapped(n - 1);
+  if (e.target.matches("input, select, textarea, summary")) return;
+
+  if (e.key === "Escape" && !el.confirmScrim.hidden){ closeConfirm(); return; }
+  if (e.key === "Escape" && screen !== "table" && screen !== "start"){ back(); return; }
+
+  if (screen === "table" && !state.over){
+    // 1-9 and 0 raise a card, Enter plays the raised one.
+    if (e.key === "Enter" && state.selected !== null){ tapped(state.selected); return; }
+    const n = e.key === "0" ? 10 : Number(e.key);
+    if (n >= 1 && n <= 10){ tapped(n - 1); return; }
+  }
+
+  buffer = (buffer + e.key).slice(-CHEAT.length);
+  if (buffer === CHEAT){ state.cheat = !state.cheat; render(); }
 });
 
-/* --- start ------------------------------------------------------------------ */
+/* --- wiring ----------------------------------------------------------------- */
 
-function applyDeck(name){
-  const root = document.documentElement;
-  root.style.setProperty("--sheet", `url("decks/${SHEET[name]}.png")`);
-  root.style.setProperty("--ratio", DECK_RATIO[name]);
+function closeConfirm(){
+  pendingAbandon = null;
+  el.confirmScrim.hidden = true;
 }
 
-document.getElementById("play").addEventListener("click", startGame);
-document.getElementById("again").addEventListener("click", () => newDealHere());
+for (const b of document.querySelectorAll("[data-back]"))
+  b.addEventListener("click", back);
 
-applyDeck(state.deck);
-buildHands();
-render();
+el.play.addEventListener("click", () => { show("table"); newDealHere(); });
+el.again.addEventListener("click", () => askAbandon(() => newDealHere()));
+el.btnHistory.addEventListener("click", () => show("history"));
+el.btnSettings.addEventListener("click", () => show("settings"));
+el.btnAbout.addEventListener("click", () => show("about"));
+
+el.confirmNo.addEventListener("click", closeConfirm);
+el.confirmYes.addEventListener("click", () => {
+  const after = pendingAbandon;
+  closeConfirm();
+  // Whatever was asked for gets a clean table: the epoch bump in abandon()
+  // is what stops the old deal's timers landing in the new one.
+  abandon();
+  if (after) after();
+});
+
+el.playAgain.addEventListener("click", () => { el.scrim.hidden = true; newDealHere(); });
+el.backToStart.addEventListener("click", abandon);
+// Leaving the table for the start sheet is abandoning, so it asks first; when
+// there is nothing to abandon it just goes. The confirm's own Yes runs
+// abandon(), which is what lands on the start sheet.
+el.changeOpponent.addEventListener("click", () => askAbandon(() => show("start")));
+
+el.deckSel.addEventListener("change", () => { applyDeck(el.deckSel.value); save(); });
+el.feltSel.addEventListener("input", () => { applyFelt(el.feltSel.value); save(); });
+el.speedSel.addEventListener("input", () => {
+  // The slider reads left to right as faster; what is stored is a delay.
+  state.speed = 2200 - Number(el.speedSel.value);
+  save();
+});
+el.pointsSel.addEventListener("change", () => {
+  state.showPoints = el.pointsSel.checked; render(); save();
+});
+el.soundSel.addEventListener("change", () => { state.sound = el.soundSel.checked; save(); });
+
+/* --- boot ------------------------------------------------------------------- */
+
+function boot(){
+  const saved = load();
+
+  buildHands();
+  buildOpponents();
+  buildDecks();
+
+  applyDeck(SHEET[saved.deck] ? saved.deck : "Trevisane");
+  applyFelt(/^#[0-9a-f]{6}$/i.test(saved.felt || "") ? saved.felt : "#1e5140");
+
+  state.speed = Number.isFinite(saved.speed) ? saved.speed : 900;
+  el.speedSel.value = 2200 - state.speed;
+
+  state.showPoints = saved.showPoints !== false;
+  el.pointsSel.checked = state.showPoints;
+
+  state.sound = saved.sound !== false;
+  el.soundSel.checked = state.sound;
+
+  selectOpponent(PROFILES[saved.opponent] ? saved.opponent : "Valerio");
+
+  // Nothing is dealt yet: you pick an opponent and a deck first.
+  show("start");
+  render();
+}
+
+boot();
 </script>

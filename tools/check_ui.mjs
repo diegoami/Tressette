@@ -25,8 +25,9 @@
  *    those shipped once. They are assertions now.
  *
  * 3. DEAL — one whole deal against Valerio, played through the fan by tapping,
- *    at one viewport in one deck. It asserts the game can be finished, not how
- *    it looks.
+ *    at one viewport in one deck, then a second deal abandoned through the
+ *    confirm. It asserts the game can be finished, recorded and walked away
+ *    from, not how it looks.
  *
  * Every threshold below is calibrated against a real defect, not taste. If you
  * relax one, check it still fails the commit that introduced the bug it names.
@@ -93,11 +94,9 @@ const STILL = '*, *::before, *::after{ transition: none !important; animation: n
 
 /* ---- getting to each screen ----------------------------------------------- */
 
-// Iteration 3 has two screens: the start sheet and the table. Settings,
-// history, about, the confirm scrim and the result dialog arrive in iteration
-// 4, and each gets a row here when it does. Deleting the rows rather than
-// leaving them pointing at nothing is deliberate — a screen that cannot be
-// reached is a check that silently passes.
+// Every screen and dialog the page has, and the states worth looking at inside
+// them. A row that cannot reach its screen is a check that silently passes, so
+// rows arrive with their screens — these five came with iteration 4.
 const SCREENS = [
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
@@ -133,6 +132,60 @@ const SCREENS = [
           && `the declaration is outside the table (${Math.round(a.top)}…${Math.round(a.bottom)} `
              + `vs ${Math.round(t.top)}…${Math.round(t.bottom)})`,
         a.bottom > you.top && `the declaration covers your own seat by ${Math.round(a.bottom - you.top)}px`,
+      ].filter(Boolean);
+    } },
+  { name: 'settings', open: async p => { await p.click('#play'); await p.click('#btnSettings'); },
+    // The disclosure is shut by default, and a shut <details> hides the table
+    // of weights from every rule below. Open it, because that is the state
+    // somebody reading their opponent's weights is in.
+    check: () => { document.querySelector('details').open = true; return []; } },
+  { name: 'history, empty', open: async p => { await p.click('#play'); await p.click('#btnHistory'); } },
+  { name: 'history, a hundred hands', open: async p => {
+      // The cap, so the tally, the per-opponent table and the log are all at
+      // their widest: three-figure counts and four names.
+      await p.evaluate(() => {
+        const now = Date.now();
+        localStorage.setItem('tressette.history', JSON.stringify(
+          Array.from({ length: 100 }, (_, i) => ({
+            t: now - i * 36e5, o: ['Valerio', 'Graziano', 'Piero', 'Franco'][i % 4],
+            d: 'Trevisane', y: 15 - (i % 16), a: i % 16 }))));
+      });
+      await p.click('#play');
+      await p.click('#btnHistory');
+    } },
+  { name: 'about', open: async p => { await p.click('#play'); await p.click('#btnAbout'); } },
+  { name: 'the abandon confirm', open: async p => { await p.click('#play'); await p.click('#again'); },
+    // Without this the row passes on a page that never asks: a new deal is a
+    // perfectly good screen, and the audit has nothing to object to.
+    check: () => document.querySelector('#confirmScrim').hidden
+      ? ['the confirm did not open over a deal in play'] : [] },
+  { name: 'the result, with declarations', open: async p => {
+      await p.click('#play');
+      // The dialog at its longest: both players declaring, which is where the
+      // extra line and the widest numbers are.
+      await p.evaluate(() => {
+        state.over = true;
+        state.terzi = [17, 15];
+        state.accusi[BASSO] = [{ kind: 'set', n: 1, count: 4, points: 4 }];
+        state.accusi[ALTO] = [{ kind: 'napoletana', suit: 0, points: 3 },
+                              { kind: 'set', n: 3, count: 3, points: 3 }];
+        finish();
+      });
+    } },
+  { name: "table, the opponent's hand face up", open: async p => {
+      // The 1997 easter egg, typed the way it is typed — on the start sheet,
+      // because at the table every digit is a card key and the word has four
+      // of them in it. It is also the only row that drives the page entirely
+      // through the keyboard.
+      await p.keyboard.type('6winouj64ie');
+      await p.click('#play');
+    },
+    check: () => {
+      const backs = [...document.querySelectorAll('.hand--opp .card')]
+        .filter(c => c.style.getPropertyValue('--col') === '10').length;
+      return [
+        document.querySelector('#cheatNote').hidden && 'the face-up note is not shown',
+        backs > 0 && `${backs} of the opponent's cards are still face down`,
       ].filter(Boolean);
     } },
   { name: 'table, a card raised', open: async p => {
@@ -590,18 +643,60 @@ async function checkDeal(browser) {
   else {
     try {
       await page.waitForFunction(
-        () => state.over && /vinto|perso|Pari/.test(document.querySelector('.announce').textContent),
+        () => state.over && !document.querySelector('#scrim').hidden &&
+              /Hai vinto|Hai perso|Pareggio/.test(document.querySelector('#resultTitle').textContent),
         null, { timeout: 15000 });
-    } catch { issues.push('the deal never announced a result'); }
+    } catch { issues.push('the deal never reached its result dialog'); }
   }
-  const end = await page.evaluate(() => ({ tricks: state.tricks, over: state.over,
-                                           line: document.querySelector('.announce').textContent }));
+
+  const end = await page.evaluate(() => ({
+    tricks: state.tricks, over: state.over,
+    line: [document.querySelector('#resultTitle').textContent,
+           document.querySelector('#resultYou').textContent + '\u2013' +
+           document.querySelector('#resultOpp').textContent].join(' '),
+    you: Number(document.querySelector('#resultYou').textContent),
+    them: Number(document.querySelector('#resultOpp').textContent),
+    score: scoreDeal(state),
+    // §4's "Done when": the deal shows up in history with the right score.
+    history: JSON.parse(localStorage.getItem('tressette.history') || '[]'),
+    opponent: state.opponent,
+  }));
   if (end.tricks !== 20) issues.push(`${end.tricks} tricks played, not 20`);
+  if (end.you !== end.score[0] || end.them !== end.score[1])
+    issues.push(`the dialog says ${end.you}\u2013${end.them}, the deal scored ${end.score.join('\u2013')}`);
+  const [logged] = end.history;
+  if (!logged) issues.push('the deal was not written to the history');
+  else if (logged.y !== end.you || logged.a !== end.them || logged.o !== end.opponent)
+    issues.push(`the history says ${logged.o} ${logged.y}\u2013${logged.a}, ` +
+                `the dialog says ${end.opponent} ${end.you}\u2013${end.them}`);
+
+  // And the other half of §4's "Done when": a deal abandoned through the
+  // confirm leaves the table and is not recorded. The count has to be read
+  // again afterwards — an abandoned deal that quietly logs itself would look
+  // exactly like one that did not.
+  await page.click('#playAgain');
+  await page.waitForTimeout(200);
+  await page.click('#again');
+  const asked = await page.evaluate(() => !document.querySelector('#confirmScrim').hidden);
+  if (!asked) issues.push('abandoning a deal in play did not ask first');
+  // Through the dialog if it is there, and through abandon() if it is not, so
+  // that a page which never asks still reaches the two assertions below rather
+  // than dying on a click at a hidden button.
+  if (asked) await page.click('#confirmYes'); else await page.evaluate(() => abandon());
+  await page.waitForTimeout(400);
+  const after = await page.evaluate(() => ({
+    screen, logged: JSON.parse(localStorage.getItem('tressette.history') || '[]').length,
+  }));
+  if (after.screen !== 'start') issues.push(`abandoning landed on ${after.screen}, not the start sheet`);
+  if (after.logged !== end.history.length)
+    issues.push(`the abandoned deal was written to the history (${end.history.length} \u2192 ${after.logged})`);
+
   thrown.forEach(t => issues.push(`the page threw: ${t}`));
   await page.close();
 
   console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${plays} cards played against ` +
-              `Valerio, ${end.tricks} tricks — ${end.line || 'no result'}`);
+              `Valerio, ${end.tricks} tricks — ${end.line || 'no result'}, ` +
+              `then one abandoned`);
   issues.forEach(i => console.log(`        ${i}`));
   return issues.length ? 1 : 0;
 }

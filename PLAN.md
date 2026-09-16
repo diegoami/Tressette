@@ -21,12 +21,12 @@ and the sections below say what moves.
 | 1 | Is there a 1997 original to transcribe? | **No.** No Tressette source exists among the repos; the opponent is designed here and tuned by self-play. | If one exists, §3.3 becomes a transcription and the fidelity contract in §1 applies to it, exactly as in Discola. |
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
 | 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
-| 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
+| 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** Confirmed by the owner before iteration 4. | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
 | 5 | The opponents | **The same four names — Valerio, Graziano, Piero, Franco — with Tressette temperaments.** | New names cost nothing technically; the four are kept because they are the house. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
 
-Decisions 1, 2, 3 and 6 were confirmed by the owner; 4 and 5 are defaults
-still open to change.
+Decisions 1, 2, 3, 4 and 6 were confirmed by the owner; 5 is a default still
+open to change, and §7.6 asks for it before iteration 5.
 
 ## 1. What "in the spirit of Discola" means here
 
@@ -815,13 +815,52 @@ ever put the page into the state that shows them. A new state — a finished
 trick, a declaration, a hand that is not yours to play — needs its own row or
 its own pass, and adding the state is the harder half of adding the assertion.
 
-### 4 — Result and sheets (1 day)
+### 4 — Result and sheets (1 day) — done
 
 The result dialog, the declarations line, the start, settings, history and
 about sheets, the confirm scrim, keys, sound, the easter egg.
 
 **Done when** a deal can be played end to end, abandoned with the confirm,
 and shows up in history with the right score.
+
+Decision 4 was confirmed by the owner before this iteration started: accusi
+stay as §0 has them, from the ten dealt and announced automatically.
+
+The sheets are Discola's, forked with the stylesheet in iteration 3 — the CSS
+for chips, decks, fields, prose, tally, log, scrim and result was already in
+the sheet and only the markup and the plumbing were missing. What changed for
+this game: the history counts *mani* rather than *partite*, because a partita
+here is one deal (§0, decision 3); the result dialog gained a line for the
+declarations, since they are scored on top of the eleven points and the two
+numbers alone cannot say where the extra came from; and the settings sheet
+discloses eleven weights, with a note that the last two tricks use none of
+them.
+
+**The result's note is computed, not chosen from a list.** It scores the deal
+again without the last trick's point, and again without the declarations, and
+says whichever one changed hands — "L'ultima presa ha deciso la mano", "Hanno
+deciso gli accusi, non le prese" — falling back to the margin. A phrase that
+can be wrong about the deal it describes is worse than no phrase.
+
+**The easter egg had to move.** `6winouj64ie` has four digits in it, and at
+this table every digit from 1 to 9 and 0 plays a card: in Discola the three
+card keys left 6, 4, 9 and 0 free to fall through to the buffer, and here
+nothing falls through. Letting the digits do both would play cards while you
+typed the word, and a misplay costs the deal — the same reason a tap raises a
+card rather than playing it. So it is typed away from the table, on the start
+sheet or over a sheet, and `state.cheat` survives into the deal. The check row
+that types it is what found this: it failed on the good page, which is the
+only reason anyone knew.
+
+**And the same lesson as iteration 3, immediately.** The face-up table had
+never been rendered by the check before this iteration; the row that renders
+it found `#cheatNote` sitting at 11.2px, under the 12.5px floor, where it had
+been since iteration 3. Six new assertions, six breaks, all caught: no
+recorded deal, no confirm before abandoning, an abandon that stays on the
+table, a result dialog whose numbers disagree with `scoreDeal`, a history log
+at 11px, and dialog buttons 20px tall. The abandon-confirm screen row needed a
+check of its own on top of the audit — a page that never asks just deals
+again, and a fresh table is a perfectly good screen to audit.
 
 ### 5 — The four opponents (1 day)
 

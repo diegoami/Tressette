@@ -5,10 +5,9 @@ description: Run Tressette's UI checks across every screen, dialog and viewport.
 
 # UI check
 
-Tressette is one HTML file — the start sheet and the table today, five screens
-and two dialogs from iteration 4 — and it has to work from a 360px phone to a
-1920px desktop, in both orientations, with five decks whose cards have
-different aspect ratios. Nearly every UI defect this
+Tressette is one HTML file — five screens and two dialogs — and it has to work
+from a 360px phone to a 1920px desktop, in both orientations, with five decks
+whose cards have different aspect ratios. Nearly every UI defect this
 check was written for was invisible to code review and threw no error. It
 exists because reading the diff was repeatedly not enough — in Discola, where
 every threshold below was calibrated.
@@ -57,11 +56,13 @@ and a `lang` on `<html>`. These cannot be layout assertions, because Playwright'
 under mobile emulation — the page measures identically with or without it.
 
 **Screens pass** — every screen the page has, and every state worth looking at,
-at five real device shapes: the start sheet, the table, the table with a card
-raised, and the table with the longest declaration the game can say. Settings, history,
-about, the confirm scrim and the result dialog each get a row in `SCREENS`
-when iteration 4 builds them; a row pointing at a screen that does not exist
-is a check that silently passes, so the rows are added with the screens. Asserts exactly one screen is visible, no sideways
+at five real device shapes: the start sheet; the table, the table with a card
+raised and the table with the longest declaration the game can say; settings
+with the weights disclosure open; history both empty and at its hundred-hand
+cap; about; the abandon confirm; and the result dialog with both players
+declaring, which is its longest form. A row pointing at a screen
+that does not exist is a check that silently passes, so rows arrive with their
+screens. Asserts exactly one screen is visible, no sideways
 scroll, no text below its size floor, no text clipped by a container that
 cannot scroll, no tap target under 32px, and no script or console errors.
 
@@ -76,10 +77,13 @@ anyone replaces the derived `--chrome` with a hard-coded number.
 played by tapping: the strip of a legal card to raise it, the raised card to
 play it, twenty times over. The two passes above measure a table that has just
 been dealt, so this is the only one that fails when the page and the engine come
-apart — or when anything throws in the middle of a deal. It also asserts the two
-things that only exist mid-deal: **both cards of a trick are on the table at
-once** before it is swept, and a number key cannot raise a card the follow-suit
-rule forbids.
+apart — or when anything throws in the middle of a deal. It also asserts the things that only exist
+mid-deal or at the end of one: **both cards of a trick are on the table at
+once** before it is swept; a number key cannot raise a card the follow-suit rule
+forbids; the result dialog's two numbers are what `scoreDeal` returned; the deal
+is written to the history under the same score and opponent; and a second deal
+abandoned through the confirm asks first, lands on the start sheet, and is *not*
+written down.
 
 **The fan** — the assertions this game needs and Briscola did not, because a
 hand of ten cards overlaps. The step of the fan matches the page's own

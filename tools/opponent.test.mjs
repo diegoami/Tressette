@@ -19,7 +19,8 @@ const here = rel => fileURLToPath(new URL(rel, import.meta.url));
 runInThisContext(readFileSync(here("../public/engine.js"), "utf8"));
 
 const { BASSO, ALTO, SUITS, mosseLegali, rngSeed, newDeal, gioca, compGioca,
-        scoreDeal, rollProfiles, fuori, sicura, controlli, WEIGHT_KEYS } = globalThis;
+        scoreDeal, rollProfiles, fuori, sicura, controlli, WEIGHT_KEYS,
+        coda, CODA_FROM } = globalThis;
 
 const P = rollProfiles(rngSeed(1)).Valerio;
 const card = (s, n) => ({ s, n });
@@ -28,8 +29,21 @@ const name = c => `${["asso","due","tre","4","5","6","7","fante","cavallo","re"]
 // A position with the opponent (ALTO) to play. `seen` is what has already gone;
 // `tallone` is what is left to draw, which only has to be long enough for the
 // draws the trick takes.
-function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [] }){
+function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [],
+                 endgame = false }){
   const played = [null, null];
+  // `endgame` completes the position: every card not in a hand and not in the
+  // tallone has been played. An endgame position has to add up, because from
+  // CODA_FROM on the opponent deduces the other hand from exactly this — and
+  // it refuses to search a position that does not, rather than answer
+  // confidently from a 41-card deck.
+  if (endgame){
+    const held = new Set([...alto, ...basso].map(c => c.s * 11 + c.n));
+    gone = [];
+    for (let su = 0; su < 4; su++)
+      for (let n = 1; n <= 10; n++)
+        if (!held.has(su * 11 + n)) gone.push({ s: su, n });
+  }
   // Cards already out of play sit at the front of the deck, dealt and gone.
   const cards = [...gone, ...tallone];
   const state = {
@@ -110,8 +124,7 @@ test("at tricks == 18 it plays the two tricks out instead of scoring them", () =
   const state = table({
     alto: [card(1, 10), card(2, 8)],            // re di coppe, fante di spade
     basso: [card(1, 8), card(2, 1)],            // fante di coppe, asso di spade
-    gone: [card(1, 3), card(1, 2), card(1, 1)], // coppe control, all gone
-    tricks: 18
+    tricks: 18, endgame: true
   });
   chooses(state, card(2, 8), "the last two tricks are played out, not scored");
 });
@@ -231,7 +244,7 @@ test("every trap has a real choice in it", () => {
     table({ led: card(0, 3), basso: [card(0, 3), card(2, 4)],
             alto: [card(0, 1), card(0, 8), card(1, 4)], tallone: [card(3,4), card(3,5)] }),
     table({ alto: [card(1, 10), card(2, 8)], basso: [card(1, 8), card(2, 1)],
-            gone: [card(1, 3), card(1, 2), card(1, 1)], tricks: 18 }),
+            tricks: 18, endgame: true }),
     table({ led: card(0, 5), basso: [card(0, 5), card(0, 6)],
             alto: [card(1, 1), card(1, 4), card(2, 7)], tallone: [card(3,4), card(3,5)] })
   ];
@@ -259,6 +272,43 @@ test("what it knows survives a copy of the state", () => {
   assert.deepEqual(copied, direct, "a copy of the position is the same position");
   assert.equal(sicura(copied, card(0, 10)), true, "the re is still sure through a copy");
   assert.equal(sicura(copied, card(1, 5)), false, "and the 5 di coppe is still not");
+});
+
+test("from CODA_FROM on it searches, and everywhere else it scores", () => {
+  // The search needs the other hand, which it deduces from what has been
+  // played — sound only once the tallone is empty. The risk is not that it
+  // answers wrongly; it is that the deduction quietly stops adding up and the
+  // opponent falls back to the formula for the rest of the game while every
+  // test still passes. So: assert it actually fires, in real deals.
+  let searched = 0, scored = 0;
+  for (let seed = 1; seed <= 25; seed++){
+    const rng = rngSeed(seed);
+    const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rng);
+    while (!state.over){
+      if (state.tricks >= CODA_FROM){
+        assert.notEqual(coda(state, state.deveGiocare), null,
+          `seed ${seed}, trick ${state.tricks}: the deduction did not add up`);
+        searched++;
+      } else scored++;
+      gioca(state, state.deveGiocare, compGioca(state, P));
+    }
+  }
+  assert.equal(searched, 25 * 2 * (20 - CODA_FROM), "every play from CODA_FROM on is searched");
+  assert.equal(scored, 25 * 2 * CODA_FROM, "and every play before it is scored");
+});
+
+test("a position that does not add up is refused, not guessed at", () => {
+  // The same position with the tallone still holding cards: the deduction
+  // would hand the search a hand far larger than the one they hold. It has to
+  // say so rather than search a fiction.
+  const half = table({
+    alto: [card(1, 10), card(2, 8)],
+    basso: [card(1, 8), card(2, 1)],
+    gone: [card(1, 3), card(1, 2)],              // most of the deck unaccounted
+    tricks: 18
+  });
+  assert.equal(coda(half, ALTO), null, "it refuses a position it cannot deduce");
+  assert.ok(compGioca(half, P) !== undefined, "and compGioca still answers, from the formula");
 });
 
 /* --- the fixture ------------------------------------------------------------ */

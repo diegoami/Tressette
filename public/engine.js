@@ -340,59 +340,105 @@ function presa(ledCard, followCard){
            terzi: terzi(ledCard.n) + terzi(followCard.n) };
 }
 
-// §3.4's last two tricks, played out exactly rather than scored. `mine` and
-// `theirs` are the cards still in hand; `led` is their card if they have
-// already led, null if I am leading. Returns my terzi across both tricks with
-// the ultima's 3 included.
+// §3.4's endgame, played out exactly rather than scored.
 //
-// Their best reply is the one that minimises my total, which is the same as
-// the one that maximises theirs: the two sum to the four cards' terzi plus 3,
-// a constant, so there is nothing else for "best" to mean.
-function codaValore(mine, theirs, led){
-  const ultima = 3;
+// From trick eleven the tallone is empty and every card has been seen, so the
+// cards `fuori` reports as outstanding ARE the other hand — deduced, not
+// peeked at. The formula is then scoring a position whose answer is knowable,
+// and it is measurably worse at it: solving from here is worth about seven
+// points of win rate against a random-legal opponent, and about ten against
+// greedy-take.
+//
+// Thirteen rather than eleven is a budget, not a principle. At thirteen each
+// side holds seven cards and one decision searches in single-digit
+// milliseconds; two tricks earlier the tree is an order of magnitude bigger
+// for a point or so of strength.
+//
+// What this costs: all four opponents play these seven tricks identically,
+// because there is nothing to have an opinion about — §1 states that exception
+// and this is its size. It was measured before it was chosen. Two temperaments
+// disagree on 14.8% of the positions where they have a choice, but only 17% of
+// those disagreements fall at trick thirteen or later: the character lives in
+// tricks eight to twelve, where the tallone is running out and hands are still
+// full. Solving the end also widens the spread between profiles rather than
+// narrowing it, because it lifts a sound profile further than a loose one.
+const CODA_FROM = 13;
 
-  if (led !== null){                       // I follow, then the last trick is forced
-    const t19 = presa(led, mine[0]);
-    const iWon19 = !t19.leaderKeeps;
-    const myLast = mine[1], theirLast = theirs[0];
-    const t20 = iWon19 ? presa(myLast, theirLast) : presa(theirLast, myLast);
-    const iWon20 = iWon19 ? t20.leaderKeeps : !t20.leaderKeeps;
-    return (iWon19 ? t19.terzi : 0) + (iWon20 ? t20.terzi + ultima : 0);
+// My terzi from here to the end of the deal, with both sides playing exactly.
+// `led` is the card already on the table, null if I am to lead.
+//
+// Their best reply is the one that minimises my total, which is the same as the
+// one that maximises theirs: over the rest of the deal the two sum to the terzi
+// still in play plus the ultima's 3, a constant, so there is nothing else for
+// "best" to mean.
+function codaValore(mine, theirs, led, myTurn, memo){
+  if (mine.length === 0 && theirs.length === 0) return 0;
+
+  const key = mine.map(c => c.s * 11 + c.n).join(",") + "|"
+            + theirs.map(c => c.s * 11 + c.n).join(",") + "|"
+            + (led ? led.s * 11 + led.n : "-") + (myTurn ? "+" : "-");
+  const seen = memo.get(key);
+  if (seen !== undefined) return seen;
+
+  const ultima = mine.length + theirs.length <= 2 ? 3 : 0;
+  const hand = myTurn ? mine : theirs;
+  const playable = led === null ? hand
+    : (hand.some(c => c.s === led.s) ? hand.filter(c => c.s === led.s) : hand);
+
+  let best = myTurn ? -Infinity : Infinity;
+  for (const c of playable){
+    const rest = hand.filter(x => x !== c);
+    let value;
+    if (led === null){
+      value = myTurn ? codaValore(rest, theirs, c, false, memo)
+                     : codaValore(mine, rest, c, true, memo);
+    } else {
+      const takes = prende(c, led);
+      const pot = terzi(c.n) + terzi(led.n) + ultima;
+      value = myTurn
+        ? (takes ? pot : 0) + codaValore(rest, theirs, null, takes, memo)
+        : (takes ? 0 : pot) + codaValore(mine, rest, null, !takes, memo);
+    }
+    best = myTurn ? Math.max(best, value) : Math.min(best, value);
   }
+  memo.set(key, best);
+  return best;
+}
 
-  const t19 = presa(mine[0], theirs[0]);   // I lead, they answer
-  const iWon19 = t19.leaderKeeps;
-  const myLast = mine[1], theirLast = theirs[1];
-  const t20 = iWon19 ? presa(myLast, theirLast) : presa(theirLast, myLast);
-  const iWon20 = iWon19 ? t20.leaderKeeps : !t20.leaderKeeps;
-  return (iWon19 ? t19.terzi : 0) + (iWon20 ? t20.terzi + ultima : 0);
+// The other hand, deduced from what has been played. Only sound once the
+// tallone is empty, which is why CODA_FROM is past it.
+function manoDedotta(state, me, led){
+  const still = fuori(state, me);
+  const cards = [];
+  for (let s = 0; s < 4; s++)
+    for (let n = 1; n <= 10; n++)
+      if (still[s][n] && !(led && led.s === s && led.n === n)) cards.push({ s, n });
+  return cards;
 }
 
 function coda(state, me){
-  const them = me === BASSO ? ALTO : BASSO;
-  const mySlots = mosseLegali(state.hands[me],
-    me === state.perPrimo ? null : state.played[state.perPrimo]);
-  const theirCards = state.hands[them].filter(c => c !== null);
   const led = me === state.perPrimo ? null : state.played[state.perPrimo];
+  const hand = state.hands[me];
+  const slots = mosseLegali(hand, led);
+  const mine = hand.filter(c => c !== null);
+  const theirs = manoDedotta(state, me, led);
 
-  let bestSlot = mySlots[0], bestValue = -Infinity;
-  for (const slot of mySlots){
-    const mine = [state.hands[me][slot],
-                  ...state.hands[me].filter((c, i) => c !== null && i !== slot)];
-    let value;
-    if (led !== null){
-      value = codaValore(mine, theirCards, led);
-    } else {
-      // Their reply is theirs to choose, so assume the worst one for me.
-      const replies = mosseLegali(state.hands[them], mine[0]);
-      value = Infinity;
-      for (const r of replies){
-        const theirs = [state.hands[them][r],
-                        ...state.hands[them].filter((c, i) => c !== null && i !== r)];
-        value = Math.min(value, codaValore(mine, theirs, null));
-      }
-    }
-    if (value > bestValue){ bestValue = value; bestSlot = slot; }   // ties to the lower slot
+  // The deduction has to come out to a hand the size of the one they hold, or
+  // this is not the position we think it is. Falling back to the formula is
+  // the safe answer; it is unreachable from CODA_FROM on, and it is here so
+  // that a future caller cannot get a confidently wrong answer instead.
+  if (theirs.length !== (led === null ? mine.length : mine.length - 1)) return null;
+
+  const memo = new Map();
+  let bestSlot = slots[0], bestValue = -Infinity;
+  for (const slot of slots){
+    const c = hand[slot];
+    const rest = mine.filter(x => x !== c);
+    const value = led === null
+      ? codaValore(rest, theirs, c, false, memo)
+      : (prende(c, led) ? terzi(c.n) + terzi(led.n) + (mine.length + theirs.length <= 2 ? 3 : 0) : 0)
+        + codaValore(rest, theirs, null, prende(c, led), memo);
+    if (value > bestValue){ bestValue = value; bestSlot = slot; }  // ties to the lower slot
   }
   return bestSlot;
 }
@@ -406,7 +452,10 @@ function compGioca(state, P){
   const led = me === state.perPrimo ? null : state.played[state.perPrimo];
   const slots = mosseLegali(hand, led);
 
-  if (state.tricks === 18) return coda(state, me);
+  if (state.tricks >= CODA_FROM){
+    const exact = coda(state, me);
+    if (exact !== null) return exact;
+  }
 
   const still = fuori(state, me);
   const late = Math.min(1, state.tricks / 10);
@@ -471,5 +520,5 @@ Object.assign(globalThis, {
   rango, terzi, buildDeck, mescola, rngSeed,
   prende, mosseLegali, accusi, puntiAccusi,
   pesca, newDeal, gioca, scoreDeal, vincitore,
-  WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura
+  WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura, CODA_FROM, coda
 });

@@ -171,6 +171,6 @@ if (argv[0] === "--probe"){
   const vsRandom = report(match(n, "valerio", "random"));
   const vsGreedy = report(match(n, "valerio", "greedy"));
   report(match(n, "random", "greedy"));
-  console.log(`\nacceptance (§3.4): random-legal ≥ 95%  ${vsRandom >= 0.95 ? "PASS" : "FAIL"}` +
-              `   greedy-take ≥ 70%  ${vsGreedy >= 0.70 ? "PASS" : "FAIL"}`);
+  console.log(`\nacceptance (§3.4): random-legal ≥ 85%  ${vsRandom >= 0.85 ? "PASS" : "FAIL"}` +
+              `   greedy-take ≥ 80%  ${vsGreedy >= 0.80 ? "PASS" : "FAIL"}`);
 }

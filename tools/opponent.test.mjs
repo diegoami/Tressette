@@ -44,9 +44,15 @@ function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [] })
     partitaPrimo: BASSO
   };
   if (led){
+    // By value, not by identity: card(0, 1) called twice makes two objects, so
+    // `!== led` removed nothing and the led card sat face up on the table and
+    // in BASSO's hand at the same time — a 41-card deck, and fuori() reporting
+    // a card lying in front of it as outstanding.
     state.played[BASSO] = led;
-    state.hands[BASSO] = basso.filter(c => c !== led);
-    while (state.hands[BASSO].length < basso.length) state.hands[BASSO].push(null);
+    const i = basso.findIndex(c => c && c.s === led.s && c.n === led.n);
+    assert.ok(i !== -1, "the led card has to come out of the hand that led it");
+    state.hands[BASSO] = basso.slice();
+    state.hands[BASSO][i] = null;
   }
   return state;
 }
@@ -157,15 +163,50 @@ test("a card still in the tallone counts against you", () => {
 /* --- the habits a win rate hides -------------------------------------------- */
 
 test("it does not lead an asso while the tre and due of that suit are out", () => {
+  // No liscio in this hand, deliberately. The first version of this trap gave
+  // the opponent a 5 to lead, and the liscio bonus of 12 decided it — so the
+  // ace-exposed penalty never entered the comparison and zeroing that weight
+  // did not fail the test. Two point cards is the position where the penalty
+  // is the only thing that can choose, and the asso sits in the lower slot so
+  // a tie goes the wrong way.
   const state = table({
-    alto: [card(0, 1), card(1, 5), card(2, 6)],
-    basso: [card(0, 3), card(0, 2), card(3, 4)],
+    alto: [card(0, 1), card(1, 10)],           // bare asso di denari, re di coppe
+    basso: [card(2, 4), card(2, 5)],
     tricks: 12,
     tallone: []
   });
-  const slot = compGioca(state, P);
-  assert.notEqual(state.hands[ALTO][slot].n, 1,
-    "leading a bare asso into the tre and the due hands over a point");
+  chooses(state, card(1, 10), "leading a bare asso into the tre and the due hands over a point");
+});
+
+test("the trick it is offered is worth the card on the table too", () => {
+  // §3.4: takes → score = (L + v) × TAKE_TERZI_WEIGHT. Dropping L — scoring only
+  // the card it plays — makes it decline a trick that is carrying a point card,
+  // and nothing else in this suite notices: the terzi still sum to 32 and the
+  // deal still scores 11.
+  const state = table({
+    led: card(0, 8),                            // fante di denari, one terzo
+    basso: [card(0, 8), card(2, 4)],
+    alto: [card(0, 7), card(0, 3)],             // a liscio, or the tre
+    tricks: 0,
+    tallone: [card(3, 4), card(3, 5)]
+  });
+  chooses(state, card(0, 3), "two terzi on the table are worth the tre this early");
+});
+
+test("late in the deal the same cheap trick is not worth the tre", () => {
+  // The same position at trick twelve. The spend-control penalty is multiplied
+  // by k, which has reached 2 by now, and the trick is worth less than an asso
+  // — so the tre is kept and the liscio goes. This pins two things at once that
+  // nothing else pins: the floor is `L + v < 3` and not `< 2`, and the penalty
+  // carries the k that §3.4 spends a paragraph defending.
+  const state = table({
+    led: card(0, 8),
+    basso: [card(0, 8), card(2, 4)],
+    alto: [card(0, 7), card(0, 3)],
+    tricks: 12,
+    tallone: []
+  });
+  chooses(state, card(0, 7), "late, a two-terzi trick does not pay for the tre");
 });
 
 test("given a free discard, it keeps the asso's guard", () => {
@@ -199,6 +240,25 @@ test("every trap has a real choice in it", () => {
     assert.ok(mosseLegali(state.hands[ALTO], led).length > 1,
       `position ${i} leaves the opponent only one legal card, so it tests nothing`);
   }
+});
+
+test("what it knows survives a copy of the state", () => {
+  // fuori() used to key its set on card objects, so any state that had been
+  // through JSON, structuredClone or a defensive copy in render() looked like
+  // one where every held card had already been played — and every card would
+  // then be sure. It threw nothing and logged nothing; it just led into cards
+  // that were still out.
+  const state = table({
+    alto: [card(0, 10), card(1, 5)],
+    basso: [card(1, 4), card(1, 7)],
+    gone: [card(0, 3), card(0, 2), card(0, 1)],
+    tricks: 12
+  });
+  const direct = fuori(state, ALTO);
+  const copied = fuori(JSON.parse(JSON.stringify(state)), ALTO);
+  assert.deepEqual(copied, direct, "a copy of the position is the same position");
+  assert.equal(sicura(copied, card(0, 10)), true, "the re is still sure through a copy");
+  assert.equal(sicura(copied, card(1, 5)), false, "and the 5 di coppe is still not");
 });
 
 /* --- the fixture ------------------------------------------------------------ */
@@ -245,6 +305,9 @@ test("the fixture covers both seats and enough of the deal to be worth freezing"
     assert.ok(plays.some(p => p[0] === "B"), `seed ${deal.seed}: no plays from the lower seat`);
     assert.ok(plays.some(p => p[0] === "A"), `seed ${deal.seed}: no plays from the upper seat`);
   }
+  for (const deal of golden.deals)
+    assert.equal(deal.plays.split(" ")[0][0], deal.lead,
+      `seed ${deal.seed}: the recorded leader is not who played first`);
   assert.ok(golden.deals.some(d => d.lead === "B") && golden.deals.some(d => d.lead === "A"),
     "the deals should not all be led by the same seat");
 });

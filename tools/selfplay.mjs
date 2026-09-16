@@ -61,13 +61,16 @@ const PLAYERS = {
 
 // `basso` and `alto` are the two players; the seed fixes the shuffle, so the
 // same seed with the seats swapped is the same deal from the other side.
-function playDeal(seed, basso, alto, watch){
+function playDeal(seed, basso, alto, watch, watched){
   const rng = rngSeed(seed);
   const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rng);
   const sit = [basso, alto];
   while (!state.over){
     const who = state.deveGiocare;
-    if (watch) watch(state, who);
+    // `watched` is the seat the profile is actually sitting in this half of the
+    // mirror. Watching a fixed seat counts the baseline's decisions for half
+    // the deals, which is what the first version of this did.
+    if (watch && who === watched) watch(state, who);
     gioca(state, who, sit[who](state, rng));
   }
   return scoreDeal(state);
@@ -79,8 +82,8 @@ function match(n, a, b, watch){
   for (let seed = 1; seed <= n; seed++){
     for (const aIsBasso of [true, false]){
       const score = aIsBasso
-        ? playDeal(seed, PLAYERS[a], PLAYERS[b], watch)
-        : playDeal(seed, PLAYERS[b], PLAYERS[a], watch);
+        ? playDeal(seed, PLAYERS[a], PLAYERS[b], watch, BASSO)
+        : playDeal(seed, PLAYERS[b], PLAYERS[a], watch, ALTO);
       const mine = aIsBasso ? score[BASSO] : score[ALTO];
       const theirs = aIsBasso ? score[ALTO] : score[BASSO];
       points += mine; deals++;
@@ -110,23 +113,26 @@ function report(r){
 function probe(n){
   console.log(`\nprobe, ${n} seeds mirrored\n`);
 
-  // 1. How often is a sure card even available to lead, before trick ten?
-  let leads = 0, leadsEarly = 0, sureEarly = 0, sureLate = 0, leadsLate = 0;
+  // 1. §4 asks how often the sure bonus *fires* — not how often a sure card is
+  //    available, which is the question the first version of this answered and
+  //    got a misleading yes to. A tre is sure from the deal, so availability is
+  //    near-universal; what matters is whether the bonus changes the lead.
+  let leadsEarly = 0, firedEarly = 0, leadsLate = 0, firedLate = 0;
+  const noSure = { ...PROFILES.Valerio, LEAD_SURE_BONUS: 0 };
   // 2. Tempo: does it decline a trick it could take while holding a sure card?
   let declined = 0, declinedHoldingSure = 0;
 
   const watch = (state, who) => {
-    if (who !== ALTO) return;                 // watch one seat, to count once
     const still = fuori(state, who);
     const hand = state.hands[who];
     const led = who === state.perPrimo ? null : state.played[state.perPrimo];
     const slots = mosseLegali(hand, led);
-    const holdsSure = slots.some(i => sicura(still, hand[i]));
 
     if (led === null){
-      leads++;
-      if (state.tricks < 10){ leadsEarly++; if (holdsSure) sureEarly++; }
-      else { leadsLate++; if (holdsSure) sureLate++; }
+      if (slots.length < 2) return;            // no choice, so nothing fired
+      const fired = compGioca(state, PROFILES.Valerio) !== compGioca(state, noSure);
+      if (state.tricks < 10){ leadsEarly++; if (fired) firedEarly++; }
+      else { leadsLate++; if (fired) firedLate++; }
     } else {
       const chosen = compGioca(state, PROFILES.Valerio);
       const couldTake = slots.some(i => prende(hand[i], led));
@@ -140,9 +146,9 @@ function probe(n){
   match(n, "valerio", "greedy", watch);
 
   const pct = (a, b) => b ? `${(100 * a / b).toFixed(1)}%` : "—";
-  console.log(`  a sure card was available to lead:`);
-  console.log(`    before trick ten   ${pct(sureEarly, leadsEarly)}  (${sureEarly} of ${leadsEarly} leads)`);
-  console.log(`    from trick ten on  ${pct(sureLate, leadsLate)}  (${sureLate} of ${leadsLate} leads)`);
+  console.log(`  the sure bonus changed the card led:`);
+  console.log(`    before trick ten   ${pct(firedEarly, leadsEarly)}  (${firedEarly} of ${leadsEarly} leads with a choice)`);
+  console.log(`    from trick ten on  ${pct(firedLate, leadsLate)}  (${firedLate} of ${leadsLate} leads with a choice)`);
   console.log(`  tricks declined that it could have taken: ${declined}`);
   console.log(`    while holding a sure card:              ${declinedHoldingSure}` +
               `  (${pct(declinedHoldingSure, declined)} of them)`);

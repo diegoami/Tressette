@@ -22,11 +22,11 @@ and the sections below say what moves.
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
 | 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
 | 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** Confirmed by the owner before iteration 4. | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
-| 5 | The opponents | **The same four names — Valerio, Graziano, Piero, Franco — with Tressette temperaments.** | New names cost nothing technically; the four are kept because they are the house. |
+| 5 | The opponents | **Three: Graziano, Piero and Franco.** Decided by the owner during iteration 4. Valerio is dropped — iteration 2 measured him and Franco choosing the same card 99% of the time, and a roster cannot carry two names for one player — and Franco inherits his tuned weights, so the house standard survives under the name that stays. | Four names would need a fourth character the eleven weights cannot express; see iteration 5. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
 
-Decisions 1, 2, 3, 4 and 6 were confirmed by the owner; 5 is a default still
-open to change, and §7.6 asks for it before iteration 5.
+All six were confirmed by the owner; 5 was decided during iteration 4, and the
+roster is three rather than four.
 
 ## 1. What "in the spirit of Discola" means here
 
@@ -939,6 +939,42 @@ at 11px, and dialog buttons 20px tall. The abandon-confirm screen row needed a
 check of its own on top of the audit — a page that never asks just deals
 again, and a fresh table is a perfectly good screen to audit. Eight more went
 in with the review's fixes, each against its own break.
+
+### Defects found by playing iteration 4 — issues #6 and #7
+
+§7.6's half of the work, and it found in one sitting what nineteen viewports
+and five decks could not.
+
+**#7 — a card could not be tapped where it looked free.** The hand keeps its
+holes all deal, and each slot is pulled left over the one before it, so an
+empty slot sits *on top of* the card to its left. An empty slot is a button,
+and a disabled button swallows a click rather than passing it on, so every tap
+aimed at the part of the card underneath did nothing. It got worse as the hand
+thinned, which is backwards: a card whose right-hand neighbours have been
+played looks entirely free and could only be touched on its leftmost strip.
+`pointer-events: none` on an empty slot, and the tap falls through to the card
+under it.
+
+The state is "a hand with holes", which does not exist until several tricks
+have been played — and every pass measures a table that has just been dealt.
+The deal pass plays twenty cards and still never *looked* at the hand between
+them: it drove the table without reading it. It checks now, after every play,
+that the middle of each held card's uncovered part belongs to that card. On
+the page as it was, the deal stops after fifteen cards.
+
+So the rule gains a clause: **a pass that drives the page is not the same as a
+pass that reads it.**
+
+**#6 — the two-tap raise was awkward.** Not the target — a raised card takes
+`z-index: 3`, so its whole face is free — the *state*: at `translateY(-18%)`
+the card moved less than the width of the strip it came out of, so the second
+tap read as a repeat of the first. It lifts 40% now, brighter and clear of the
+fan, and the line above the hand says *Gioca il tre di spade* rather than
+naming the card. Drag-and-drop was considered and declined: the keyboard path
+needs the raise whatever the pointer does, so a drag would be a second way in
+rather than a replacement, and a fan of ten overlapping cards is a poor drag
+source. Both halves are asserted — the lift is at least .3 of a card, and the
+line says what the next tap will do — and both fail on the page as it was.
 
 ### 5 — The four opponents (1 day)
 

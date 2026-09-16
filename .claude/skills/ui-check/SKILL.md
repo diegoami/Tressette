@@ -81,14 +81,17 @@ the rows never drift apart. Then it
 repeats the tightest viewports with the spacing tokens inflated, which fails if
 anyone replaces the derived `--chrome` with a hard-coded number.
 
-**Deal pass** — one whole deal against Valerio at one viewport in one deck,
+**Deal pass** — one whole deal against the opponent at one viewport in one deck,
 played by tapping: the strip of a legal card to raise it, the raised card to
 play it, twenty times over. The two passes above measure a table that has just
 been dealt, so this is the only one that fails when the page and the engine come
-apart — or when anything throws in the middle of a deal. It also asserts the things that only exist
+apart — or when anything throws in the middle of a deal. It reads the table as well as driving it — that
+distinction is the whole of issue #7, where a pass that played twenty cards
+never looked at the hand between them — and asserts the things that only exist
 mid-deal or at the end of one: **both cards of a trick are on the table at
-once** before it is swept; a number key cannot raise a card the follow-suit rule
-forbids; the result dialog's two numbers are what `scoreDeal` returned; the deal
+once** before it is swept; **every card you still hold can be tapped where it
+looks free**, which stops being true the moment the hand has holes in it; a
+number key cannot raise a card the follow-suit rule forbids; the result dialog's two numbers are what `scoreDeal` returned; the deal
 is written to the history under the same score and opponent; and a second deal
 abandoned through the confirm asks first, lands on the start sheet, and is *not*
 written down.
@@ -168,6 +171,8 @@ shipped — in Discola, which is the same table and the same budget:
 | a card was played through the abandon dialog | the card keys only checked the screen, and a dialog is a scrim over the table — `Enter` answered the dialog *and* played the raised card |
 | the result opened over a sheet | the result dialog ignored what was on screen, so it landed over the history, which still said no hand had ever been played |
 | the history has no way to clear itself | one entry written by another build threw mid-render and took the log and the wipe button with it |
+| a card cannot be tapped where it looks free | the hand keeps its holes, each slot overlaps the one before it, and an empty slot is a button that swallows the tap meant for the card underneath — worse the thinner the hand gets |
+| a raised card does not lift far enough | at 18% of a card the lift was shorter than the strip the card came out of, so the second tap read as a repeat of the first |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

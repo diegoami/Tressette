@@ -505,6 +505,14 @@ const measure = () => {
   // check that --say is still in step with the type it reserves room for: the
   // strip clips what does not fit, silently.
   const nameH = document.querySelector('.sel-name').getBoundingClientRect().height;
+  // Issue #6: the raise has to read as a state, not as a nudge. Two things
+  // make it one, and both are measured here — how far the card comes out of
+  // the fan, and whether the line above the hand says what the next tap does.
+  // At 18% of a card the lift was shorter than the strip the card came out of,
+  // and the line just named the card, so the second tap read as a repeat of
+  // the first.
+  const raisedLift = Math.round(cards[0].top - raised.top);
+  const saysNext = /^Gioca /.test(document.querySelector('.sel-name').textContent);
   state.selected = wasSelected; render();
 
   return {
@@ -517,6 +525,7 @@ const measure = () => {
     raisedAbove: Math.round(table.top - raised.top),
     raisedBelowFold: Math.round(raised.bottom - window.innerHeight),
     sayClip: Math.round(sayShown ? Math.max(0, nameH - say.height) : 0),
+    raisedLift, saysNext,
     gapTop: Math.round(trick.top - oppHand.bottom),
     sayMissing: !sayShown,
     gapBot: Math.round((sayShown ? say.top : youHand.top) - Math.max(trick.bottom, tallone.bottom)),
@@ -582,6 +591,15 @@ const tableFaults = r => [
   // §3.7, assertion 2: a raised card is what you are about to play, so it has
   // to be wholly on the table and wholly on screen.
   r.raisedAbove > 0 && `a raised card lifts ${r.raisedAbove}px above the table`,
+
+  // Issue #6. .3 of a card is not taste: it is the point at which the lift is
+  // longer than the strip the card came out of, so the card reads as out of
+  // the fan rather than nudged within it. At .18, where this started, the two
+  // taps felt like one thing done twice.
+  r.raisedLift < 0.3 * r.ch &&
+    `a raised card lifts ${r.raisedLift}px, ${(r.raisedLift / r.ch).toFixed(2)} of a card: ` +
+    'not far enough to read as raised',
+  !r.saysNext && 'the line above your hand does not say what the next tap will do',
   r.raisedBelowFold > 0 && `a raised card sits ${r.raisedBelowFold}px below the fold`,
 ].filter(Boolean);
 
@@ -730,6 +748,30 @@ async function checkDeal(browser) {
     }
     plays++;
 
+    // Issue #7: every card you still hold has to be reachable where it looks
+    // reachable. The hand keeps its holes all deal, each slot overlaps the one
+    // before it, and an empty slot is a box that swallows a tap — so a card
+    // with played slots to its right looked entirely free and could only be
+    // touched on its leftmost strip. Checked from the middle of the part of
+    // each card that no later held card covers, which is where a player aims.
+    const unreachable = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('.hand--you .card')];
+      const bad = [];
+      cards.forEach((c, i) => {
+        if (c.dataset.empty === 'true') return;
+        const r = c.getBoundingClientRect();
+        const next = cards.slice(i + 1).find(n => n.dataset.empty === 'false');
+        const right = next ? Math.min(next.getBoundingClientRect().left, r.right) : r.right;
+        const hit = document.elementFromPoint((r.left + right) / 2, r.top + r.height / 2);
+        if (hit !== c && !c.contains(hit))
+          bad.push(`${i} (${hit ? hit.id || hit.className : 'nothing'} is in front of it)`);
+      });
+      return bad;
+    });
+    for (const u of unreachable.slice(0, 2))
+      issues.push(`a card you hold cannot be tapped where it looks free: slot ${u}`);
+    if (unreachable.length) break;
+
     if (!await yourCardShows(move.card)) {
       issues.push('the card you played was not on the table the moment you played it: ' +
                   'the trick before it is still there');
@@ -744,8 +786,20 @@ async function checkDeal(browser) {
     }
   }
 
-  if (plays < 20) issues.push(`only ${plays} of 20 cards could be played`);
-  else {
+  // A deal that could not be played out says nothing about what comes after it,
+  // and every stage below needs a finished one: run them only if the twenty
+  // cards went down, and report the first real failure instead of a cascade of
+  // clicks at buttons that are not there.
+  if (plays < 20) {
+    issues.push(`only ${plays} of 20 cards could be played`);
+    thrown.forEach(t => issues.push(`the page threw: ${t}`));
+    await page.close();
+    console.log(`  FAIL  ${plays} cards played against Valerio, then the deal stopped`);
+    issues.forEach(i => console.log(`        ${i}`));
+    return 1;
+  }
+
+  {
     try {
       await page.waitForFunction(
         () => state.over && !document.querySelector('#scrim').hidden &&
@@ -785,7 +839,7 @@ async function checkDeal(browser) {
   // went to the start sheet, and *then* dealt a new hand, which ran behind the
   // start sheet with the opponent leading into a table nobody could see. An
   // assertion that asked for the start sheet here passed on that bug.
-  await page.click('#playAgain');
+  await page.click('#playAgain', { timeout: 4000 });
   await page.waitForTimeout(200);
 
   // A trick first, and then the discard has to happen while the sweep is

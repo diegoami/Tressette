@@ -322,6 +322,11 @@ function weights(values){
 // Iteration 2 tunes one profile. Graziano, Franco and Piero are iteration 5,
 // which is also where `rng` starts doing something: Piero is rolled from it,
 // once per session, as in Discola.
+// §0 decision 5: three players, not four. Valerio was dropped during iteration
+// 4 — iteration 2 measured him and Franco choosing the same card 99 times in a
+// hundred, and a table cannot carry two names for one player — and Franco keeps
+// his weights, so the house standard is the same player under the name that
+// stayed.
 function rollProfiles(rng){
   return {
     // Tuned by coordinate ascent on seeds 1..250 and chosen between candidates
@@ -334,12 +339,43 @@ function rollProfiles(rng){
     // last seven. Every trick the search gains or gives back revalues the late
     // weights, silently — moving CODA_FROM means re-measuring these, not just
     // re-recording the fixture.
-    Valerio: weights([
+    Franco: weights([
       //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
            4.0,   12.0,  0.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
-    ])
+    ]),
+
+    // Loose and quick: he leads his big cards instead of keeping them back,
+    // spends control to take a trick, and worries less about exposing an asso.
+    // He plays a different card from Franco in one choice in ten and beats
+    // greedy-take 79% against Franco's 86% — which is the whole story of §4
+    // iteration 5. Character in this formula is bought with LEAD_LISCIO_BONUS
+    // and paid for in win rate at about a point per percent, so a Graziano you
+    // can tell apart is a Graziano you beat more often. The owner chose where
+    // on that curve he sits.
+    Graziano: weights([
+      //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+           4.0,    8.0,  0.0,   1.0,   2.5,  -4.0,   2.5,   1.5,   1.0,   1.5,  1.0
+    ]),
+
+    // Rolled once per session, as Discola's Piero is, because SetProfiles ran
+    // from FormCreate in 1997. A house tradition now rather than a Delphi
+    // accident — and the reason rollProfiles takes an rng at all.
+    Piero: weights(PIERO_RANGES.map(([lo, hi]) => Math.round((lo + rng() * (hi - lo)) * 10) / 10))
   };
 }
+
+// The intervals Piero is drawn from. Wide enough that two sessions play
+// differently, narrow enough that he is still playing Tressette — and the
+// liscio bonus is the one that has to be kept off the floor: it is the weight
+// that carries the character in this formula, and below about 7 it takes the
+// player down with it (at 3, the win rate against greedy-take falls from 90%
+// to 64%). Every other range straddles Franco's value.
+const PIERO_RANGES = [
+  //  SURE      LISCIO      LONG      ACE       CTRL       VOID
+  [2, 6], [7, 14], [0, 1.0], [0.5, 5], [0.5, 4], [-5, -1],
+  //  TAKE      GIVE      SPEND     GUARD     LATE
+  [1, 3], [1, 3], [0.5, 3], [0, 3], [0.7, 1.3]
+];
 
 // The trick two cards make: does the follower take it, and what is it worth.
 function presa(ledCard, followCard){

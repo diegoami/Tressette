@@ -25,8 +25,16 @@ cards overlapping the hand, the player's own hand pushed below the fold, the
 table drifting apart until it stopped reading as one surface, body copy at
 12.5px, and every screen rendering at once behind a click-eating overlay. This
 game forks that table, so it inherits every one of those ways to fail, plus the
-fan's own. Reading the diff catches none of them; the check catches all of
-them.
+fan's own. Reading the diff catches none of them; the check catches each one it
+has a row for.
+
+That last clause is the whole of it. **An assertion only sees the states the
+check renders.** Iteration 3 shipped a table where a finished trick was never
+drawn, a declaration was cut in half at every phone width, and your own name
+plate hung below the fold — with every assertion green, because no pass ever
+rendered a finished trick, an announcement, or measured anything below your
+cards. When the page gains a state, the check gains the row that puts it there,
+and that is the harder half of the work.
 
 The `ui-check` skill explains what it covers and how to read a failure.
 
@@ -52,10 +60,19 @@ makes a card unreachable, and a misplay costs the deal. That is why a tap
 raises a card and a second tap plays it, and why the fan assertions in §3.7 of
 `PLAN.md` are written against a broken fan before the good one.
 
-Anything that appears on the table while a deal is running — the line that
-names the raised card, a declaration — is in the budget too, and is in the flow
-whether or not it has something to say. A row that costs nothing while empty
-moves every card below it the moment it fills.
+Anything that takes vertical space on the table is in the budget, and is in the
+flow whether or not it has something in it: the line that names the raised card
+costs `--say` whether or not a card is raised, because a row that costs nothing
+while empty moves every card below it the moment it fills. Anything that cannot
+be budgeted — a declaration is a sentence, and three of them at once is three
+lines — does not go in the flow at all; it floats over the table and out of the
+budget.
+
+**Every term of `--chrome` is derived, including the ones that look like
+constants.** `--plates` was 76px, forked from Discola, against two name plates
+that cost 120px on a 770px-wide screen, because their type is expressed in vw —
+and the player's own plate hung below the fold while the check said `pass`. A
+number in that block is a defect waiting for the screen that disagrees with it.
 
 ## The engine is ours, and then it is frozen
 

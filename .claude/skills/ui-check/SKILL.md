@@ -56,8 +56,9 @@ and a `lang` on `<html>`. These cannot be layout assertions, because Playwright'
 `viewport` option sets the layout viewport directly and the tag is only consulted
 under mobile emulation — the page measures identically with or without it.
 
-**Screens pass** — every screen the page has, at five real device shapes: the
-start sheet, the table, and the table with a card raised. Settings, history,
+**Screens pass** — every screen the page has, and every state worth looking at,
+at five real device shapes: the start sheet, the table, the table with a card
+raised, and the table with the longest declaration the game can say. Settings, history,
 about, the confirm scrim and the result dialog each get a row in `SCREENS`
 when iteration 4 builds them; a row pointing at a screen that does not exist
 is a check that silently passes, so the rows are added with the screens. Asserts exactly one screen is visible, no sideways
@@ -74,27 +75,55 @@ anyone replaces the derived `--chrome` with a hard-coded number.
 **Deal pass** — one whole deal against Valerio at one viewport in one deck,
 played by tapping: the strip of a legal card to raise it, the raised card to
 play it, twenty times over. The two passes above measure a table that has just
-been dealt, so this is the only one that fails when the page and the engine
-come apart — or when anything throws in the middle of a deal.
+been dealt, so this is the only one that fails when the page and the engine come
+apart — or when anything throws in the middle of a deal. It also asserts the two
+things that only exist mid-deal: **both cards of a trick are on the table at
+once** before it is swept, and a number key cannot raise a card the follow-suit
+rule forbids.
 
 **The fan** — the assertions this game needs and Briscola did not, because a
-hand of ten cards overlaps. Every card has a strip wide enough to single out,
-by `min(24px, .4 of a card)`: the absolute term catches a fan whose margin
-arithmetic has gone wrong, and the share term keeps it from failing a card
-sitting on its own 32px clamp floor, where a good fan is 22px wide. The steps
-are even to within a pixel, the fan stays inside the table on both edges — on
-the right that is also "the last card is whole", one subtraction and so one
-message — and a raised card is entirely inside the table and above the fold.
-Three more came out of the defect the raised-card assertion found: the line
-above your hand that names the raised card is never zero-height, never clips
-what it holds, and counts as content rather than as a gap when the rows are
-measured for drift. All of it in every deck, at every viewport, with the
-spacing tokens inflated. Cards are already excluded from the 32px tap-target rule, and were
+hand of ten cards overlaps. The step of the fan matches the page's own
+`--strip`, which catches margins that have drifted from the token at any
+`--overlap`; and the strip is either 24px wide or at least `.45` of a card,
+which is the share the design gives its tightest orientation. Both terms are
+needed: a card on its 32px clamp floor shows a good 22px strip and must pass,
+while a desktop fan cut from `.7` to `.42` must fail — a `min(24px, .4 of a
+card)` floor passed that break at every viewport, because its absolute term is
+inert below a 60px card. The steps are even to within a pixel, the fan stays
+inside the table on both edges — on the right that is also "the last card is
+whole", one subtraction and so one message — and a raised card is entirely
+inside the table and above the fold. Three more came out of the defect the
+raised-card assertion found: the line above your hand that names the raised card
+is never zero-height, never clips what it holds, and counts as content rather
+than as a gap when the rows are measured for drift. And dimming means one thing
+— the rule forbids this card — so the number of dimmed cards has to equal the
+number of illegal ones, which is zero while the opponent is thinking. All of it
+in every deck, at every viewport, with the spacing tokens inflated.
+
+Two mechanical notes, both of them bugs once. The measuring passes run with
+`transition` and `animation` off, because a measurement taken on the tick that
+*starts* the raise reads the unraised box — the raised-card assertions were
+blind to the geometry they exist to catch. And the fold is measured from
+`.seat--you`, not from `.hand--you`: in portrait your name plate is below your
+hand, and it hung 15px off the bottom of the screen at 770x1475 while this pass
+printed `pass`. Cards are already excluded from the 32px tap-target rule, and were
 before this game existed: `check_ui.mjs:163-168` excludes them because a card's
 size is the table's budget, asserted by the table pass rather than by a
 thumb-sized floor. The fan gives that exclusion a second reason rather than its
 first — a strip is narrower than 32px by design, which is why a card is raised
 by one tap and played by a second.
+
+## The thing this check cannot do for you
+
+**An assertion only sees the states the check renders.** Iteration 3 shipped a
+table where a finished trick was never drawn, a declaration was cut in half at
+every phone width, and the player's own name plate hung below the fold — with
+every assertion green, because no pass rendered a finished trick, no pass showed
+an announcement, and nothing measured below the cards. None of those was a weak
+threshold; the page was simply never in the state that shows them.
+
+So when the page gains a state, the check gains the row that puts it there. That
+is the harder half of adding an assertion, and it is the half that gets skipped.
 
 ## Reading a failure
 
@@ -116,6 +145,11 @@ shipped — in Discola, which is the same table and the same budget:
 | the fan runs past the table | written against a `--cw` with the width term dropped, which sizes ten cards by height alone and runs the hand up to 227px past the edge |
 | a raised card below the fold | the line naming the raised card was `hidden` until it had something to say, so raising a card added a row and moved every card 31px down, past the fold in landscape |
 | the name strip takes no space | the same defect, named where it starts rather than where it shows |
+| both cards of a trick | `gioca` resolves a trick and clears it in the same call, so a table that renders straight from the engine blanked both cards the instant the second one landed and swept two empty boxes |
+| cut off inside an ancestor | a declaration in a strip sized for one line lost half a line off the top and half off the bottom at every phone width; the horizontal rule could not see it, because the element that clips is not the element that holds the text |
+| your seat below the fold | `--plates` was a hand-set 76px against two name plates that cost 120px at 770x1475, and the fold was measured from the hand, not from the plate below it |
+| a key raised an illegal card | the pointer cannot reach one — it is a disabled button — so the keyboard path raised a forbidden card and threw on the second press |
+| dimmed but not illegal | every card dims while the opponent thinks, saying "wait" in the mark that means "illegal", with ten translucent cards showing through one another |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

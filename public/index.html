@@ -45,18 +45,27 @@
   --step: clamp(.5rem, 1.4vw, 1rem);         /* .table row gaps              */
   --trick-pad: var(--step);                  /* .trick, inside its border    */
   --extra-gap: 0px;                          /* .middle's gap when it stacks */
+  /* A name plate is its type plus its padding: the who-line at --t-pick, the
+     score at 1.5rem, and .35rem above and below. Derived, because --t-pick is
+     expressed in vw on phone-shaped screens — at 770x1475 it is 34px and a
+     plate is 60px tall, against the 76px that used to be hard-coded here for
+     both of them. Your own plate was cut in half by the bottom of the screen
+     and the check said `pass`: it measured your hand, and in portrait the
+     plate is below your hand. */
+  --plate-h: calc(max(var(--t-pick) * 1.45, 1.5rem) + .7rem);
   --plates: 0px;                             /* name plates, when they stack  */
   --slack: 8px;                              /* never land exactly on zero   */
   --pad-inline: clamp(16px, 3vw, 2rem);      /* .table, left and right        */
   --rows: 3;                                 /* card rows down the table     */
-  /* The line above your hand that names the raised card and carries a
-     declaration. It is always in flow and always this tall, empty or not:
-     while it was `hidden` until it had something to say, showing it moved
-     every card below it down 31px — past the fold in landscape, where there
-     is no spare height to absorb it. Reserving the space costs those pixels
-     honestly, in the budget, and it rides inside your seat rather than as a
-     table row of its own so that it costs no extra row gap. */
-  --say: calc(var(--t-label) * 1.5 + 4px);
+  /* The line above your hand that names the raised card. It is always in flow
+     and always this tall, empty or not: while it was `hidden` until it had
+     something to say, showing it moved every card below it down 31px — past
+     the fold in landscape, where there is no spare height to absorb it.
+     Reserving the space costs those pixels honestly, in the budget, and it
+     rides inside your seat rather than as a table row of its own so that it
+     costs no extra row gap. A card's name is two or three words, so one line
+     of --t-tiny holds it; a declaration is a sentence and does not go here. */
+  --say: calc(var(--t-tiny) * 1.5 + 4px);
   --chrome: calc(var(--topbar) + 2*var(--pad-block) + 2*var(--step)
                  + 2*var(--trick-pad) + var(--extra-gap) + var(--plates)
                  + var(--say) + var(--slack));
@@ -249,8 +258,11 @@ button, select, input{ font: inherit; color: inherit; }
   box-shadow: 0 12px 20px rgba(0,0,0,.55), 0 0 0 2px var(--brass);
 }
 /* A card the follow-suit rule forbids. Dimmed and inert, so the rule is taught
-   by the table rather than by an error message after the fact. */
-.hand--you > .card:disabled[data-empty="false"]{ opacity: .4; }
+   by the table rather than by an error message after the fact — but only while
+   it is your turn to play. Every card is inert while the opponent thinks, and
+   dimming them all there says "wait" in the mark that means "illegal", with ten
+   translucent cards showing through one another down the fan. */
+.hand--you[data-turn="true"] > .card:disabled[data-empty="false"]{ opacity: .4; }
 
 .seat--opp .plate{ grid-column: 1; justify-self: start; }
 .seat--you .plate{ grid-column: 3; justify-self: end; }
@@ -287,11 +299,11 @@ button.card:not(:disabled):focus-visible{
 }
 button.card:disabled{ cursor: default; }
 
-/* The strip that holds the transient line for a declaration and the name of
-   the raised card. It spans your seat, directly above the cards it talks
-   about. The strip itself never leaves the flow — see --say — so neither line
-   can move the cards; only its contents come and go. Its row gap is zero
-   because --say already carries the 4px that separates it from the hand. */
+/* The strip that holds the name of the raised card, spanning your seat,
+   directly above the cards it talks about. It never leaves the flow — see
+   --say — so it cannot move the cards; only its contents come and go. Its row
+   gap is zero because --say already carries the 4px that separates it from the
+   hand. */
 .seat--you{ row-gap: 0; }
 .say{
   grid-column: 1 / -1;
@@ -299,19 +311,52 @@ button.card:disabled{ cursor: default; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.5ch;
   overflow: hidden;
 }
-.announce, .sel-name{
+.sel-name{
   margin: 0;
   text-align: center;
   line-height: 1.5;
   font-family: var(--font-label);
   text-transform: uppercase;
   letter-spacing: .1em;
+  color: var(--ivory-dim);
+  font-size: var(--t-tiny);
 }
-.announce{ color: var(--brass); font-size: var(--t-label); }
-.sel-name{ color: var(--ivory-dim); font-size: var(--t-tiny); }
+
+/* A declaration — and, until iteration 4 gives the result its dialog, the
+   score at the end of a deal. It is a sentence, and several declarations in one
+   hand make it a long one, so it is not in the card budget at all: a strip
+   sized for one line of it clipped the second line in half at every phone
+   width, top and bottom, and a strip sized for three lines would take the space
+   out of the cards for a message that is on screen for 2.6 seconds. It floats
+   over the top of the table instead, where the only thing under it is the
+   opponent's face-down hand, and it wraps to as many lines as it needs. Body
+   copy's size, because a sentence is read rather than glanced at. */
+.table > .announce{
+  position: absolute;
+  top: calc(var(--pad-block) + var(--step));
+  /* Both edges, then centred by auto margins. With only `left: 50%` the box
+     shrinks to fit the space from the middle to the right edge — half the room
+     it has — and a sentence that would take two lines takes six. */
+  left: var(--pad-inline);
+  right: var(--pad-inline);
+  z-index: 4;
+  width: max-content;
+  max-width: calc(100% - 2 * var(--pad-inline));
+  margin: 0 auto;
+  padding: .4rem .9rem;
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: var(--t-body);
+  line-height: 1.35;
+  color: var(--brass);
+  background: rgba(8, 26, 21, .92);
+  box-shadow: inset 0 0 0 1px var(--brass-dim), 0 8px 24px rgba(0, 0, 0, .45);
+}
 
 .card--won-up{   animation: sweepUp   .45s ease-in both; }
 .card--won-down{ animation: sweepDown .45s ease-in both; }
@@ -755,11 +800,18 @@ button.card:disabled{ cursor: default; }
      plate rows out of the card budget rather than pretending they are free. */
   .seat{ grid-template-columns: minmax(0,1fr); justify-items: center; gap: .25rem; }
   .hand, .seat--opp .plate, .seat--you .plate{ grid-column: 1; justify-self: center; }
+  /* The height --plates reserves, made explicit, so the budget and the plate
+     cannot drift apart: if the type ever outgrows the box the audit's clipped
+     text rule says so instead of the table quietly overflowing. Your seat sets
+     row-gap to 0 for the name strip, so your plate keeps its own margin. */
+  .plate{ height: var(--plate-h); }
+  .seat--you .plate{ margin-top: .25rem; }
 
   :root{
     --rows: 4;
     --extra-gap: 1rem;
-    --plates: 76px;
+    /* Two plates and the gap each one keeps from its hand. */
+    --plates: calc(2 * var(--plate-h) + .5rem);
     /* Discola's portrait floor and cap, and the same two terms as above. The
        22vw that used to sit here is gone with the 9vw: see the note on --cw. */
     --overlap: .45;
@@ -874,9 +926,10 @@ button.card:disabled{ cursor: default; }
       </div>
     </section>
 
+    <p class="announce" id="announce" hidden></p>
+
     <section class="seat seat--you">
       <div class="say">
-        <p class="announce" id="announce" hidden></p>
         <p class="sel-name" id="selName" hidden></p>
       </div>
       <div class="hand hand--you" id="youHand"></div>
@@ -925,7 +978,6 @@ button.card:disabled{ cursor: default; }
 
 /* --- decks ------------------------------------------------------------------ */
 
-const DECKS = ["Trevisane", "Piacentine", "Napoletane", "Romagnole", "Francesi"];
 const DECK_RATIO = {
   Trevisane: 125 / 60, Romagnole: 112 / 71, Napoletane: 128 / 78,
   Piacentine: 128 / 74, Francesi: 128 / 75
@@ -935,6 +987,11 @@ const SHEET = { Trevisane: "trevisane", Piacentine: "piacentine", Napoletane: "n
 
 const NOMI = ["asso", "due", "tre", "quattro", "cinque", "sei", "sette",
               "fante", "cavallo", "re"];
+// A declaration names three or four of a rank, so it needs the plural. Four of
+// the ten are invariant and one is irregular, which is why this is a table and
+// not a suffix: "tre assi", not "tre assoi".
+const PLURALI = ["assi", "due", "tre", "quattro", "cinque", "sei", "sette",
+                 "fanti", "cavalli", "re"];
 const nomeDi = card => `${NOMI[card.n - 1]} di ${SUITS[card.s]}`;
 
 /* --- state ------------------------------------------------------------------ */
@@ -954,6 +1011,9 @@ const state = {
 
 let timer = null;
 let sayTimer = null;
+// The trick the table is still showing while it is swept. The engine clears a
+// trick the moment it resolves; the table is a step behind it on purpose.
+let sweeping = null;
 let epoch = 0;          // bumped on every new deal, so a stale timer cannot fire into it
 
 // The game's own clock: one timer, so a new deal cancels whatever the last one
@@ -1064,6 +1124,8 @@ function render(){
   const led = state.deveGiocare === state.perPrimo ? null : state.played[state.perPrimo];
   const legal = yourTurn ? mosseLegali(state.hands[BASSO], led) : [];
 
+  el.youHand.dataset.turn = String(yourTurn);
+
   [...el.youHand.children].forEach((node, i) => {
     const card = state.hands[BASSO][i];
     faceOf(node, card);
@@ -1082,8 +1144,9 @@ function render(){
     if (state.cheat) faceOf(node, card); else backOf(node);
   });
 
-  faceOf(el.slotOpp, state.played[ALTO]);
-  faceOf(el.slotYou, state.played[BASSO]);
+  const onTable = sweeping ?? state.played;
+  faceOf(el.slotOpp, onTable[ALTO]);
+  faceOf(el.slotYou, onTable[BASSO]);
 
   const remaining = 40 - state.next;
   el.pile.dataset.stock = remaining >= 1 ? "1" : "0";
@@ -1110,7 +1173,7 @@ function announce(who, list){
   if (!list.length) return;
   const words = list.map(a => a.kind === "napoletana"
     ? `napoletana di ${SUITS[a.suit]}`
-    : `${a.count === 4 ? "quattro" : "tre"} ${NOMI[a.n - 1]}${a.n === 1 ? "i" : ""}`);
+    : `${a.count === 4 ? "quattro" : "tre"} ${PLURALI[a.n - 1]}`);
   const punti = list.reduce((t, a) => t + a.points, 0);
   el.announce.textContent =
     `${who === BASSO ? "Tu" : state.opponent}: ${words.join(", ")} — ${punti} punti`;
@@ -1124,12 +1187,26 @@ function announce(who, list){
 // sane tap target and a misplay costs the deal, so nothing is played by one tap.
 function tapped(slot){
   if (state.deveGiocare !== BASSO || state.over) return;
+  // The pointer cannot reach an illegal card because it is a disabled button.
+  // The keyboard can, so the rule lives here rather than in the markup: number
+  // keys used to raise a forbidden card and then throw out of gioca on the
+  // second press.
+  const led = state.perPrimo === BASSO ? null : state.played[state.perPrimo];
+  if (!mosseLegali(state.hands[BASSO], led).includes(slot)) return;
   if (state.selected !== slot){ state.selected = slot; render(); return; }
   play(BASSO, slot);
 }
 
 function play(who, slot){
+  // The pair as the table shows it, captured before gioca resolves the trick:
+  // resolving clears state.played and deals the draw, so a render after it
+  // paints two empty slots and the sweep animates nothing. The table keeps
+  // showing the trick until the sweep is over — seeing what the other player
+  // answered with is most of what a card table is for.
+  const shown = state.played.slice();
+  shown[who] = state.hands[who][slot];
   const { announced, trick } = gioca(state, who, slot);
+  if (trick) sweeping = shown;
   state.selected = null;
   blip(who === BASSO ? 760 : 620);
   announce(who, announced);
@@ -1152,6 +1229,7 @@ function resolve(trick){
   later(() => {
     for (const node of [el.slotOpp, el.slotYou])
       node.classList.remove("card--won-up", "card--won-down");
+    sweeping = null;
     render();
     if (state.over){ finish(); return; }
     if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed * 0.6);
@@ -1171,6 +1249,7 @@ function newDealHere(){
   clearTimeout(sayTimer);
   newDeal(state, Math.random);
   state.selected = null;
+  sweeping = null;
   el.announce.hidden = true;
   render();
   if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed);

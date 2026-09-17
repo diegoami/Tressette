@@ -91,14 +91,35 @@ function prende(follow, led){
 }
 
 // §2.3. Follow suit if you can, otherwise anything. Returns slot indices, not
-// cards, because the hand keeps its holes: a played card leaves a null behind
-// and a draw fills the first one, so a card's slot is its place in the fan.
+// cards, because a slot is a card's identity for as long as it is held: a
+// played card leaves a null behind, a draw fills the first one, and nothing
+// here ever reorders a hand. Where a card *sits* is ordinaMano's business,
+// below, and the two are deliberately not the same thing.
 function mosseLegali(hand, led){
   const full = [];
   for (let i = 0; i < hand.length; i++) if (hand[i] !== null) full.push(i);
   if (led === null || led === undefined) return full;
   const following = full.filter(i => hand[i].s === led.s);
   return following.length ? following : full;
+}
+
+// §3.7. The order a hand is *held* in, as slot indices: by suit, and within a
+// suit from the strongest card down. Nothing in the engine reads it — it is
+// here rather than in the page because it is a fact about Tressette's rank
+// order, which is `rango` and lives here, and because the tests can then hold
+// it to that.
+//
+// It deliberately does not reorder `hands`. A slot is an identity: mosseLegali
+// returns slot indices, gioca takes one, and compGioca breaks ties on the
+// lowest of them, so a hand that sorted itself would move every one of those
+// under its callers and change which card the opponent plays — the golden
+// fixture's whole subject. So the hand is stored in the order it was dealt and
+// drawn into, and shown sorted.
+function ordinaMano(hand){
+  const slots = [];
+  for (let i = 0; i < hand.length; i++) if (hand[i] !== null) slots.push(i);
+  return slots.sort((a, b) =>
+    hand[a].s - hand[b].s || rango(hand[b].n) - rango(hand[a].n));
 }
 
 // §2.4, from the ten cards dealt and only those: a set completed by drawing
@@ -715,7 +736,7 @@ function compGioca(state, P){
 Object.assign(globalThis, {
   SUITS, BASSO, ALTO,
   rango, terzi, buildDeck, mescola, rngSeed,
-  prende, mosseLegali, accusi, puntiAccusi,
+  prende, mosseLegali, ordinaMano, accusi, puntiAccusi,
   pesca, newDeal, gioca, scoreDeal, vincitore,
   WEIGHT_KEYS, weights, rollProfiles, compGioca, fuori, controlli, sicura, CODA_FROM, coda, manoDedotta
 });

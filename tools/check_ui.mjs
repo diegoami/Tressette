@@ -536,7 +536,11 @@ const measure = () => {
   // Raise one, measure it, put it back. The raised card is the whole point of
   // the two-tap interaction, and it is the one state that can leave the table.
   const wasSelected = state.selected;
-  state.selected = 0; render();
+  // The leftmost card in the fan. It used to be written as slot 0, which was
+  // the same thing while a hand was shown in the order it was dealt; a sorted
+  // hand puts slot 0 anywhere, and this assertion is about the card at the
+  // edge of the fan.
+  state.selected = ordinaMano(state.hands[BASSO])[0]; render();
   const raised = document.querySelector('.hand--you .card[aria-pressed="true"]').getBoundingClientRect();
   // Raised is also when the name line has something in it, so this is where to
   // check that --say is still in step with the type it reserves room for: the
@@ -731,7 +735,10 @@ async function checkDeal(browser) {
       return legal.length ? { slot: legal[0], card: state.hands[BASSO][legal[0]] } : null;
     });
     if (!move) return 'no legal card to play';
-    const card = page.locator('.hand--you .card').nth(move.slot);
+    // By slot, not by position: the fan is sorted, so the nth card in the DOM
+    // is the nth card of the *hand* and not slot n. Locating by position here
+    // tapped a different card than the one the move was computed for.
+    const card = page.locator(`.hand--you .card[data-slot="${move.slot}"]`);
     try {
       await card.click({ position: { x: 6, y: 20 }, timeout: 4000 });
       const box = await card.boundingBox();
@@ -741,7 +748,7 @@ async function checkDeal(browser) {
   };
 
   let plays = 0;
-  let keyTried = false;
+  let keyTried = false, placeTried = false;
   for (let i = 0; i < 600 && plays < 20; i++) {
     await page.waitForTimeout(90);
     // The first legal card. Which one it is does not matter; that a legal one
@@ -750,11 +757,15 @@ async function checkDeal(browser) {
       if (state.over || state.deveGiocare !== BASSO) return null;
       const led = state.perPrimo === BASSO ? null : state.played[state.perPrimo];
       const legal = mosseLegali(state.hands[BASSO], led);
-      const held = state.hands[BASSO].map((c, i) => c && i).filter(i => i !== null && i !== false);
+      const order = ordinaMano(state.hands[BASSO]);
+      const illegal = order.find(i => !legal.includes(i)) ?? null;
       return legal.length
         ? { slot: legal[0], answering: state.perPrimo !== BASSO,
             card: state.hands[BASSO][legal[0]],
-            illegal: held.find(i => !legal.includes(i)) ?? null }
+            place: order.indexOf(legal[0]),
+            // The keys count places in the fan, so the forbidden card has to be
+            // named by its place and not by its slot.
+            illegal, illegalPlace: illegal === null ? null : order.indexOf(illegal) }
         : null;
     });
     if (move === null) continue;
@@ -764,15 +775,43 @@ async function checkDeal(browser) {
     // that could raise a forbidden card and throw on the second press.
     if (!keyTried && move.illegal !== null) {
       keyTried = true;
-      const key = move.illegal === 9 ? '0' : String(move.illegal + 1);
+      const key = move.illegalPlace === 9 ? '0' : String(move.illegalPlace + 1);
       await page.keyboard.press(key);
       await page.keyboard.press(key);
-      const raised = await page.evaluate(i => document.querySelectorAll('.hand--you .card')[i]
-                                                .getAttribute('aria-pressed'), move.illegal);
+      const raised = await page.evaluate(slot =>
+        document.querySelector(`.hand--you .card[data-slot="${slot}"]`).getAttribute('aria-pressed'),
+        move.illegal);
       if (raised === 'true') issues.push('a key raised a card the follow-suit rule forbids');
     }
 
-    const card = page.locator('.hand--you .card').nth(move.slot);
+    // And the other half of it, which the assertion above cannot do: a key has
+    // to raise the card at *that* place in the fan. The forbidden-card test is
+    // one-sided — it says a particular card was not raised — and a keyboard
+    // that indexed slots rather than places satisfied it by raising the wrong
+    // legal card instead. Once per deal, on a card the rule allows, so the
+    // press gets as far as raising something.
+    if (!placeTried) {
+      placeTried = true;
+      const key = move.place === 9 ? '0' : String(move.place + 1);
+      await page.keyboard.press(key);
+      const up = await page.evaluate(() => {
+        const c = document.querySelector('.hand--you .card[aria-pressed="true"]');
+        return c ? Number(c.dataset.slot) : null;
+      });
+      if (up !== move.slot)
+        issues.push(`key ${key} raised ${up === null ? 'nothing' : 'slot ' + up}, ` +
+                    `not the card at place ${move.place + 1} of the fan`);
+      // Put it back down. An assertion that leaves the page in a state it
+      // found it out of is a defect of its own: this one left a card raised,
+      // and a raised card is scaled and on top of its neighbours, so the tap
+      // below it became the *second* tap of a play it had not made and the
+      // reachability rule then found the raised card in front of the one it
+      // was aiming at. It failed on some deals and not others, which is the
+      // worst way for a check to be wrong.
+      await page.evaluate(() => { state.selected = null; render(); });
+    }
+
+    const card = page.locator(`.hand--you .card[data-slot="${move.slot}"]`);
     // 6px in from its left edge: everything right of the strip belongs to the
     // next card, so that is where a player's thumb has to land.
     try {
@@ -786,18 +825,21 @@ async function checkDeal(browser) {
     plays++;
 
     // Issue #7: every card you still hold has to be reachable where it looks
-    // reachable. The hand keeps its holes all deal, each slot overlaps the one
-    // before it, and an empty slot is a box that swallows a tap — so a card
-    // with played slots to its right looked entirely free and could only be
-    // touched on its leftmost strip. Checked from the middle of the part of
-    // each card that no later held card covers, which is where a player aims.
+    // reachable. The hand used to keep its holes all deal, and an empty slot —
+    // a box the width of a card, overlapping the card to its left — swallowed
+    // every tap aimed at the part it covered, so a card with played slots to
+    // its right looked entirely free and could only be touched on its leftmost
+    // strip. A sorted hand closes up and has no holes at all, which retires
+    // that shape of the defect; the assertion stays because what it actually
+    // measures is that nothing is in front of a card where a player aims, and
+    // the next thing to sit there will not be an empty slot. Checked from the
+    // middle of the part of each card that no later card covers.
     const unreachable = await page.evaluate(() => {
-      const cards = [...document.querySelectorAll('.hand--you .card')];
+      const cards = [...document.querySelectorAll('.hand--you .card')].filter(c => !c.hidden);
       const bad = [];
       cards.forEach((c, i) => {
-        if (c.dataset.empty === 'true') return;
         const r = c.getBoundingClientRect();
-        const next = cards.slice(i + 1).find(n => n.dataset.empty === 'false');
+        const next = cards[i + 1];
         const right = next ? Math.min(next.getBoundingClientRect().left, r.right) : r.right;
         const hit = document.elementFromPoint((r.left + right) / 2, r.top + r.height / 2);
         if (hit !== c && !c.contains(hit))
@@ -806,8 +848,36 @@ async function checkDeal(browser) {
       return bad;
     });
     for (const u of unreachable.slice(0, 2))
-      issues.push(`a card you hold cannot be tapped where it looks free: slot ${u}`);
+      issues.push(`a card you hold cannot be tapped where it looks free: place ${u} in the fan`);
     if (unreachable.length) break;
+
+    // A hand is held sorted: by suit, and within a suit from the strongest card
+    // down. Asserted here rather than in the table pass because the table pass
+    // only ever sees a hand as it was dealt, and a hand as it was dealt is
+    // sorted by the code that sorts it *once* — the states that can break this
+    // are the ones a deal reaches, after cards have been played out of the
+    // middle and drawn back into the holes they left. Contiguity is half of it:
+    // a hole in a sorted hand is a card in the wrong place.
+    const outOfOrder = await page.evaluate(() => {
+      const shown = [...document.querySelectorAll('.hand--you .card')];
+      const visible = shown.filter(c => !c.hidden);
+      const held = state.hands[BASSO].filter(c => c).length;
+      if (visible.length !== held)
+        return `the fan shows ${visible.length} cards for a hand of ${held}`;
+      if (shown.findIndex(c => c.hidden) !== -1
+          && shown.findIndex(c => c.hidden) < visible.length)
+        return 'the fan has a hole in it: a hidden card sits before a shown one';
+      const cards = visible.map(c => state.hands[BASSO][Number(c.dataset.slot)]);
+      if (cards.some(c => !c)) return 'a card in the fan points at an empty slot';
+      for (let i = 1; i < cards.length; i++){
+        const a = cards[i - 1], b = cards[i];
+        if (b.s < a.s) return `suits out of order at place ${i}: ${SUITS[a.s]} then ${SUITS[b.s]}`;
+        if (b.s === a.s && rango(b.n) >= rango(a.n))
+          return `${SUITS[a.s]} out of order at place ${i}: ${a.n} then ${b.n}, not decreasing`;
+      }
+      return null;
+    });
+    if (outOfOrder){ issues.push(`the hand is not held sorted: ${outOfOrder}`); break; }
 
     if (!await yourCardShows(move.card)) {
       issues.push('the card you played was not on the table the moment you played it: ' +

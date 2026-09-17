@@ -16,7 +16,8 @@ runInThisContext(TEXT);
 
 const {
   SUITS, BASSO, ALTO, rango, terzi, buildDeck, mescola, rngSeed,
-  prende, mosseLegali, accusi, puntiAccusi, pesca, newDeal, gioca, scoreDeal, vincitore
+  prende, mosseLegali, ordinaMano, accusi, puntiAccusi, pesca, newDeal, gioca, scoreDeal,
+  vincitore
 } = globalThis;
 
 const card = (s, n) => ({ s, n });
@@ -119,6 +120,45 @@ test("mosseLegali forces the suit, and answers in slots", () => {
 
   assert.deepEqual(mosseLegali([null, null, card(3, 4)], card(0, 1)), [2],
     "the answer is the slot, not the card");
+});
+
+test("ordinaMano holds a hand by suit, then from the strongest card down", () => {
+  //        0            1            2            3            4
+  const hand = [card(1, 4), card(0, 1), null, card(0, 3), card(1, 8)];
+
+  // denari before coppe; within denari the tre outranks the asso, which is
+  // Tressette's order and not the card numbers'.
+  assert.deepEqual(ordinaMano(hand), [3, 1, 4, 0],
+    "suits in order, and inside a suit the strongest first");
+
+  assert.deepEqual(ordinaMano([null, null, null]), [], "an empty hand has no order");
+  assert.deepEqual(ordinaMano([null, card(3, 7), null]), [1], "one card, whatever its slot");
+
+  // The whole point of returning slots: the hand itself is untouched, because
+  // a slot is a card's identity for mosseLegali, gioca and compGioca's
+  // tie-break. A sort that reordered the array would move all three.
+  const before = [card(2, 5), card(0, 1), card(2, 10)];
+  const copy = before.slice();
+  ordinaMano(before);
+  assert.deepEqual(before, copy, "the hand is not reordered");
+
+  // Every rank, in one suit, from a shuffled start: the order is rango's, so
+  // 3 · 2 · A · re · cavallo · fante · 7 · 6 · 5 · 4.
+  const one = [4, 1, 10, 7, 3, 9, 5, 2, 8, 6].map(n => card(2, n));
+  assert.deepEqual(ordinaMano(one).map(i => one[i].n), [3, 2, 1, 10, 9, 8, 7, 6, 5, 4],
+    "Tressette's rank order, decreasing");
+
+  // A dealt hand of ten, which is the shape the table renders.
+  const s = newDeal(fresh(), rngSeed(7));
+  const order = ordinaMano(s.hands[BASSO]);
+  assert.equal(order.length, 10, "ten cards, ten places in the fan");
+  assert.deepEqual([...order].sort((a, b) => a - b), [0,1,2,3,4,5,6,7,8,9],
+    "every slot appears exactly once");
+  for (let i = 1; i < order.length; i++){
+    const a = s.hands[BASSO][order[i - 1]], b = s.hands[BASSO][order[i]];
+    assert.ok(b.s > a.s || (b.s === a.s && rango(b.n) < rango(a.n)),
+      `place ${i} is out of order: ${SUITS[a.s]} ${a.n} then ${SUITS[b.s]} ${b.n}`);
+  }
 });
 
 /* --- declarations ----------------------------------------------------------- */

@@ -4,6 +4,8 @@ A two-player **Tressette a due** for the browser: one static page, no build
 step, no runtime dependencies, and the 1997 card art from
 [Discola](https://github.com/diegoami/discola-web) in five decks.
 
+**Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
+
 You against one of four opponents, one deal at a time. Everything — your
 settings, your last hundred hands — stays in your browser.
 

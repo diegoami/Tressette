@@ -8,16 +8,20 @@
  *   npm i playwright-core && npx playwright-core install chromium
  *   CHROME=/path/to/chrome node tools/check_ui.mjs   # or name one yourself
  *
- * Three passes. The first two are Discola's, because the failures that project
- * shipped came in two different shapes; the third plays a deal, because a table
+ * Four passes. The middle two are Discola's, because the failures that project
+ * shipped came in two different shapes; the last plays a deal, because a table
  * can measure perfectly and still not be wired to the engine.
+ *
+ * 0. DOCUMENT — the four document facts that cannot be expressed as a layout
+ *    assertion: the viewport meta, the doctype, the charset and <html lang>.
  *
  * 1. SCREENS — every screen and both dialogs, at a handful of real device
  *    shapes. Catches things that are wrong anywhere: more than one screen
  *    visible at once, text set too small to read, clipped labels, tap targets
  *    below the thumb, sideways scroll, script errors.
  *
- * 2. TABLE — the card table only, at every viewport and in all five decks.
+ * 2. TABLE — the card table only, at every viewport and in all five decks, and
+ *    then the tightest five again with the spacing tokens inflated.
  *    The card size is a budget, (viewport height - chrome) / rows, and when
  *    that budget is wrong nothing throws and nothing looks broken in review:
  *    the cards quietly overlap, or your hand slides below the fold, or the

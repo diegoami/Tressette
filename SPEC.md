@@ -5,8 +5,10 @@ the project got here, including what it got wrong; this file describes the
 thing that exists, and is what a stranger taking the project over should read
 first.
 
-The game is live at the Netlify site linked to `main`, which publishes `public/`
-and nothing else.
+The game is live at **<https://tresettette.netlify.app>** — the Netlify site
+linked to `main`, which publishes `public/` and nothing else. That URL is not
+reachable from the container the work is done in (the network policy denies
+it), so nothing in the repository asserts that it serves; see §7 of `PLAN.md`.
 
 ---
 
@@ -25,7 +27,8 @@ English.
 ```
 public/index.html    the whole page: styles, markup, and the code that
                      renders a state object and turns taps into calls
-public/engine.js     the rules and the opponent, as pure functions
+public/engine.js     the rules and the opponent, as functions over one
+                     mutable state object and nothing else
 public/decks/        five sprite sheets, the original 1997 bitmaps
 tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
@@ -33,6 +36,7 @@ tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
 tools/check_ui.mjs       the UI check: four passes, 111 rows
 tools/pack_cards.py      carried from Discola, for repacking a deck
+.github/workflows/check.yml  the two CI jobs: the tests, and the UI check
 netlify.toml         publish public/, cache the decks hard, never the page
 RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
@@ -50,8 +54,12 @@ the browser runs — `vm.runInThisContext` — and that is what makes the tests,
 self-play harness and the golden fixture possible at all. Randomness arrives as
 an injected `rng`, `rollProfiles(rng)` included.
 
-Everything is a pure function over a plain state object; the page owns the
-timers, the DOM and `Math.random`.
+Every function here is a function of the state object it is handed and
+nothing else — no module-level mutable state, no globals, no clock. They
+*mutate* that object rather than returning a new one (`newDeal`, `pesca` and
+`gioca` all do; §3.3 of `PLAN.md` chose one mutable object, as in Discola), so
+a caller that wants the old state copies it first. The page owns the timers,
+the DOM and `Math.random`.
 
 ```
 newDeal(state, rng)        shuffle, ten each, non-dealer leads
@@ -101,8 +109,14 @@ it and plays it out exactly.** All four profiles play those seven tricks alike,
 which is also why those decisions are excluded whenever the roster is measured
 for difference: there is nothing there for a weight to change.
 
-That search is worth about four points of win rate over stopping at the last
-two tricks, and costs a median 28ms on the first searched decision (p95 64ms).
+Playing those tricks exactly rather than scoring them is worth **about seven
+points** of win rate (§1 of `PLAN.md`, measured on the formula with the search
+switched off). Thirteen is a budget rather than a principle: `CODA_FROM = 11`
+is worth **four points more** — 89.2% against greedy-take where thirteen is
+85.0% — and costs about twenty-seven times the time, a median 767ms and a worst
+case of 1,906ms against thirteen's 28ms median and 66ms worst on the first
+searched decision (`PLAN.md` §3.4 records the run). Thirteen declines those
+four points to keep the worst case near 70ms rather than near two seconds.
 Moving `CODA_FROM` means re-tuning the late weights, not just re-recording the
 fixture: the search silently revalues them.
 
@@ -146,7 +160,9 @@ floors are a regression guard.**
 enough to hold his corner and seven from the wide ranges. He is rolled once per
 session, as in 1997 where `SetProfiles` ran from `FormCreate`. Most of the seven
 barely move a play, so his sessions differ less than his weight vectors do:
-twenty rolls (`SEED_FROM=90001 … --piero 8 500` and `… --piero 12 400`) ran
+twenty rolls — `SEED_FROM=90001 node tools/selfplay.mjs --piero 8 500` and
+`node tools/selfplay.mjs --piero 12 400`, on deliberately different seed
+ranges — ran
 80.5–85.2% against greedy-take and 18.9–24.3% away from Franco, with five of
 the twelve falling into two groups identical to the decimal.
 
@@ -154,6 +170,39 @@ The four bands cost him about two points against greedy-take, and buy the
 corner: with all eleven drawn wide, one roll in eight comes out 5.6% from
 Franco — Franco under another name, which is what retired the name Valerio the
 first time.
+
+### Changing it safely
+
+The eleven weights, in the order the settings sheet discloses them:
+
+```
+LEAD_SURE_BONUS   LEAD_LISCIO_BONUS   LEAD_LONG_SUIT   LEAD_ACE_EXPOSED_PENALTY
+LEAD_CONTROL_PENALTY   LEAD_INTO_VOID_PENALTY   TAKE_TERZI_WEIGHT
+GIVE_TERZI_WEIGHT   SPEND_CONTROL_PENALTY   DISCARD_GUARD_PENALTY   LATE_FACTOR
+```
+
+**The scoring formula itself is §3.4 of `PLAN.md`**, written out term by term,
+and the comments in `engine.js` beside each vector say what that vector is for.
+Four traps are recorded there and will not be guessed at:
+
+- **`LATE_FACTOR` multiplies the four control terms only**, never the point
+  terms. The asymmetry looks like an oversight and is not: `compGioca` takes
+  the argmax within a branch, so a factor applied to a whole branch changes
+  nothing, and "fixing" it into symmetry makes the weight inert while
+  invalidating the fixture.
+- **Ties go to the lowest slot**, deterministically. Nothing in the scoring may
+  reach for an rng: that tie-break is part of what makes the golden fixture a
+  fixture.
+- **The endgame search refuses positions it cannot deduce.** If the cards it
+  believes outstanding do not come to a hand the size of the one held, it falls
+  back to the formula rather than answering from a deck that does not add up.
+- **Four entries of `PIERO_RANGES` are dead** — `PIERO_STANCE` overrides them
+  — and they are kept rather than deleted because `rollPiero` maps the array
+  onto `WEIGHT_KEYS` *by index*, so removing one silently shifts every weight
+  after it. They are marked `†` in the source.
+
+Seven of the eleven move almost nothing at any magnitude, which is measured
+rather than asserted: `node tools/selfplay.mjs --ladder KEY v1,v2,v3`.
 
 ### Measuring any of this
 
@@ -206,13 +255,15 @@ node tools/check_ui.mjs             111 rows, needs playwright-core + Chromium
 
 Both run in CI on every pull request; a red check does not merge.
 
-The UI check has four passes: the **document** (four head tags that cannot be
-layout assertions), the **screens** (every screen and every state worth looking
+The UI check has four passes: the **document** (the four facts a layout
+assertion cannot reach — the viewport meta, the doctype, the charset and
+`<html lang>`), the **screens** (every screen and every state worth looking
 at, at five device shapes, every opponent included), the **table** (19
 viewports × 5 decks, then the tightest five again with the spacing tokens
 inflated), and a **deal** — twenty cards tapped through the fan, a result, a
-history entry, and a second deal abandoned through the confirm. `.claude/skills/ui-check/SKILL.md` explains what
-each threshold is calibrated against.
+history entry, and a second deal abandoned through the confirm.
+`.claude/skills/ui-check/SKILL.md` explains what each threshold is calibrated
+against.
 
 **Every threshold in it was calibrated against a defect that actually shipped.**
 Change one only after running the check against the commit that introduced the
@@ -267,8 +318,8 @@ part worth carrying to another project:
 
 - **A deal in progress is not saved.** Reload and it is gone.
 - **The opponent's search is exact but not fast**: the first searched decision
-  is a median 28ms and a p95 of 64ms. Alpha-beta and `CODA_FROM = 12` is the
-  named next move, and it would need the late weights re-measured.
+  is a median 28ms and a worst case of 66ms. Alpha-beta and `CODA_FROM = 12`
+  is the named next move, and it would need the late weights re-measured.
 - **Piero's variety is thinner than his name promises.** Four of his eleven
   weights are drawn from bands narrow enough that he cannot roll into another
   player's game, and most of the seven drawn wide barely move a play. The

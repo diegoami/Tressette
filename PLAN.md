@@ -22,11 +22,11 @@ and the sections below say what moves.
 | 2 | Two players with a stock, or four with partners? | **Two players, with the tallone** (Tressette a due). Same table shape as Discola: you at the bottom, them at the top. | Four-player is a different game: partners, signalling, three opponents to render. See §5. |
 | 3 | What is a *partita*? | **One deal, as in Discola.** Twenty tricks, 11 points plus declarations, the higher total wins. Chosen by the owner. | The traditional match to 21 across deals would add a running score, a second result dialog and a match saved between deals. The engine's `scoreDeal` is where it would plug in; see §5. |
 | 4 | Declarations (*accusi*)? | **Yes, from the ten cards dealt, declared automatically when the first card is played.** Confirmed by the owner before iteration 4. | Off would remove one dialog and one scoring branch; declaring completed-by-draw sets would add state. |
-| 5 | The opponents | **Three: Graziano, Piero and Franco.** Decided by the owner during iteration 4. Valerio is dropped — iteration 2 measured him and Franco choosing the same card 99% of the time, and a roster cannot carry two names for one player — and Franco inherits his tuned weights, so the house standard survives under the name that stays. | Four names would need a fourth character the eleven weights cannot express; see iteration 5. |
+| 5 | The opponents | **Four: Franco, Valerio, Graziano and Piero — one to each corner of the two weights that decide the game a profile plays.** Taken in two steps. Iteration 4 dropped Valerio, because iteration 2 had measured him and Franco choosing the same card 99% of the time, and Franco inherited his tuned weights. The review of iteration 5 then found that the formula has two levers rather than one, so the corner Valerio had failed to occupy by intention exists by measurement: he is back in it, 14–27% away from all three of the others. | A fifth name would need a lever the eleven weights do not have. |
 | 6 | Where the engine lives | **`engine.js`, a classic script beside `index.html`.** Still static, still no build. | One-file-only means the self-play tuner has to slice the script out of the HTML. See §3.1. |
 
 All six were confirmed by the owner; 5 was decided during iteration 4, and the
-roster is three rather than four.
+roster is four again, one to each corner of the two weights that matter.
 
 ## 1. What "in the spirit of Discola" means here
 
@@ -197,7 +197,7 @@ vincitore(state)                   // BASSO, ALTO or null for a draw
 
 // the opponent
 WEIGHT_KEYS                        // the eleven names, in table order
-rollProfiles(rng)                  // {Valerio, Graziano, Piero, Franco}; Piero drawn from rng
+rollProfiles(rng)                  // {Franco, Valerio, Graziano, Piero}; Piero drawn from rng
 compGioca(state, P)                // slot to play, given one profile's weights
 ```
 
@@ -337,6 +337,18 @@ touching them. Two of the eleven moved when the search took the last seven:
 re-tuned to 0. So moving `CODA_FROM` means re-measuring the weights, not
 just re-recording the fixture.
 
+Those two percentages are the ones iteration 2 printed, and the review of
+iteration 5 found the denominator behind them: `probe()` counted every late
+lead, including the 72% of them from `CODA_FROM` on, where the search answers
+and no weight can fire at all. Over the leads the weights actually decide —
+trick ten to `CODA_FROM`, `SEED_FROM=5001 node tools/selfplay.mjs --probe
+150` — the sure bonus changes **26.7%** of them (131 of 490), not 2.9%. The
+coupling is real and the conclusion stands; the size of it was never what that
+line said. `LEAD_LONG_SUIT` is the same story from the other end: it was tuned
+to 0 as harmful in iteration 2's context, and the review of iteration 5 found
+it is the cheapest lever this formula has for making one profile play
+differently from another.
+
 **The named next move on the formula**, while §3.4's contract still allows
 one: the search is plain minimax with a transposition table, no move
 ordering and no alpha-beta. Alpha-beta on a tree this shape typically buys
@@ -356,9 +368,11 @@ one it thinks it is, and it falls back to the formula rather than answering
 confidently from a deck that does not add up.
 
 What this costs is stated in §1, and was measured before it was chosen: the
-four opponents play these seven tricks alike. What it buys, against the same
-baselines and on seeds no tuner saw, is 79.8% to 86.7% against random-legal
-and 74.5% to 86.7% against greedy-take.
+four opponents play these seven tricks alike. What it buys is the roster in
+the acceptance table below — 84.7% to 87.0% against random-legal and 80.3% to
+86.6% against greedy-take, on seeds no tuner saw. The figures this paragraph
+carried before the review (79.8–86.7% and 74.5–86.7%) were iteration 2's, for
+a roster of three that no longer exists.
 
 The case that shows why the formula cannot do it: the opponent holds the Re di
 coppe and the Fante di spade and leads; the human holds the Fante di coppe and
@@ -394,12 +408,28 @@ formula freezes.
 | LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
 **The four temperaments.** Iteration 2 measured whether this formula can
-actually tell them apart; §4.5 has the answer and it is not a comfortable one.
-Valerio balanced and the default; Graziano loose,
-cashing sure cards early and spending 3s freely; Franco tight, hoarding control
-and guarding every asso; Piero rolled once per session by `rollProfiles`, as
-in Discola, because that is now a house tradition rather than a Delphi
-accident.
+actually tell them apart and iteration 5 priced it, twice; §4.5 and the
+iteration 5 record have the answer. Two weights decide the game a profile
+plays — whether it opens its longest suit, and what a liscio is worth
+leading — and there is a player in each of the four corners they make.
+
+**Franco** is the house standard and the default, balanced: no long suit, lisci
+kept. He is the player iteration 2 tuned. **Graziano** opens the long suit and
+keeps fewer lisci — another game, and not a worse one: 86.5% against
+greedy-take where Franco is 86.6%, on the same 2,000 held-out deals. That is
+the correction iteration 5's review forced: the first pass had concluded that
+character costs about a point of win rate per percent of plays changed, having
+never priced `LEAD_LONG_SUIT`. **Valerio** is the corner where character does
+cost something: neither the long suit nor the patience, so he leads his big
+cards and takes what is there, at 81.3%. He is the name iteration 4 retired,
+back on a vector that earns it. **Piero** opens long *and* keeps his lisci, and
+is rolled once per session by `rollProfiles`, as in Discola, because that is
+now a house tradition rather than a Delphi accident.
+
+There is still no "tight" character: the weights that would express one — the
+control penalties and the guard — move almost no plays at any magnitude, which
+is what iteration 2 found and iteration 5 confirmed a second way. A fifth name
+would need a lever the eleven weights do not have.
 
 **The contract, from v1.0 on.** Discola's rule was *change a weight, not the
 formula* because the formula was the 1997 artefact. Here the formula is ours
@@ -410,25 +440,56 @@ golden tests freeze the plays, and a formula change invalidates them.
 {profile, random-legal, greedy-take} with a seeded rng and reports win rate,
 mean points per deal and the noise floor. Discola's 40,000-hand comparison is
 the model. Acceptance for v1: every profile beats random-legal in at least
-**85%** of deals and greedy-take in at least **80%**, and no profile beats
+**82%** of deals and greedy-take in at least **78%**, and no profile beats
 another by more than 65% — they should be characters, not tiers.
 
-Those two numbers were 95% and 70%, written from intuition because §0 decision
-1 leaves no 1997 opponent to calibrate against, and iteration 2 measured them
-instead. 95% was unreachable by anything: a player that cheats outright wins
-82.5%. 70% turned out to be a real bar — a first tuning pass failed it and a
-second cleared it — and then the endgame search cleared it by so much that it
-stopped being one. The numbers above sit about two points under what iteration
-2 measured on seeds no tuner had seen — 86.7% against both baselines, so
-nearly two points of margin on one bar and nearly seven on the other, rather
-than a target fitted to the result. A small suite of
-*trap positions* asserts the obvious plays directly, because a win rate can
-hide a stupid habit: an asso on the table and the 3 in hand; forced to follow
-with only an asso and a figure; the Re and Fante position above, where the
-Fante must be led first; and the 3, 2 and asso of a suit all gone with
-a 7 and a Cavallo of that suit in hand, where the 7 must not be led as if it
-were sure. Every trap is a position with a real choice: a position where
-every legal play is forced asserts nothing.
+**Where those two floors come from.** They have been written three times, and
+only the last two were measured. They started at 95% and 70%, from intuition,
+because §0 decision 1 leaves no 1997 opponent to calibrate against. Iteration 2
+measured them instead: 95% was unreachable by anything — a player that cheats
+outright wins 82.5% — and 70% turned out to be a real bar, one a first tuning
+pass failed and a second cleared, until the endgame search cleared it by so
+much that it stopped being one. So they became 85% and 80%, about two points
+under the 86.7% iteration 2 measured against both baselines on seeds no tuner
+had seen.
+
+That measurement was one profile, on about a thousand deals, before the endgame
+search existed. The review of iteration 5's second round asked what it says
+about the roster it had since been applied to. On 2,000 deals a matchup, on a
+seed range nothing had been tuned or reported on (`SEED_FROM=90001 node
+tools/selfplay.mjs 1000`), that roster runs:
+
+| | vs random-legal | vs greedy-take |
+|---|---|---|
+| Franco | 85.5% ± 1.5 | 86.6% ± 1.5 |
+| Valerio | 85.8% ± 1.5 | 81.3% ± 1.7 |
+| Graziano | 87.0% ± 1.5 | 86.5% ± 1.5 |
+| Piero (one roll) | 84.7% ± 1.6 | 80.3% ± 1.7 |
+
+Franco cleared 85% by half a point, which is a third of his own error bar, and
+a rolled Piero lands on either side of it depending on the roll and on the seed
+range. Twenty rolls of him, by the two commands that roll him:
+
+| | vs random-legal | vs greedy-take |
+|---|---|---|
+| `SEED_FROM=90001 node tools/selfplay.mjs --piero 8 500` | 85.6–87.2% | 82.2–85.2% |
+| `node tools/selfplay.mjs --piero 12 400` | 83.6–84.6% | 80.5–83.8% |
+
+A floor that half the roster straddles on half the seed ranges is not measuring
+anything, so the floor moved rather than the roster. The weakest figure anywhere
+above is 83.6% against random-legal and 80.3% against greedy-take, so **82% and
+78% keep between one and a half and two and a half points of margin**, which is
+what a regression guard is for and not what a description is for. **The first
+table is the claim about how strong these players are. The floors are only
+there to catch a change that breaks one.**
+
+A small suite of *trap positions* asserts the obvious plays directly, because a
+win rate can hide a stupid habit: an asso on the table and the 3 in hand;
+forced to follow with only an asso and a figure; the Re and Fante position
+above, where the Fante must be led first; and the 3, 2 and asso of a suit all
+gone with a 7 and a Cavallo of that suit in hand, where the 7 must not be led
+as if it were sure. Every trap is a position with a real choice: a position
+where every legal play is forced asserts nothing.
 
 ### 3.5 Turn flow
 
@@ -1049,34 +1110,153 @@ Franco's value, 100 seeds mirrored against greedy-take:
 |---|---|---|
 | `TAKE_TERZI_WEIGHT` 5 (from 1.5) | 85.5% | 3.0% |
 | `SPEND_CONTROL_PENALTY` 0 (from 2) | 82.0% | 6.8% |
-| `DISCARD_GUARD_PENALTY` 0 **or** 3 (from 1.5) | 90.0% | **0.1%** |
+| `DISCARD_GUARD_PENALTY` 0 (from 1.5) | 90.0% | 2 choices in 3,437 |
+| `DISCARD_GUARD_PENALTY` 3 (from 1.5) | 90.0% | **none at all** |
 
-So: **character in this formula is bought almost entirely with the liscio
-bonus, and it is paid for in win rate at about a point per percent.** The
-guard penalty moves 2 choices in 3,437 at any value, which is iteration 2's
-ablation confirmed a second way. There is no free temperament to find, and
-tuning for difference cannot invent one — it can only choose a point on that
-curve.
+The conclusion drawn from that table was **wrong**, and the review of this
+iteration caught it: the ladder had not priced `LEAD_LONG_SUIT`, the one weight
+iteration 2 set to zero. It is the cheap lever, and it is a switch rather than a
+dial — 0.5, 1 and 1.5 play identically, because the term only reorders which
+liscio is led:
 
-The owner chose the point: a Graziano who differs on one choice in ten and
-wins a little less. Held out on seeds 5001+, which the tuning never saw:
+`SEED_FROM=5001 node tools/selfplay.mjs --try … 600`, 1,200 mirrored deals a
+row, and `SEED_FROM=5001 node tools/selfplay.mjs franco greedy 600` for the
+baseline. Re-measured on the shipped engine after `rngSeed` was given its
+warm-up, which moved every one of these by a few tenths:
 
-| | vs random-legal | vs greedy-take | differing from Franco |
+| from Franco | vs greedy | differing |
+|---|---|---|
+| Franco himself | 85.0% ± 2.0 | — |
+| `LEAD_LISCIO_BONUS` 8 and three other weights moved | 80.8% | 15.6% |
+| `LEAD_LONG_SUIT` 0.5 | 85.8% | 16.8% |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 8 | **86.1%** | **21.9%** |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 7 | 84.8% | 26.7% |
+
+Half again the difference for none of the cost: the weight iteration 5 tuned
+along buys 15.6% of plays for 4.2 points of win rate, and the one it never
+priced buys 21.9% for nothing measurable at all. So the honest version:
+**this formula has about two and a half levers, not one** — the long suit, the
+liscio bonus, and a little from spending and taking — and the first tuning pass
+found one of them and concluded there were none. The guard penalty moves two
+choices in 3,437 at 0 and none at all at 3, which is iteration 2's ablation
+confirmed a second way; seven of the eleven weights are like that.
+
+The owner chose from the corrected curve: a Graziano who plays another game
+rather than a worse one. And once the corrected curve had two levers on it,
+**the roster went back to four**: two weights make four corners, and there is a
+player in each.
+
+| | opens the long suit | keeps its lisci | |
 |---|---|---|---|
-| Franco | 88.6% | 88.2% | — |
-| Graziano | 88.8% | 80.8% | 11.1% |
-| Piero (this session's roll) | 86.8% | 78.6% | 22.7% |
+| Franco | no | yes | the house standard |
+| Graziano | yes | no | |
+| Piero | yes | yes | rolled per session |
+| Valerio | no | no | the loosest |
 
-Piero is rolled per session, so his strength is a distribution and not a
-number: over six sessions, 73.1% to 83.8% against greedy-take, differing from
-Franco by 12.3% to 30.1%. His ranges keep the liscio bonus at 7 or above,
-because that is the cliff — below it a rolled player stops playing Tressette.
-The §3.4 acceptance numbers are Franco's contract; Graziano meets both, and a
-rolled Piero can land a point or two under the greedy-take floor, which is
-what "you never play the same Piero twice" costs and the dossier says so.
+Valerio is the vector this iteration first shipped as Graziano, under the name
+iteration 4 retired. He went because iteration 2's sketch of him chose Franco's
+card 99 times in a hundred; he is back because this corner is a different
+player by measurement — 15.0% from Franco and 26–28% from the other two.
 
-**The fixture grew with the roster.** Twenty deals each for the two tuned
-players, forty in all, plus every weight of all three — Piero's rolled eleven
+On seeds 5001+, which the tuning never saw, 500 mirrored deals each:
+
+| | vs random-legal | vs greedy-take |
+|---|---|---|
+| Franco | 86.6% | 84.8% |
+| Valerio | 87.6% | 80.6% |
+| Graziano | 88.4% | 86.8% |
+| Piero (this session) | 86.8% | 81.8% |
+
+and the pairs, from `SEED_FROM=5001 node tools/selfplay.mjs --differ 200` —
+1,600 deals, counting only the decisions the weights make:
+
+| pair | choices that differ |
+|---|---|
+| Valerio vs Piero | 28.0% |
+| Valerio vs Graziano | 26.2% |
+| Franco vs Piero | 25.2% |
+| Franco vs Graziano | 21.6% |
+| Franco vs Valerio | 15.0% |
+| Graziano vs Piero | 11.6% |
+
+and §3.4's second clause, which nothing had measured until the review asked:
+head to head the six pairs run 42.2% to 59.6% — characters, not tiers.
+
+**The acceptance floors moved, and that is the part worth reading twice.** The
+first version of this iteration had a quarter of its rolled Pieros under the
+greedy-take floor, and the plan answered by reinterpreting the contract in a
+distant paragraph rather than amending it. The review's second round then found
+that re-tuning Piero could not fix it either, because the floor was not
+measuring the player: `node tools/selfplay.mjs --piero 12 400` puts twelve
+rolls of twelve *under* 85% against random-legal, and `SEED_FROM=90001 node
+tools/selfplay.mjs --piero 8 500` puts eight of eight *over* it. 85% was never
+a floor this roster stood on — Franco clears it by a third of his own error
+bar. So the contract was amended out loud, from 85%/80% to 82%/78%, with the
+measurement table §3.4 now carries. The floors are a regression guard; the
+table is the claim.
+
+Piero's four deciding weights are drawn from bands of their own — narrow enough
+that he keeps his corner, wide enough that they are still drawn — because
+rolling him across the whole of `PIERO_RANGES` put him 98.4% onto Graziano's
+card once and 7.1% from Franco another time. A corner of weight space is not a
+promise about plays.
+
+**What the bands cost**, which the second review round had to ask for because
+the first version of this record only said what they buy. The control is a copy
+of `engine.js` with `rollPiero`'s stance lookup removed, run on the same seeds:
+
+| `SEED_FROM=90001 … --piero 8 500` | vs greedy-take | away from Franco |
+|---|---|---|
+| bands on, as shipped | 82.2–85.2% | 19.9–24.2% |
+| bands off, all eleven wide | 83.8–87.4% | 5.6–21.1% |
+
+About two points of win rate, for a floor under the thing the corner is for:
+one roll in eight without the bands came out **5.6% from Franco**, which is
+Franco under another name, which is what retired the name Valerio in the first
+place. With the bands he still clears §3.4's floors, so it is a trade and not a
+cost.
+
+**What the draw costs, measured rather than claimed:** the seven weights drawn
+wide are mostly the inert ones, so his sessions vary less than the dossier used
+to promise. Over twenty rolls — `SEED_FROM=90001 node tools/selfplay.mjs
+--piero 8 500` and `node tools/selfplay.mjs --piero 12 400` — he runs 80.5% to
+85.2% against greedy-take and 18.9% to 24.3% away from Franco, and in the
+twelve-roll run five sessions fall into two groups identical to the decimal.
+"You never play the same Piero twice" is true of his weights and only half
+true of his play, and the dossier says the smaller thing now — at the second
+attempt. The honest sentence was twenty characters longer than the dishonest
+one, ran to a fifth line on a 360px phone and pushed the deck row 15px down,
+and the check said so before anyone had to see it.
+
+**A fix can orphan a measurement**, which is the second round's own
+contribution to that rule. Warming `rngSeed` changed which deals seeds 5001+
+produce, so every figure in the lever table above — the exhibit this whole
+round turns on — stopped reproducing from the command printed beside it, by two
+to ten tenths of a point. Nothing about the argument changed and the table now
+reads better than it did, but nobody re-ran it: the fix and the table were in
+the same commit and neither mentioned the other. A measurement is coupled to
+the code that produced it, and a change to an rng is a change to the code that
+produced every measurement.
+
+**And what the review of this iteration is worth writing down**, beyond the
+numbers it corrected. Every measurement in the first version was real; the
+conclusion drawn from them was not, because the ladder had a hole in it and
+nobody asked what was missing from the list of weights it priced. Two smaller
+habits went with it: the difference metric counted 31% of decisions in which no
+profile *can* differ — everything from `CODA_FROM` on, where the search answers
+— so every figure it printed, including the one in a dossier, was 1.45 times
+too small; and the comment defending its denominator said "about half of all
+decisions have one legal card" when the measured number is 15.3%, three times
+smaller. Neither was a lie anyone told: they were numbers written from
+intuition beside numbers that had been measured, and they read exactly alike on
+the page.
+
+So the rule that comes out of iteration 5: **a measured number and a
+remembered one look the same in a comment.** Every figure in this document that
+is not followed by how it was obtained is a claim, not a measurement.
+
+**The fixture grew with the roster.** Twenty deals each for the three fixed
+players, sixty in all, plus every weight of all four — Piero's rolled eleven
 included, so a change to his ranges or to the order they are drawn in moves
 numbers nobody wrote by hand and the test says so. Re-recording is a command
 now rather than a script someone writes twice:
@@ -1161,7 +1341,7 @@ beside this repo, clone it: `https://github.com/diegoami/discola-web`.
 | 2 Opponent and harness | **high** | the project's first way to fail quietly; §4 gives it slack |
 | 3 The table | **high** | the second; may take two sessions, fan first, then the check |
 | 4 Result and sheets | medium | Discola's screens, forked |
-| 5 The four opponents | medium | the harness does the work; the builder reads numbers |
+| 5 The opponents | medium | the harness does the work; the builder reads numbers |
 | 6 Ship | medium | docs in Discola's voice |
 
 The builder is the Opus tier throughout. Do not drop to a smaller model on the
@@ -1210,6 +1390,12 @@ with goes to the owner, in the pull request, not into a silent merge.
   how every threshold in Discola's check got its story.
 - **No project board, no milestones, no issue per iteration.** This document
   holds the plan; a second copy goes stale.
+- **A pull request does not merge while its review is still running.** Added
+  after iteration 5 merged with its review in flight and the review then found
+  the iteration's central conclusion wrong — a table with a hole in it, which
+  the next pull request had to undo and redo. If the owner asks to merge and a
+  review is out, say so and what the last reviews found, and let them decide
+  with that in hand. The review is part of the work, not a formality after it.
 - **Commit messages** as in Discola's history: one line saying what changed
   and why, in English, imperative mood, no ticket numbers.
 

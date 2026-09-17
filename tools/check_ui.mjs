@@ -108,6 +108,39 @@ const SCREENS = [
         renderLastResult();
       });
     } },
+  // The review of iteration 5: nothing ever rendered an opponent other than the
+  // default, so two new dossiers and a rolled weights table went into the game
+  // without a single rule ever looking at them. Rule 3 again.
+  { name: 'start, an opponent other than the default', open: async p => {
+      // Valerio's dossier, four lines on a phone where Graziano's is three. The
+      // row used to select Graziano and call him the loosest, both of which were
+      // true of the vector that is now Valerio's: the name moved and the row did
+      // not follow it, so the screen rules were reading the shortest of the four.
+      // Which one is longest is not this row's business — the rule below cycles
+      // all four, and that is what caught Piero's dossier growing to five lines
+      // and pushing the deck row 15px down the phone.
+      await p.evaluate(() => selectOpponent('Valerio'));
+    },
+    // The dossier holds three lines open so that switching opponent does not
+    // move the deck row under the player's thumb. That is a claim about a
+    // layout, so it is measured: pick each of them in turn and watch the row.
+    check: () => {
+      const top = () => Math.round(document.querySelector('.decks').getBoundingClientRect().top);
+      const was = state.opponent;
+      const tops = Object.keys(PROFILES).map(name => { selectOpponent(name); return [name, top()]; });
+      selectOpponent(was);
+      const spread = Math.max(...tops.map(t => t[1])) - Math.min(...tops.map(t => t[1]));
+      return spread > 1
+        ? [`the deck row moves ${spread}px when the opponent changes (` +
+           tops.map(([n, t]) => `${n} ${t}`).join(', ') + ')']
+        : [];
+    } },
+  { name: "settings, the rolled opponent's weights", open: async p => {
+      await p.evaluate(() => selectOpponent('Piero'));
+      await p.click('#play');
+      await p.click('#btnSettings');
+      await p.evaluate(() => { document.querySelector('#viewSettings details').open = true; });
+    } },
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
     // type pushed it past the fold once; a pinned footer is the fix, and this
@@ -161,7 +194,7 @@ const SCREENS = [
         const now = Date.now();
         localStorage.setItem('tressette.history', JSON.stringify(
           Array.from({ length: 100 }, (_, i) => ({
-            t: now - i * 36e5, o: ['Franco', 'Graziano', 'Piero'][i % 3],
+            t: now - i * 36e5, o: ['Franco', 'Valerio', 'Graziano', 'Piero'][i % 4],
             d: 'Trevisane', y: 15 - (i % 16), a: i % 16 }))));
       });
       await p.click('#play');

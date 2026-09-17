@@ -637,8 +637,12 @@ button.card:disabled{ cursor: default; }
   font-size: var(--t-body);
   line-height: 1.5;
   color: var(--ivory-dim);
-  /* three lines held open, so switching opponent does not move the deck row */
-  min-height: calc(var(--t-body) * 1.5 * 3);
+  /* Four lines held open, so switching opponent does not move the deck row
+     under the player's thumb. Three were reserved while there was one dossier
+     to look at; three of the four run to four lines on a 360px phone — Graziano
+     is the short one at three — and the check measures the row rather than
+     trusting this number. */
+  min-height: calc(var(--t-body) * 1.5 * 4);
 }
 
 
@@ -1197,9 +1201,10 @@ const PROFILES = rollProfiles(Math.random);   // §3.2: the page rolls, the engi
 // player can check across a few deals. The chips are built from PROFILES, so
 // this map and the engine's roster stay in step.
 const DOSSIER = {
+  Valerio: "Il più sciolto dei quattro: gioca subito le carte grosse, non apre mai di lungo e prende quello che passa. Si lascia dietro qualche punto.",
   Franco: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte.",
-  Graziano: "Sciolto e veloce. Tira fuori le carte grosse presto e spende volentieri un controllo per prendere: gioca diverso da Franco una volta su dieci, e lo batti un po' più spesso.",
-  Piero: "Si tira i pesi a caso a ogni sessione, come nel '97. Non giochi mai due volte contro lo stesso Piero."
+  Graziano: "Apre il suo seme lungo e tiene meno cartine. Forte quanto Franco, ma su cinque scelte ne gioca una diversa.",
+  Piero: "Apre lungo come Graziano ma tiene le cartine, e prende volentieri. Tutti i suoi pesi sono estratti a ogni sessione, ma non tutti lo cambiano."
 };
 
 const state = {

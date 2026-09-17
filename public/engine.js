@@ -64,13 +64,21 @@ function mescola(cards, rng){
 // replayed against another is not a fixture. mulberry32.
 function rngSeed(seed){
   let a = seed >>> 0;
-  return function(){
+  const next = function(){
     a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  // Eight thrown away first. mulberry32's first output is correlated with a
+  // small seed — for seeds 1 to 6 it is 0.627, 0.734, 0.720, 0.924, 0.690,
+  // 0.526, all on the same side of a half — and anything that reads the first
+  // value to make a structural decision inherits that. Piero's stance did:
+  // six consecutive seeds drew the same one. Warming the generator is cheaper
+  // than remembering which draw is safe to use.
+  for (let i = 0; i < 8; i++) next();
+  return next;
 }
 
 /* --- a deal ----------------------------------------------------------------- */
@@ -322,11 +330,46 @@ function weights(values){
 // Iteration 2 tunes one profile. Graziano, Franco and Piero are iteration 5,
 // which is also where `rng` starts doing something: Piero is rolled from it,
 // once per session, as in Discola.
-// §0 decision 5: three players, not four. Valerio was dropped during iteration
-// 4 — iteration 2 measured him and Franco choosing the same card 99 times in a
-// hundred, and a table cannot carry two names for one player — and Franco keeps
-// his weights, so the house standard is the same player under the name that
-// stayed.
+// §0 decision 5, in its final form: four players, one to a corner. Two weights
+// decide the game a profile plays — whether it opens its longest suit, and what
+// a liscio is worth leading — and those two make four corners:
+//
+//                     opens the long suit   keeps its lisci
+//   Franco                    no                  yes         the house standard
+//   Graziano                 yes                   no
+//   Piero                    yes                  yes         rolled per session
+//   Valerio                   no                   no         the loosest
+//
+// Valerio was dropped in iteration 4 and is back here. The reason he went was
+// that iteration 2's sketch of him chose the same card as Franco 99 times in a
+// hundred; the reason he is back is that this corner is a different player by
+// measurement, not by intention.
+const FRANCO_WEIGHTS = weights([
+  //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+       4.0,   12.0,  0.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
+]);
+
+// The fourth corner: no long suit and no patience with lisci. He leads his big
+// cards and takes what is there, which is the loosest of the four and the
+// weakest of the three fixed vectors — 81.3% against greedy-take on 2,000
+// held-out deals, where Franco and Graziano are 86.6% and 86.5%. A rolled
+// Piero can land under him; the fixed three cannot.
+//
+// This is the vector iteration 5 shipped as Graziano, under the name iteration
+// 4 retired. Valerio was dropped for being Franco under a second name: they
+// chose the same card 99 times in a hundred. He comes back because the corner
+// is real — he differs from all three of the others on one lever or both — and
+// because the house has four names.
+const VALERIO_WEIGHTS = weights([
+  //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+       4.0,    8.0,  0.0,   1.0,   2.5,  -4.0,   2.5,   1.5,   1.0,   1.5,  1.0
+]);
+
+const GRAZIANO_WEIGHTS = weights([
+  //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
+       4.0,    8.0,  0.5,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
+]);
+
 function rollProfiles(rng){
   return {
     // Tuned by coordinate ascent on seeds 1..250 and chosen between candidates
@@ -339,41 +382,122 @@ function rollProfiles(rng){
     // last seven. Every trick the search gains or gives back revalues the late
     // weights, silently — moving CODA_FROM means re-measuring these, not just
     // re-recording the fixture.
-    Franco: weights([
-      //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
-           4.0,   12.0,  0.0,   3.0,   2.5,  -4.0,   1.5,   1.5,   2.0,   1.5,  1.0
-    ]),
+    Franco: FRANCO_WEIGHTS,
+    Valerio: VALERIO_WEIGHTS,
 
-    // Loose and quick: he leads his big cards instead of keeping them back,
-    // spends control to take a trick, and worries less about exposing an asso.
-    // He plays a different card from Franco in one choice in ten and beats
-    // greedy-take 79% against Franco's 86% — which is the whole story of §4
-    // iteration 5. Character in this formula is bought with LEAD_LISCIO_BONUS
-    // and paid for in win rate at about a point per percent, so a Graziano you
-    // can tell apart is a Graziano you beat more often. The owner chose where
-    // on that curve he sits.
-    Graziano: weights([
-      //  SURE  LISCIO  LONG   ACE   CTRL   VOID   TAKE   GIVE  SPEND  GUARD  LATE
-           4.0,    8.0,  0.0,   1.0,   2.5,  -4.0,   2.5,   1.5,   1.0,   1.5,  1.0
-    ]),
+    // He opens his long suit and keeps fewer lisci back: two weights away from
+    // Franco, and a different game. On seeds 5001+, 1,200 mirrored deals
+    // (`SEED_FROM=5001 node tools/selfplay.mjs --try
+    // LEAD_LONG_SUIT=0.5,LEAD_LISCIO_BONUS=8 600`), he beats greedy-take 86.1%
+    // against Franco's 85.0% — a gap inside the ±2.0 noise — and plays a
+    // different card in 21.9% of the decisions the weights actually make. On
+    // 2,000 held-out deals at seeds 90001+ the two are 86.5% and 86.6%.
+    //
+    // LEAD_LONG_SUIT is why he is free. Iteration 5 first tuned him along
+    // LEAD_LISCIO_BONUS alone and concluded character costs about a point of
+    // win rate per percent of plays changed; the review of that iteration
+    // pointed out that the ladder had never priced the one weight iteration 2
+    // had set to zero. It is a switch rather than a dial — 0.5, 1 and 1.5 play
+    // identically, because the term only reorders which liscio is led — and the
+    // exchange rate is not a rate at all: the measured axis buys 15.6% of plays
+    // for 4.2 points of win rate, and this one buys 21.9% for nothing.
+    Graziano: GRAZIANO_WEIGHTS,
 
     // Rolled once per session, as Discola's Piero is, because SetProfiles ran
     // from FormCreate in 1997. A house tradition now rather than a Delphi
     // accident — and the reason rollProfiles takes an rng at all.
-    Piero: weights(PIERO_RANGES.map(([lo, hi]) => Math.round((lo + rng() * (hi - lo)) * 10) / 10))
+    Piero: rollPiero(rng)
   };
 }
 
+// Two weights decide whether two profiles play the same game: whether the long
+// suit is led from, and how much a liscio is worth leading. The other nine move
+// a play now and then, and three of them move none at all at any magnitude.
+//
+// That is only two levers for three players, so Piero cannot simply be drawn
+// from a wide range and be a third: the first version of this rolled him into
+// Graziano's game — 98.4% the same card — the moment Graziano moved onto the
+// long suit, which is the two-names-one-player problem that dropped Valerio,
+// arriving by a different door. Re-rolling until he was far enough away in
+// those two weights did not fix it either: a gap of three in the liscio bonus
+// with the long suit matching is 6% of plays, and 6% is not a player.
+//
+// All eleven of Piero's weights are drawn. Four of them are drawn from bands of
+// their own, and the other seven from PIERO_RANGES:
+//
+//   LEAD_LONG_SUIT and LEAD_LISCIO_BONUS put him in his corner. He leads the
+//   long suit like Graziano and keeps his lisci like Franco, which is the
+//   corner those two leave empty. They are drawn, not fixed — the band is what
+//   holds the corner, not the value.
+//
+//   SPEND_CONTROL_PENALTY and TAKE_TERZI_WEIGHT are what keep him off Graziano.
+//   Sharing the long suit is most of a game: with these two left in
+//   PIERO_RANGES' own bands the two of them played a different card in 6.6% of
+//   the decisions the weights make, which is not two players. Drawn from here
+//   it is 12.3%.
+//
+// Piero does not roll between corners. He tried it for one round: rolled ten
+// times across two corners it gave a Piero 33.1% away from Franco and a Piero
+// 7.1% away, and a 7.1% Piero is Franco under another name. A corner of weight
+// space is not a promise about plays, which is this project's own lesson
+// arriving one more time. The corner he was borrowing is Valerio's now.
+//
+// What the draw does *not* buy is as measured as what it does: seven of the
+// eleven weights barely move a play, so two sessions of Piero are two weight
+// vectors and often one player. Thirty rolls give thirty distinct weight
+// vectors and nothing like thirty players; in `node tools/selfplay.mjs --piero
+// 12 400`, five of the twelve sessions fall into two groups whose win rates
+// and difference from Franco agree to the decimal.
+//
+// And what the four bands cost, which the review of iteration 5's second round
+// had to ask for because this comment only said what they buy. Same command at
+// `SEED_FROM=90001 --piero 8 500`, against a copy of this file with the
+// PIERO_STANCE lookup in rollPiero removed so all eleven draw from
+// PIERO_RANGES:
+//
+//   bands on:   82.2–85.2% vs greedy-take,  19.9–24.2% away from Franco
+//   bands off:  83.8–87.4% vs greedy-take,   5.6–21.1% away from Franco
+//
+// So the corner costs Piero about two points of win rate, and buys a floor
+// under the thing the corner is for: one roll in eight without the bands came
+// out at 5.6% from Franco, which is Franco under another name, which is what
+// retired the name Valerio in the first place. He still clears §3.4's floors
+// with the bands on, which is what makes it a trade rather than a cost.
+const PIERO_STANCE = {
+  LEAD_LONG_SUIT: [0.3, 1.0],
+  LEAD_LISCIO_BONUS: [12, 14],
+  SPEND_CONTROL_PENALTY: [0, 2.0],
+  TAKE_TERZI_WEIGHT: [1.5, 3.4]
+};
+
+function rollPiero(rng){
+  return weights(PIERO_RANGES.map(([lo, hi], i) => {
+    const [a, b] = PIERO_STANCE[WEIGHT_KEYS[i]] ?? [lo, hi];
+    return Math.round((a + rng() * (b - a)) * 10) / 10;
+  }));
+}
+
 // The intervals Piero is drawn from. Wide enough that two sessions play
-// differently, narrow enough that he is still playing Tressette — and the
-// liscio bonus is the one that has to be kept off the floor: it is the weight
-// that carries the character in this formula, and below about 7 it takes the
-// player down with it (at 3, the win rate against greedy-take falls from 90%
-// to 64%). Every other range straddles Franco's value.
+// differently, narrow enough that he is still playing Tressette.
+//
+// Four of the eleven are dead, marked † below: PIERO_STANCE overrides them and
+// rollPiero never reads them. They are marked rather than deleted because
+// rollPiero maps this array onto WEIGHT_KEYS by index, so removing an entry
+// would silently shift every weight after it — and they are marked rather than
+// left alone because a range that cannot change a draw is the same defect as a
+// weight that cannot change a play, and the next reader will otherwise spend an
+// afternoon tuning one. The review of iteration 5's second round found this
+// after the round before it had edited one of them as though it mattered.
+//
+// That edit, for the record: iteration 5 had a wide liscio range here, and a
+// quarter of rolled Pieros came out under the then-acceptance floor, some of
+// them ten points under, because the cliff is between 9 and 7. Narrowing this
+// entry to [9, 14] was the fix at the time; the stance band [12, 14]
+// superseded it and this entry has been inert ever since.
 const PIERO_RANGES = [
-  //  SURE      LISCIO      LONG      ACE       CTRL       VOID
-  [2, 6], [7, 14], [0, 1.0], [0.5, 5], [0.5, 4], [-5, -1],
-  //  TAKE      GIVE      SPEND     GUARD     LATE
+  //  SURE      LISCIO†     LONG†     ACE       CTRL       VOID
+  [2, 6], [9, 14], [0, 1.0], [0.5, 5], [0.5, 4], [-5, -1],
+  //  TAKE†     GIVE      SPEND†    GUARD     LATE
   [1, 3], [1, 3], [0.5, 3], [0, 3], [0.7, 1.3]
 ];
 

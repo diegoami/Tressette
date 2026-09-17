@@ -521,9 +521,10 @@ test("four players, and each one plays a different game", () => {
   // one player.
   //
   // Counted over dealt positions with more than one legal card, because a
-  // forced move is not a temperament. Measured over 8,000 plays, 15.3% are
-  // forced: 5.0% of leads and 25.5% of follows. (A comment here used to say
-  // "about half", which was three times the truth and nobody had counted.)
+  // forced move is not a temperament. `SEED_FROM=5001 node tools/selfplay.mjs
+  // --differ 200` prints the share: 13.8% of 32,000 plays, 6.2% of leads and
+  // 24.0% of follows. (A comment here used to say "about half", which was
+  // three times the truth and nobody had counted.)
   const P4 = rollProfiles(rngSeed(1));
   const names = ["Franco", "Valerio", "Graziano", "Piero"];
   assert.deepEqual(Object.keys(P4).sort(), [...names].sort());

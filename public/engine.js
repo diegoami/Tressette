@@ -386,19 +386,21 @@ function rollProfiles(rng){
     Valerio: VALERIO_WEIGHTS,
 
     // He opens his long suit and keeps fewer lisci back: two weights away from
-    // Franco, and a different game. On seeds 5001+, 1,200 mirrored deals, he
-    // beats greedy-take 87.1% against Franco's 88.2% — a gap inside the noise —
-    // and plays a different card in 22.2% of the decisions the weights actually
-    // make.
+    // Franco, and a different game. On seeds 5001+, 1,200 mirrored deals
+    // (`SEED_FROM=5001 node tools/selfplay.mjs --try
+    // LEAD_LONG_SUIT=0.5,LEAD_LISCIO_BONUS=8 600`), he beats greedy-take 86.1%
+    // against Franco's 85.0% — a gap inside the ±2.0 noise — and plays a
+    // different card in 21.9% of the decisions the weights actually make. On
+    // 2,000 held-out deals at seeds 90001+ the two are 86.5% and 86.6%.
     //
-    // LEAD_LONG_SUIT is why he is cheap. Iteration 5 first tuned him along
+    // LEAD_LONG_SUIT is why he is free. Iteration 5 first tuned him along
     // LEAD_LISCIO_BONUS alone and concluded character costs about a point of
     // win rate per percent of plays changed; the review of that iteration
     // pointed out that the ladder had never priced the one weight iteration 2
     // had set to zero. It is a switch rather than a dial — 0.5, 1 and 1.5 play
-    // identically, because the term only reorders which liscio is led — and at
-    // 15.5% difference for 7.4 points, against 22.2% for 1.1, the axis it opens
-    // is twenty times cheaper than the one that was measured.
+    // identically, because the term only reorders which liscio is led — and the
+    // exchange rate is not a rate at all: the measured axis buys 15.6% of plays
+    // for 4.2 points of win rate, and this one buys 21.9% for nothing.
     Graziano: GRAZIANO_WEIGHTS,
 
     // Rolled once per session, as Discola's Piero is, because SetProfiles ran
@@ -442,8 +444,25 @@ function rollProfiles(rng){
 //
 // What the draw does *not* buy is as measured as what it does: seven of the
 // eleven weights barely move a play, so two sessions of Piero are two weight
-// vectors and often one player. Over thirty sessions, fifteen distinct players,
-// and one of them turned up twelve times.
+// vectors and often one player. Thirty rolls give thirty distinct weight
+// vectors and nothing like thirty players; in `node tools/selfplay.mjs --piero
+// 12 400`, five of the twelve sessions fall into two groups whose win rates
+// and difference from Franco agree to the decimal.
+//
+// And what the four bands cost, which the review of iteration 5's second round
+// had to ask for because this comment only said what they buy. Same command at
+// `SEED_FROM=90001 --piero 8 500`, against a copy of this file with the
+// PIERO_STANCE lookup in rollPiero removed so all eleven draw from
+// PIERO_RANGES:
+//
+//   bands on:   82.2–85.2% vs greedy-take,  19.9–24.2% away from Franco
+//   bands off:  83.8–87.4% vs greedy-take,   5.6–21.1% away from Franco
+//
+// So the corner costs Piero about two points of win rate, and buys a floor
+// under the thing the corner is for: one roll in eight without the bands came
+// out at 5.6% from Franco, which is Franco under another name, which is what
+// retired the name Valerio in the first place. He still clears §3.4's floors
+// with the bands on, which is what makes it a trade rather than a cost.
 const PIERO_STANCE = {
   LEAD_LONG_SUIT: [0.3, 1.0],
   LEAD_LISCIO_BONUS: [12, 14],
@@ -461,15 +480,24 @@ function rollPiero(rng){
 // The intervals Piero is drawn from. Wide enough that two sessions play
 // differently, narrow enough that he is still playing Tressette.
 //
-// The two weights that decide the game he plays come from his stance, below,
-// not from here: iteration 5 put a wide liscio range here and a quarter of
-// rolled Pieros came out under the acceptance floor, some of them ten points
-// under, because the cliff is between 9 and 7 and the floor had been set at
-// its bottom rather than its top.
+// Four of the eleven are dead, marked † below: PIERO_STANCE overrides them and
+// rollPiero never reads them. They are marked rather than deleted because
+// rollPiero maps this array onto WEIGHT_KEYS by index, so removing an entry
+// would silently shift every weight after it — and they are marked rather than
+// left alone because a range that cannot change a draw is the same defect as a
+// weight that cannot change a play, and the next reader will otherwise spend an
+// afternoon tuning one. The review of iteration 5's second round found this
+// after the round before it had edited one of them as though it mattered.
+//
+// That edit, for the record: iteration 5 had a wide liscio range here, and a
+// quarter of rolled Pieros came out under the then-acceptance floor, some of
+// them ten points under, because the cliff is between 9 and 7. Narrowing this
+// entry to [9, 14] was the fix at the time; the stance band [12, 14]
+// superseded it and this entry has been inert ever since.
 const PIERO_RANGES = [
-  //  SURE      LISCIO      LONG      ACE       CTRL       VOID
+  //  SURE      LISCIO†     LONG†     ACE       CTRL       VOID
   [2, 6], [9, 14], [0, 1.0], [0.5, 5], [0.5, 4], [-5, -1],
-  //  TAKE      GIVE      SPEND     GUARD     LATE
+  //  TAKE†     GIVE      SPEND†    GUARD     LATE
   [1, 3], [1, 3], [0.5, 3], [0, 3], [0.7, 1.3]
 ];
 

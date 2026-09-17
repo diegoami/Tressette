@@ -37,8 +37,10 @@ in the first place played the same card 99 times in a hundred.
 
 \* one session of him, and a session is a roll of all eleven weights. Four of
 them are drawn from bands narrow enough that he cannot roll into somebody
-else's game; the other seven are drawn wide, and most of them barely move a
-play, which is why his sessions differ less than his weight vectors do. Twenty
+else's game — that corner costs him about two points of win rate, and without
+it one roll in eight comes out as Franco under another name. The other seven
+are drawn wide, and most of them barely move a play, which is why his sessions
+differ less than his weight vectors do. Twenty
 rolls — `SEED_FROM=90001 node tools/selfplay.mjs --piero 8 500` and
 `node tools/selfplay.mjs --piero 12 400` — ran 83.6% to 87.2% against
 random-legal, 80.5% to 85.2% against greedy-take, and 18.9% to 24.3% away from

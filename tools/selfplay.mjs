@@ -143,14 +143,18 @@ function probe(n){
     const led = who === state.perPrimo ? null : state.played[state.perPrimo];
     const slots = mosseLegali(hand, led);
 
+    // Nothing below this line can fire from CODA_FROM on: the search answers
+    // there and reads no weight at all. Counting those leads put 72.1% of
+    // zero-effect decisions in the denominator and made the late figure 3.6
+    // times too small — the same defect the review of iteration 5 found in
+    // differ(), left behind in the one place that had not been swept. The
+    // guard went on the lead branch alone for one round, and the second review
+    // found it had to cover the follow counters too: a trick the search
+    // declines is not a tempo the weights chose.
+    if (state.tricks >= CODA_FROM) return;
+
     if (led === null){
       if (slots.length < 2) return;            // no choice, so nothing fired
-      // And nothing can fire from CODA_FROM on: the search answers there and
-      // reads no weight at all. Counting those leads put 72.1% of zero-effect
-      // decisions in the denominator and made the late figure 3.6 times too
-      // small — the same defect the review of iteration 5 found in differ(),
-      // left behind in the one place that had not been swept.
-      if (state.tricks >= CODA_FROM) return;
       const fired = compGioca(state, PROFILES.Franco) !== compGioca(state, noSure);
       if (state.tricks < 10){ leadsEarly++; if (fired) firedEarly++; }
       else { leadsLate++; if (fired) firedLate++; }
@@ -191,9 +195,12 @@ function probe(n){
 // review of iteration 5 found it.
 //
 //   Forced moves — one legal card — because a forced move is not a
-//   temperament. Measured over 8,000 plays, 15.3% are forced: 5.0% of leads
-//   and 25.5% of follows. (An earlier comment here said "about half", which
-//   was three times the truth and nobody had counted.)
+//   temperament. The run prints its own share now rather than quoting one: at
+//   `SEED_FROM=5001 node tools/selfplay.mjs --differ 200`, 13.8% of 32,000
+//   plays are forced, 6.2% of leads and 24.0% of follows. (An earlier comment
+//   here said "about half", which was three times the truth and nobody had
+//   counted; the version after it quoted 15.3% from a scratch script that no
+//   longer existed, which is the same defect wearing a decimal point.)
 //
 //   Everything from CODA_FROM on, because there the weights are not consulted
 //   at all: compGioca enumerates the rest of the deal and every profile plays
@@ -207,10 +214,16 @@ function differ(n, names, driver = "greedy"){
     for (let j = i + 1; j < names.length; j++) pairs.push([i, j, 0]);
   let decisions = 0;
 
-  let endgame = 0;
+  let endgame = 0, forcedLeads = 0, forcedFollows = 0, leads = 0, follows = 0;
   const watch = (state, who) => {
     const led = who === state.perPrimo ? null : state.played[state.perPrimo];
-    if (mosseLegali(state.hands[who], led).length < 2) return;
+    // The two exclusions are counted, not asserted: the comment above quotes
+    // these numbers and this is where they come from.
+    if (led === null) leads++; else follows++;
+    if (mosseLegali(state.hands[who], led).length < 2){
+      if (led === null) forcedLeads++; else forcedFollows++;
+      return;
+    }
     if (state.tricks >= CODA_FROM){ endgame++; return; }
     decisions++;
     const choice = profiles.map(P => compGioca(state, P));
@@ -222,21 +235,27 @@ function differ(n, names, driver = "greedy"){
   // about the tight player's positions would flatter whichever drove.
   for (const name of names) match(n, name, driver, watch);
 
-  return { decisions, endgame, pairs: pairs.map(([i, j, count]) => ({
-    a: names[i], b: names[j], count, share: count / decisions })) };
+  return { decisions, endgame, leads, follows, forcedLeads, forcedFollows,
+    pairs: pairs.map(([i, j, count]) => ({
+      a: names[i], b: names[j], count, share: count / decisions })) };
 }
 
 const cap = s => s[0].toUpperCase() + s.slice(1);
 
 function differTable(n){
   const names = ["franco", "valerio", "graziano", "piero"];
-  const { decisions, endgame, pairs } = differ(n, names);
+  const { decisions, endgame, leads, follows, forcedLeads, forcedFollows,
+          pairs } = differ(n, names);
   console.log(`\nchoices that differ, over ${decisions} decisions the weights actually made\n`);
   for (const p of pairs.sort((x, y) => y.share - x.share))
     console.log(`  ${(p.a + " vs " + p.b).padEnd(22)}${(100 * p.share).toFixed(1)}%`.padEnd(34) +
                 `${p.count} of ${decisions}`);
+  const pc = (a, b) => `${(100 * a / b).toFixed(1)}%`;
   console.log(`\n  ${endgame} further decisions were from trick ${CODA_FROM + 1} on, where the search` +
               `\n  answers and all four play alike. They are not in the denominator.`);
+  console.log(`\n  and neither are forced moves: of ${leads + follows} plays, ` +
+              `${pc(forcedLeads + forcedFollows, leads + follows)} have one legal card` +
+              `\n  (${pc(forcedLeads, leads)} of leads, ${pc(forcedFollows, follows)} of follows).`);
 }
 
 /* ---- what each weight costs, and what it buys ------------------------------- */

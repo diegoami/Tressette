@@ -407,19 +407,29 @@ formula freezes.
 | DISCARD_GUARD_PENALTY | cost of leaving an asso unguarded |
 | LATE_FACTOR | how much the four control terms steepen as the tallone empties |
 
-**The three temperaments.** Iteration 2 measured whether this formula can
-actually tell them apart and iteration 5 priced it; §4.5 and iteration 5 have
-the answer, and it is not a comfortable one. **Franco** is the house standard
-and the default, balanced — he is the player iteration 2 tuned, under the name
-that stayed when Valerio was dropped for choosing the same card 99 times in a
-hundred. **Graziano** is loose and quick: he leads his big cards rather than
-keeping them back and spends control to take a trick, which is a temperament
-bought at a measured price in win rate. **Piero** is rolled once per session by
-`rollProfiles`, as in Discola, because that is now a house tradition rather
-than a Delphi accident. There is no "tight" character: the weights that would
-express one — the control penalties and the guard — move almost no plays at any
-magnitude, which is what iteration 2 found and iteration 5 confirmed a second
-way.
+**The four temperaments.** Iteration 2 measured whether this formula can
+actually tell them apart and iteration 5 priced it, twice; §4.5 and the
+iteration 5 record have the answer. Two weights decide the game a profile
+plays — whether it opens its longest suit, and what a liscio is worth
+leading — and there is a player in each of the four corners they make.
+
+**Franco** is the house standard and the default, balanced: no long suit, lisci
+kept. He is the player iteration 2 tuned. **Graziano** opens the long suit and
+keeps fewer lisci — another game, and not a worse one: 86.5% against
+greedy-take where Franco is 86.6%, on the same 2,000 held-out deals. That is
+the correction iteration 5's review forced: the first pass had concluded that
+character costs about a point of win rate per percent of plays changed, having
+never priced `LEAD_LONG_SUIT`. **Valerio** is the corner where character does
+cost something: neither the long suit nor the patience, so he leads his big
+cards and takes what is there, at 81.3%. He is the name iteration 4 retired,
+back on a vector that earns it. **Piero** opens long *and* keeps his lisci, and
+is rolled once per session by `rollProfiles`, as in Discola, because that is
+now a house tradition rather than a Delphi accident.
+
+There is still no "tight" character: the weights that would express one — the
+control penalties and the guard — move almost no plays at any magnitude, which
+is what iteration 2 found and iteration 5 confirmed a second way. A fifth name
+would need a lever the eleven weights do not have.
 
 **The contract, from v1.0 on.** Discola's rule was *change a weight, not the
 formula* because the formula was the 1997 artefact. Here the formula is ours
@@ -1109,14 +1119,22 @@ iteration 2 set to zero. It is the cheap lever, and it is a switch rather than a
 dial — 0.5, 1 and 1.5 play identically, because the term only reorders which
 liscio is led:
 
+`SEED_FROM=5001 node tools/selfplay.mjs --try … 600`, 1,200 mirrored deals a
+row, and `SEED_FROM=5001 node tools/selfplay.mjs franco greedy 600` for the
+baseline. Re-measured on the shipped engine after `rngSeed` was given its
+warm-up, which moved every one of these by a few tenths:
+
 | from Franco | vs greedy | differing |
 |---|---|---|
-| `LEAD_LISCIO_BONUS` 8 and three other weights moved | 80.8% | 15.5% |
-| `LEAD_LONG_SUIT` 0.5 | 86.2% | 17.1% |
-| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 8 | **87.1%** | **22.2%** |
-| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 7 | 85.2% | 27.3% |
+| Franco himself | 85.0% ± 2.0 | — |
+| `LEAD_LISCIO_BONUS` 8 and three other weights moved | 80.8% | 15.6% |
+| `LEAD_LONG_SUIT` 0.5 | 85.8% | 16.8% |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 8 | **86.1%** | **21.9%** |
+| `LEAD_LONG_SUIT` 0.5, `LEAD_LISCIO_BONUS` 7 | 84.8% | 26.7% |
 
-Half again the difference for a seventh of the cost. So the honest version:
+Half again the difference for none of the cost: the weight iteration 5 tuned
+along buys 15.6% of plays for 4.2 points of win rate, and the one it never
+priced buys 21.9% for nothing measurable at all. So the honest version:
 **this formula has about two and a half levers, not one** — the long suit, the
 liscio bonus, and a little from spending and taking — and the first tuning pass
 found one of them and concluded there were none. The guard penalty moves two
@@ -1183,6 +1201,21 @@ rolling him across the whole of `PIERO_RANGES` put him 98.4% onto Graziano's
 card once and 7.1% from Franco another time. A corner of weight space is not a
 promise about plays.
 
+**What the bands cost**, which the second review round had to ask for because
+the first version of this record only said what they buy. The control is a copy
+of `engine.js` with `rollPiero`'s stance lookup removed, run on the same seeds:
+
+| `SEED_FROM=90001 … --piero 8 500` | vs greedy-take | away from Franco |
+|---|---|---|
+| bands on, as shipped | 82.2–85.2% | 19.9–24.2% |
+| bands off, all eleven wide | 83.8–87.4% | 5.6–21.1% |
+
+About two points of win rate, for a floor under the thing the corner is for:
+one roll in eight without the bands came out **5.6% from Franco**, which is
+Franco under another name, which is what retired the name Valerio in the first
+place. With the bands he still clears §3.4's floors, so it is a trade and not a
+cost.
+
 **What the draw costs, measured rather than claimed:** the seven weights drawn
 wide are mostly the inert ones, so his sessions vary less than the dossier used
 to promise. Over twenty rolls — `SEED_FROM=90001 node tools/selfplay.mjs
@@ -1194,6 +1227,16 @@ true of his play, and the dossier says the smaller thing now — at the second
 attempt. The honest sentence was twenty characters longer than the dishonest
 one, ran to a fifth line on a 360px phone and pushed the deck row 15px down,
 and the check said so before anyone had to see it.
+
+**A fix can orphan a measurement**, which is the second round's own
+contribution to that rule. Warming `rngSeed` changed which deals seeds 5001+
+produce, so every figure in the lever table above — the exhibit this whole
+round turns on — stopped reproducing from the command printed beside it, by two
+to ten tenths of a point. Nothing about the argument changed and the table now
+reads better than it did, but nobody re-ran it: the fix and the table were in
+the same commit and neither mentioned the other. A measurement is coupled to
+the code that produced it, and a change to an rng is a change to the code that
+produced every measurement.
 
 **And what the review of this iteration is worth writing down**, beyond the
 numbers it corrected. Every measurement in the first version was real; the

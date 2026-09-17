@@ -6,8 +6,11 @@ step, the 1997 card art, a table lit from above, four named opponents who
 share one formula and differ only in their weights, and a UI check calibrated
 against the defects that actually ship.
 
-**Status: nothing is built.** This document is the plan. It becomes `SPEC.md`
-once the game exists, the way Discola's did.
+**Status: built, and live.** This document stays as the record of how it was
+built — including what it got wrong on the way, which is most of what it is
+worth. `SPEC.md` is the handover: what exists, how it is put together, what the
+numbers are, and what is missing. Read that first; read this when you want to
+know why something is the way it is.
 
 ---
 
@@ -1262,7 +1265,7 @@ numbers nobody wrote by hand and the test says so. Re-recording is a command
 now rather than a script someone writes twice:
 `node tools/selfplay.mjs --golden > tools/golden.json`.
 
-### 6 — Ship (½ day)
+### 6 — Ship (½ day) — done
 
 Netlify site. README with the rules as played and provenance. `SPEC.md`
 written from this document and what actually got built, including the
@@ -1270,6 +1273,27 @@ written from this document and what actually got built, including the
 
 **Done when** the live URL plays and the handover document would let a
 stranger take the project over.
+
+The site was already connected by the owner during iteration 4, which is why
+every pull request from #5 on carried a deploy preview — and those previews are
+where both of iteration 4's defects were found. `netlify.toml` publishes
+`public/` and nothing else, so this document, `SPEC.md` and `CLAUDE.md` are not
+on the web; that is Discola's lesson, where publishing `.` served a private
+repo's `SPEC.md` and `ROADMAP.md` to anyone who guessed the names.
+
+`SPEC.md` is written for a stranger and says the things this document says only
+in passing: the engine contract, the two weights that make the roster, where
+every number came from, the six rules the reviews bought, and the known gaps —
+the unsaved deal in progress, the 28ms search, Piero's thin variety, and the
+seven weights that move almost nothing.
+
+**One thing this iteration could not check itself.** The live URL is not
+reachable from the container the work is done in — the network policy denies
+it — so nothing here can assert that production plays. The owner played it and
+confirmed it does, which is the only way that box could be ticked from inside
+this project, and is worth knowing for the next thing that wants to check a
+deployment: the check that runs here asserts the directory `netlify.toml`
+publishes, and a human asserts the URL.
 
 **Total: 7–8 days**, with the opponent the one estimate that can slip.
 
@@ -1403,8 +1427,8 @@ with goes to the owner, in the pull request, not into a silent merge.
 
 Nothing lives in a session's memory. Anything learned goes into one of three
 files: a decision into §0 of this document, a rule the builder must follow
-into `CLAUDE.md`, and, at iteration 6, everything a stranger needs into
-`SPEC.md`. If a session ends with something only it knows, that is a defect
+into `CLAUDE.md`, and everything a stranger needs into `SPEC.md`, which
+iteration 6 wrote. If a session ends with something only it knows, that is a defect
 in the handoff.
 
 **Discola is a moving reference, not a fixed one.** It is a live repository

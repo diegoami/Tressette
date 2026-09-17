@@ -351,7 +351,9 @@ const FRANCO_WEIGHTS = weights([
 
 // The fourth corner: no long suit and no patience with lisci. He leads his big
 // cards and takes what is there, which is the loosest of the four and the
-// weakest — 80.8% against greedy-take where the others are 84.8% to 86.8%.
+// weakest of the three fixed vectors — 81.3% against greedy-take on 2,000
+// held-out deals, where Franco and Graziano are 86.6% and 86.5%. A rolled
+// Piero can land under him; the fixed three cannot.
 //
 // This is the vector iteration 5 shipped as Graziano, under the name iteration
 // 4 retired. Valerio was dropped for being Franco under a second name: they
@@ -418,19 +420,30 @@ function rollProfiles(rng){
 // those two weights did not fix it either: a gap of three in the liscio bonus
 // with the long suit matching is 6% of plays, and 6% is not a player.
 //
-// So Piero's two levers are not rolled at all: he stands in the one corner of
-// the lever space the other two leave empty. Franco leads no long suit and
-// hoards his lisci; Graziano leads the long suit and spends them; Piero leads
-// the long suit AND keeps his lisci — Franco's patience with Graziano's
-// opening. His other nine weights are rolled, which is what makes two sessions
-// two Pieros: measured over ten sessions of him, 17.6% to 22.8% of his choices
-// differ from Franco's, and every one of them beat greedy-take by 86% or more.
+// All eleven of Piero's weights are drawn. Four of them are drawn from bands of
+// their own, and the other seven from PIERO_RANGES:
+//
+//   LEAD_LONG_SUIT and LEAD_LISCIO_BONUS put him in his corner. He leads the
+//   long suit like Graziano and keeps his lisci like Franco, which is the
+//   corner those two leave empty. They are drawn, not fixed — the band is what
+//   holds the corner, not the value.
+//
+//   SPEND_CONTROL_PENALTY and TAKE_TERZI_WEIGHT are what keep him off Graziano.
+//   Sharing the long suit is most of a game: with these two left in
+//   PIERO_RANGES' own bands the two of them played a different card in 6.6% of
+//   the decisions the weights make, which is not two players. Drawn from here
+//   it is 12.3%.
 //
 // Piero does not roll between corners. He tried it for one round: rolled ten
 // times across two corners it gave a Piero 33.1% away from Franco and a Piero
 // 7.1% away, and a 7.1% Piero is Franco under another name. A corner of weight
 // space is not a promise about plays, which is this project's own lesson
 // arriving one more time. The corner he was borrowing is Valerio's now.
+//
+// What the draw does *not* buy is as measured as what it does: seven of the
+// eleven weights barely move a play, so two sessions of Piero are two weight
+// vectors and often one player. Over thirty sessions, fifteen distinct players,
+// and one of them turned up twelve times.
 const PIERO_STANCE = {
   LEAD_LONG_SUIT: [0.3, 1.0],
   LEAD_LISCIO_BONUS: [12, 14],
@@ -480,7 +493,7 @@ function presa(ledCard, followCard){
 // milliseconds; two tricks earlier the tree is an order of magnitude bigger
 // for a point or so of strength.
 //
-// What this costs: all three opponents play these seven tricks identically,
+// What this costs: all four opponents play these seven tricks identically,
 // because there is nothing to have an opinion about — §1 states that exception
 // and this is its size. It was measured before it was chosen. Two temperaments
 // disagree on 14.8% of the positions where they have a choice, but only 17% of

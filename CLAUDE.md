@@ -2,7 +2,7 @@
 
 A two-player Tressette game for the browser, built in the spirit of
 [Discola](https://github.com/diegoami/discola-web): one static page, no build
-step, the 1997 card art, one opponent formula with three weight vectors.
+step, the 1997 card art, one opponent formula with four weight vectors.
 
 `PLAN.md` is the architecture and the plan, and it is the reference for
 anything this file does not state. Section 7 says how the work is organised:
@@ -93,7 +93,7 @@ One exception to "score every legal card and play the highest" is deliberate
 and belongs in the source with its reason: from `CODA_FROM` on — the last seven
 tricks, where the tallone is empty and the opponent's information is already
 perfect — `compGioca` enumerates the position and plays it out exactly. All
-three opponents play those seven tricks alike, which is also why those
+four opponents play those seven tricks alike, which is also why those
 decisions are not in the denominator when the roster is measured for
 difference: there is nothing there for a weight to change. A
 weight that cannot move a play does not belong in the eleven.

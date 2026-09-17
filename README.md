@@ -19,27 +19,32 @@ leading. Two weights make four corners, and there is a player in each.
 | **Piero** — rolled fresh every session | yes | yes |
 | **Valerio** — the loosest of the four | no | no |
 
-On seeds the tuning never saw, 500 mirrored deals each:
+On seeds nothing was ever tuned or reported on, 2,000 deals a matchup —
+`SEED_FROM=90001 node tools/selfplay.mjs 1000` for the win rates,
+`SEED_FROM=90001 node tools/selfplay.mjs --differ 200` for the last column:
 
 | | vs random-legal | vs greedy-take | choices differing from Franco |
 |---|---|---|---|
-| Franco | 86.6% | 84.8% | — |
-| Valerio | 87.6% | 80.6% | 15.0% |
-| Graziano | 88.4% | 86.8% | 21.6% |
-| Piero\* | 86.8% | 81.8% | 25.2% |
+| Franco | 85.5% ± 1.5 | 86.6% ± 1.5 | — |
+| Valerio | 85.8% ± 1.5 | 81.3% ± 1.7 | 14.0% |
+| Graziano | 87.0% ± 1.5 | 86.5% ± 1.5 | 20.7% |
+| Piero\* | 84.7% ± 1.6 | 80.3% ± 1.7 | 24.0% |
 
-Head to head the six pairs run 42% to 60% — characters, not difficulty tiers.
-The closest two, Graziano and Piero, still play a different card in 11.6% of
+Head to head the six pairs run 44% to 58% — characters, not difficulty tiers.
+The closest two, Graziano and Piero, still play a different card in 10.8% of
 the decisions the weights actually make; the pair that retired the name Valerio
 in the first place played the same card 99 times in a hundred.
 
-\* one session of him. Piero's two deciding weights are fixed, so that he
-cannot roll into somebody else's game; the other nine are drawn fresh each
-session, and over eight sessions he ran 82.1–85.8% against greedy-take and
-20.5–25.1% away from Franco. Most of those nine barely move a play, which is
-why his sessions differ less than his weights do.
+\* one session of him, and a session is a roll of all eleven weights. Four of
+them are drawn from bands narrow enough that he cannot roll into somebody
+else's game; the other seven are drawn wide, and most of them barely move a
+play, which is why his sessions differ less than his weight vectors do. Twenty
+rolls — `SEED_FROM=90001 node tools/selfplay.mjs --piero 8 500` and
+`node tools/selfplay.mjs --piero 12 400` — ran 83.6% to 87.2% against
+random-legal, 80.5% to 85.2% against greedy-take, and 18.9% to 24.3% away from
+Franco.
 
 The settings sheet discloses all eleven weights for whoever you are playing.
 From the fourteenth trick the weights stop mattering: the opponent enumerates
-the rest of the deal and plays it exactly, and all three play those seven
+the rest of the deal and plays it exactly, and all four play those seven
 tricks alike.

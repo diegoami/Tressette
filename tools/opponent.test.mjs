@@ -521,9 +521,9 @@ test("four players, and each one plays a different game", () => {
   // one player.
   //
   // Counted over dealt positions with more than one legal card, because a
-  // forced move is not a temperament: about half of all decisions in this game
-  // have one legal card, and counting those buries the difference under the
-  // follow-suit rule.
+  // forced move is not a temperament. Measured over 8,000 plays, 15.3% are
+  // forced: 5.0% of leads and 25.5% of follows. (A comment here used to say
+  // "about half", which was three times the truth and nobody had counted.)
   const P4 = rollProfiles(rngSeed(1));
   const names = ["Franco", "Valerio", "Graziano", "Piero"];
   assert.deepEqual(Object.keys(P4).sort(), [...names].sort());
@@ -543,7 +543,7 @@ test("four players, and each one plays a different game", () => {
       const who = state.deveGiocare;
       const led = who === state.perPrimo ? null : state.played[state.perPrimo];
       // Decisions the weights actually make: not the forced moves, and not the
-      // endgame, where compGioca enumerates the rest of the deal and all three
+      // endgame, where compGioca enumerates the rest of the deal and all four
       // play the same card whatever their weights say. Counting the endgame
       // put 31% of zero-difference decisions in the denominator and made every
       // figure 1.45 times too small.
@@ -560,7 +560,8 @@ test("four players, and each one plays a different game", () => {
   // disjoint twenty-four-seed windows the tightest pair — Graziano and Piero,
   // who share a corner's long suit and differ on the lisci — ran 6.4% to 12.3%,
   // so the floor sits 1.4 points under the worst window seen. Pooled over
-  // 19,000 decisions that pair is 11.6%.
+  // 19,000 decisions that pair is 11.6% on seeds 5001+ and 10.8% on 90001+
+  // (`--differ 200`), which is the size of the thing this floor guards.
   //
   // The first version of this test used eight seeds and a 5% floor on a metric
   // that counted the endgame, where every profile plays alike by construction:

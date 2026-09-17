@@ -111,8 +111,15 @@ const SCREENS = [
   // The review of iteration 5: nothing ever rendered an opponent other than the
   // default, so two new dossiers and a rolled weights table went into the game
   // without a single rule ever looking at them. Rule 3 again.
-  { name: 'start, the loosest opponent chosen', open: async p => {
-      await p.evaluate(() => selectOpponent('Graziano'));
+  { name: 'start, an opponent other than the default', open: async p => {
+      // Valerio's dossier, four lines on a phone where Graziano's is three. The
+      // row used to select Graziano and call him the loosest, both of which were
+      // true of the vector that is now Valerio's: the name moved and the row did
+      // not follow it, so the screen rules were reading the shortest of the four.
+      // Which one is longest is not this row's business — the rule below cycles
+      // all four, and that is what caught Piero's dossier growing to five lines
+      // and pushing the deck row 15px down the phone.
+      await p.evaluate(() => selectOpponent('Valerio'));
     },
     // The dossier holds three lines open so that switching opponent does not
     // move the deck row under the player's thumb. That is a claim about a

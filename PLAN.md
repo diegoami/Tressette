@@ -226,7 +226,8 @@ One mutable object, as in Discola. `render()` reads it and writes the DOM.
 ```
 cards[40]          the shuffled deck
 next               index of the next card to draw; 40 − next is the tallone
-hands[2][10]       BASSO = 0 (you), ALTO = 1 (them); null = empty slot
+hands[2][10]       BASSO = 0 (you), ALTO = 1 (them); null = empty slot.
+                   Never reordered: a slot is a card's identity. §3.7.
 played[2]          the two cards on the table, or null
 terzi[2]           points taken this deal, in thirds
 accusi[2]          declarations, from the ten dealt; scored at the end
@@ -590,6 +591,28 @@ commit `22c4b9c` fixed the doctype and the head tags. The `--plates` token and
 the stacked name plates arrived in the same commit, and a ten-card fan
 interacts with them differently from three cards; iteration 3 measures rather
 than assumes.
+
+**A hand is held sorted**, by suit and, within a suit, from the strongest card
+down — which is how a hand is held away from a screen, and the change the owner
+asked for after the game shipped. Two things follow, and both matter more than
+the sorting does.
+
+The first is that the engine does not sort. A slot is a card's identity:
+`mosseLegali` answers in slot indices, `gioca` takes one, and `compGioca`
+breaks ties on the lowest of them, so a hand that reordered itself would move
+all three under their callers and change which card the opponent plays — which
+is the golden fixture's whole subject. `ordinaMano(hand)` returns the slots in
+the order the fan shows them and touches nothing; the page is its only caller.
+It lives in the engine anyway, because the order is a fact about Tressette's
+rank order, which is `rango`, and because the tests can then hold it to that.
+
+The second is that a sorted hand closes up. Holes are an artefact of a
+ten-long array, not of a hand, so the fan shows only the cards in it and the
+empty slot — the subject of issue #7 — no longer exists inside a hand. The
+button is a *place* in the fan rather than a card, which is why it carries
+`data-slot` and reads it on the click instead of closing over its index, and
+why the number keys count places: `1` is the leftmost card you are holding,
+and a hand of six has no `7`.
 
 **Selection instead of a direct tap.** A 29px strip is under any sane tap
 target, and a misplay in Tressette costs the deal. So a tap on a card *raises*
@@ -1283,9 +1306,9 @@ repo's `SPEC.md` and `ROADMAP.md` to anyone who guessed the names.
 
 `SPEC.md` is written for a stranger and says the things this document says only
 in passing: the engine contract, the two weights that make the roster, where
-every number came from, the six rules the reviews bought, and the known gaps —
-the unsaved deal in progress, the 28ms search, Piero's thin variety, and the
-seven weights that move almost nothing.
+every number came from, the seven rules the reviews and the breaks bought, and
+the known gaps — the unsaved deal in progress, the 28ms search, Piero's thin
+variety, and the seven weights that move almost nothing.
 
 **One thing this iteration could not check itself.** The live URL is not
 reachable from the container the work is done in — the network policy denies
@@ -1296,6 +1319,86 @@ deployment: the check that runs here asserts the directory `netlify.toml`
 publishes, and a human asserts the URL.
 
 **Total: 7–8 days**, with the opponent the one estimate that can slip.
+
+### After it shipped — the hand is held sorted
+
+The owner, playing the shipped game: a hand must always be sorted by suit and,
+within a suit, from the strongest card down. §3.7 has the design; this is what
+the work found.
+
+**The sort is in the page, not in the engine.** The tempting version — sort
+`state.hands[who]` — moves a card's slot, and a slot is what `mosseLegali`
+answers in, what `gioca` takes, and what `compGioca` breaks ties on. Sorting
+the array would have changed the opponent's play in every deal and invalidated
+the golden fixture, to make a hand look tidy. `ordinaMano(hand)` returns slot
+indices in fan order and mutates nothing; the engine never calls it.
+
+**Five deliberate breaks, per rule 1, and the fifth is the one worth writing
+down.** No sort at all, the holes kept in the fan, the ranks ascending, and the
+click closing over its build index instead of reading `data-slot` — all four
+were caught, three of them by the new assertion naming the exact place in the
+fan where the order went wrong.
+
+The fifth was the number keys indexing slots instead of places in the fan,
+which is the defect this change most obviously invites, and **the check passed
+it**. The keyboard assertion that existed was one-sided: it pressed the key of
+a card the follow-suit rule forbids and asserted that card was *not* raised. A
+keyboard indexing the wrong thing satisfies that by raising a different, legal
+card. An assertion that can only fail one way cannot see a defect that moves
+sideways, so there is a second one now — press a key, and the card raised must
+be the card at that place — and the break fails it by name.
+
+That is rule 1 earning its keep on an assertion written the same afternoon, and
+it sharpens what rule 1 is for: **an assertion has to be broken in the
+direction the change can actually go wrong**, not in the direction that is easy
+to break. Four of these five breaks confirmed what the new assertions were
+written to catch. The fifth found a hole in an old one.
+
+**And then the new assertion broke the pass it lives in.** It pressed a key and
+left the card raised, and a raised card is scaled and on top of its neighbours,
+so the pointer tap that followed landed on a card the page thought was already
+chosen and the reachability rule then found the raised card sitting in front of
+the one it was aiming at. It failed on some deals and passed on others, because
+whether it mattered depended on which card the sort had put next to which —
+so the run before it was green and the run after it was not, on identical code.
+Clearing the selection after the assertion fixes it, and three consecutive runs
+on three different deals are green.
+
+**And the review found the regression none of that caught.** A hand that closes
+up ends the deal with nothing in it, and a flex row with nothing in it is zero
+tall — so the table re-centred itself twice in the last trick, moving the
+player's own hand **74px up at 393x852, 101px at 1440x900, while they were
+choosing the card that decides the deal**. `min-height: var(--ch)` on `.hand`
+fixes it, and the numbers go back to the ones `main` measures exactly.
+
+It is this document's oldest rule arriving from the other side. CLAUDE.md says
+a row that costs nothing while empty moves every card below it the moment it
+fills; this was a row that had cost something all deal and then stopped. And it
+went unseen for the usual reason: `measure()` runs on a table that has just
+been dealt, and the deal pass reads the hand's *order* after every play but
+never its geometry. **An assertion only ever sees the states the check
+renders** — the third rule, on the change that retired the second half of the
+seventh. The table pass empties both hands and re-renders now, at every
+viewport and in every deck, and asserts the three rows have not moved.
+
+The same review found three more, each one line: the fan never compared a
+card's *picture* to the slot it names, so a render painting its neighbour's
+face passed everything, because the click, the reachability rule and the deal
+pass all go by the name; the keyboard-place assertion fired once a deal on
+`legal[0]`, which when you lead is slot 0, and a slot-indexing keyboard is only
+visible when a card's place differs from its slot — true of all but 10.0% of
+dealt hands, so it would have missed its own motivating break one run in ten;
+and a hidden place kept `aria-pressed="true"`, so a query for the raised card
+could find a node with no slot to its name.
+
+Which is a seventh rule, and the sharpest one the deal pass has taught:
+**a pass that drives the page has to leave it as it found it.** The clause
+issue #7 added to §4's iteration-4 record said a pass that drives the page is
+not the same as a pass that reads it. This is the other half: a pass that drives the page is also a pass that can
+*change* it, and an assertion whose own side effect reaches the next assertion
+is not measuring the page any more. A check that fails one run in three is
+worse than one that never fails, because the first thing anyone does with it is
+run it again.
 
 ## 5. Out of scope, deliberately
 

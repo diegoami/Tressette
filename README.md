@@ -11,11 +11,15 @@ settings, your last hundred hands — stays in your browser.
 
 ## Playing
 
+Your hand is held sorted, by suit and then from the strongest card of each
+suit down, and closes up as you play.
+
 A tap on a card raises it, a second tap plays it: on a phone a hand of ten
 cards is a fan, and a card's uncovered strip is about 29px, which is no width
 for a decision that costs the deal. The keyboard does the same with `1`–`9`,
-`0` and `Enter`. Cards the follow-suit rule forbids are dimmed and inert, so
-the rule is taught by the table rather than by an error message after the fact.
+`0` and `Enter`, counting from the left of the fan. Cards the follow-suit rule
+forbids are dimmed and inert, so the rule is taught by the table rather than by
+an error message after the fact.
 
 ## The rules it plays
 

@@ -64,6 +64,7 @@ the DOM and `Math.random`.
 ```
 newDeal(state, rng)        shuffle, ten each, non-dealer leads
 mosseLegali(hand, led)     slot indices; follow suit if you can
+ordinaMano(hand)           slot indices in the order a hand is held
 gioca(state, who, slot)    play a card; resolves the trick when both have
 scoreDeal(state)           [you, them], floors of terzi plus declarations
 compGioca(state, P)        the opponent's choice, given a weight vector
@@ -238,9 +239,27 @@ A hand of ten cannot sit side by side on a phone, so it is a **fan**: each card
 after the first shows a strip of `--cw × --overlap`. A strip is not a tap
 target, so a tap raises a card — it lifts 40% of its own height, clear of the
 fan, and the line above the hand says what the next tap will do — and a second
-tap plays it. Empty slots are `pointer-events: none`, because the hand keeps its
-holes all deal and an empty slot sitting on top of a card swallowed every tap
-meant for it.
+tap plays it.
+
+**A hand is held sorted** — by suit, and within a suit from the strongest card
+down — and therefore closes up: the fan shows the cards in the hand and nothing
+else. The engine does not do the sorting and must not be made to. A slot is a
+card's identity there (`mosseLegali` answers in slots, `gioca` takes one,
+`compGioca` breaks ties on the lowest), so reordering `hands` would change the
+opponent's play in every deal and invalidate the golden fixture. `ordinaMano`
+returns the fan's order as slot indices and mutates nothing, and the page is
+its only caller — `render`, and the keydown handler that turns a number key
+into a place in the fan.
+
+So a card element is a **place in the fan**, not a card. It carries the engine
+slot in `data-slot` and reads it on the click rather than closing over its
+build index, and the number keys count places — `1` is the leftmost card you
+hold, and a hand of six has no `7`. Empty slots are still
+`pointer-events: none`: no hand has holes any more, but the two slots on the
+table wear the same state, and the defect the rule names (issue #7 — a
+card-shaped box overlapping the card to its left, swallowing every tap aimed at
+the part it covers) is a property of the fan's negative margins rather than of
+the holes that used to sit in them.
 
 Anything that takes vertical space on the table is in the budget and is in the
 flow whether or not it has anything in it. Anything that cannot be budgeted —
@@ -287,7 +306,8 @@ Discola.
 
 ## 9. What this project learned, which is most of its value
 
-Six rules, each bought by a review finding something that was green and wrong.
+Seven rules, each bought by a review, or a break, finding something that was
+green and wrong.
 They are in `PLAN.md` beside the iteration that paid for them, and they are the
 part worth carrying to another project:
 
@@ -313,6 +333,11 @@ part worth carrying to another project:
    reproducing from the command printed beside it — including the table the
    round turned on. A change to an rng is a change to the code that produced
    every measurement.
+7. **A pass that drives the page has to leave it as it found it.** The
+   assertion added for the sorted hand pressed a key and left the card raised;
+   the tap that followed landed on a card the page thought was already chosen,
+   and the next assertion found the raised card in front of the one it was
+   aiming at. It failed on some deals and not others, on identical code.
 
 ## 10. Known gaps
 

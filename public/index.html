@@ -244,6 +244,13 @@ button, select, input{ font: inherit; color: inherit; }
   grid-column: 2;
   display: flex;
   gap: 0;
+  /* A hand that closes up ends the deal empty, and an empty flex row is zero
+     tall — so the table re-centred itself twice in the last trick, moving your
+     own hand 74px up while you were choosing the card that decides the deal.
+     Exactly the failure CLAUDE.md names: a row that costs nothing while empty
+     moves everything around it the moment it empties. It is a card row all
+     deal, whether or not it has a card in it. */
+  min-height: var(--ch);
 }
 .hand > * + *{ margin-left: calc(var(--strip) - var(--cw)); }
 
@@ -297,14 +304,20 @@ button, select, input{ font: inherit; color: inherit; }
   background-image: none;
   box-shadow: inset 0 0 0 1px rgba(242,235,220,.11);
   /* An empty slot is the shape of a card that has been played, and nothing
-     else: it must not take a tap. Issue #7 — the hand keeps its holes all
-     deal, and each slot overlaps the one before it, so an empty slot sits on
-     top of the card to its left and swallowed every tap aimed at the part of
-     that card it covers. As the hand thinned the cards looked more and more
+     else: it must not take a tap. Issue #7 — the hand kept its holes all deal,
+     and each slot overlaps the one before it, so an empty slot sat on top of
+     the card to its left and swallowed every tap aimed at the part of that
+     card it covered. As the hand thinned the cards looked more and more
      reachable and were less and less tappable: a card with empty slots to its
      right looks entirely free, and could only be touched on its leftmost
      strip. A disabled button eats the click rather than passing it on, so this
-     has to be pointer-events, not the disabled attribute. */
+     has to be pointer-events, not the disabled attribute.
+
+     A hand is held sorted now, so it closes up and has no holes in it at all,
+     and the two slots on the table are what is left wearing this state. The
+     rule stays because it is cheap and because the defect it names is a
+     property of the fan's negative margins, not of the holes that happened to
+     be sitting in them. */
   pointer-events: none;
 }
 
@@ -1305,21 +1318,32 @@ function backOf(node){
   node.style.setProperty("--row", 0);
 }
 
-// Ten slots a side, built once. A played card leaves its slot empty and a draw
-// fills the first empty one, so a card keeps its place in the fan all deal.
+// Ten card elements a side, built once and reused. Which engine slot each one
+// shows is decided per render by ordinaMano, and written to `data-slot`, so a
+// button is a *place in the fan* and not a card: the hand is held sorted by
+// suit and, within a suit, from the strongest card down, which is how it is
+// held away from a screen. That is also why the click reads `data-slot` rather
+// than closing over the index — it used to, and every play after the first
+// would have gone to whatever card had since sorted into that place.
+//
+// A hand shows only the cards in it. Holes are an artefact of the array, not of
+// a hand: closing them up is what sorting means, and it retires the empty slot
+// that issue #7 was about, since there is no longer such a thing in a hand.
 function buildHands(){
   el.oppHand.replaceChildren(...Array.from({ length: 10 }, () => {
     const d = document.createElement("div");
     d.className = "card";
     return d;
   }));
-  el.youHand.replaceChildren(...Array.from({ length: 10 }, (_, i) => {
+  el.youHand.replaceChildren(...Array.from({ length: 10 }, () => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "card";
-    b.dataset.slot = i;
     b.setAttribute("aria-pressed", "false");
-    b.addEventListener("click", () => tapped(i));
+    b.addEventListener("click", () => {
+      if (b.hidden) return;
+      tapped(Number(b.dataset.slot));
+    });
     return b;
   }));
 }
@@ -1344,22 +1368,41 @@ function render(){
 
   el.youHand.dataset.turn = String(yourTurn);
 
+  // Slot indices in the order the fan shows them, left to right. Everything
+  // below indexes the fan; `state.selected`, `legal` and gioca all speak slots.
+  const order = ordinaMano(state.hands[BASSO]);
   [...el.youHand.children].forEach((node, i) => {
-    const card = state.hands[BASSO][i];
+    const slot = order[i];
+    node.hidden = slot === undefined;
+    if (node.hidden){
+      faceOf(node, null);
+      node.disabled = true;
+      node.removeAttribute("data-slot");
+      // And it is not the raised card any more. Playing the rightmost card of
+      // the fan left this node hidden, still aria-pressed and with no slot to
+      // its name, so a query for the raised card found it and read its slot as
+      // NaN. Nothing shows it today — it is display:none — but the query is
+      // one the check runs.
+      node.setAttribute("aria-pressed", "false");
+      return;
+    }
+    const card = state.hands[BASSO][slot];
+    node.dataset.slot = String(slot);
     faceOf(node, card);
     // Dimmed and inert when the follow-suit rule forbids it: the rule is taught
     // by the table, not by an error message after the fact.
-    node.disabled = !card || !yourTurn || !legal.includes(i);
-    node.setAttribute("aria-pressed", String(state.selected === i));
-    node.setAttribute("aria-label", card
-      ? (state.selected === i ? `Gioca il ${nomeDi(card)}` : `Scegli il ${nomeDi(card)}`)
-      : "Posto vuoto");
+    node.disabled = !yourTurn || !legal.includes(slot);
+    node.setAttribute("aria-pressed", String(state.selected === slot));
+    node.setAttribute("aria-label", state.selected === slot
+      ? `Gioca il ${nomeDi(card)}` : `Scegli il ${nomeDi(card)}`);
   });
 
+  const oppOrder = ordinaMano(state.hands[ALTO]);
   [...el.oppHand.children].forEach((node, i) => {
-    const card = state.hands[ALTO][i];
-    if (!card){ faceOf(node, null); return; }
-    if (state.cheat) faceOf(node, card); else backOf(node);
+    const slot = oppOrder[i];
+    node.hidden = slot === undefined;
+    if (node.hidden){ faceOf(node, null); return; }
+    if (state.cheat) faceOf(node, state.hands[ALTO][slot]); else backOf(node);
   });
 
   const onTable = sweeping ?? state.played;
@@ -1887,7 +1930,15 @@ document.addEventListener("keydown", e => {
     // 1-9 and 0 raise a card, Enter plays the raised one.
     if (e.key === "Enter" && state.selected !== null){ tapped(state.selected); return; }
     const n = e.key === "0" ? 10 : Number(e.key);
-    if (n >= 1 && n <= 10){ tapped(n - 1); return; }
+    // The keys count places in the fan, not slots: 1 is the leftmost card you
+    // are holding, whatever slot it happens to occupy, and a hand of six has
+    // no 7. Keying a slot would put the keyboard and the table out of step the
+    // moment a card was played.
+    if (n >= 1 && n <= 10){
+      const slot = ordinaMano(state.hands[BASSO])[n - 1];
+      if (slot !== undefined) tapped(slot);
+      return;
+    }
   }
 
   buffer = (buffer + e.key).slice(-CHEAT.length);

@@ -90,11 +90,15 @@ distinction is the whole of issue #7, where a pass that played twenty cards
 never looked at the hand between them — and asserts the things that only exist
 mid-deal or at the end of one: **both cards of a trick are on the table at
 once** before it is swept; **every card you still hold can be tapped where it
-looks free**, which stops being true the moment the hand has holes in it; a
-number key cannot raise a card the follow-suit rule forbids; the result dialog's two numbers are what `scoreDeal` returned; the deal
-is written to the history under the same score and opponent; and a second deal
-abandoned through the confirm asks first, lands on the start sheet, and is *not*
-written down.
+looks free**, which is about what sits in front of a card where a player aims;
+**the hand is held sorted and closed up** — by suit, then from the strongest
+card of each suit down, with the fan showing the cards in the hand and nothing
+else, and each place painting the face of the slot it names; **a number key
+counts places in the fan**, so pressing one raises the card at that place and
+cannot raise a card the follow-suit rule forbids; the result dialog's two
+numbers are what `scoreDeal` returned; the deal is written to the history under
+the same score and opponent; and a second deal abandoned through the confirm
+asks first, lands on the start sheet, and is *not* written down.
 
 **The fan** — the assertions this game needs and Briscola did not, because a
 hand of ten cards overlaps. The step of the fan matches the page's own
@@ -171,7 +175,10 @@ shipped — in Discola, which is the same table and the same budget:
 | a card was played through the abandon dialog | the card keys only checked the screen, and a dialog is a scrim over the table — `Enter` answered the dialog *and* played the raised card |
 | the result opened over a sheet | the result dialog ignored what was on screen, so it landed over the history, which still said no hand had ever been played |
 | the history has no way to clear itself | one entry written by another build threw mid-render and took the log and the wipe button with it |
-| a card cannot be tapped where it looks free | the hand keeps its holes, each slot overlaps the one before it, and an empty slot is a button that swallows the tap meant for the card underneath — worse the thinner the hand gets |
+| a card cannot be tapped where it looks free | the hand kept its holes, each slot overlaps the one before it, and an empty slot is a button that swallows the tap meant for the card underneath — worse the thinner the hand gets. A sorted hand closes up and has no holes, so the rule now guards the shape rather than that instance of it |
+| the table moves as the hands empty | a hand that closes up ends the deal with nothing in it, and an empty flex row is zero tall, so the table re-centred twice in the last trick and moved the player's own hand 74px up while they chose the card that decides the deal |
+| a place in the fan shows a card it does not name | a button carries its engine slot in `data-slot` and its face in `--col`/`--row`, set on different lines; the click, the reachability rule and the deal pass all go by the name, so ten wrong faces passed everything |
+| a number key raises the wrong card | the keys count places in the fan and the hand is sorted, so a keyboard that indexed slots raised a different, legal card — which the forbidden-card assertion, being one-sided, was happy with |
 | a raised card does not lift far enough | at 18% of a card the lift was shorter than the strip the card came out of, so the second tap read as a repeat of the first |
 
 If you believe a threshold is genuinely wrong, change it — then run the check

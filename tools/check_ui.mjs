@@ -556,6 +556,26 @@ const measure = () => {
   const saysNext = /^Gioca /.test(document.querySelector('.sel-name').textContent);
   state.selected = wasSelected; render();
 
+  // The hand empties, and that is a state no pass had ever rendered. A hand is
+  // held sorted now, so it closes up, and a flex row with nothing in it is zero
+  // tall: the table re-centred itself twice in the last trick and moved the
+  // player's own hand 74px up at 393x852 — while they were choosing the card
+  // that decides the deal. It is the failure CLAUDE.md names, arriving
+  // sideways: not a row that costs nothing while empty, but a row that has
+  // cost something all deal and then stops.
+  //
+  // Both hands, because they empty one after the other and the first of the two
+  // lurches was the opponent's last card leaving, not the player's.
+  const rowTops = () =>
+    ['.hand--opp', '.trick', '.hand--you'].map(sel => Math.round(r(sel).top));
+  const withCards = rowTops();
+  const heldHands = state.hands.map(h => h.slice());
+  state.hands = [new Array(10).fill(null), new Array(10).fill(null)];
+  render();
+  const emptied = rowTops();
+  state.hands = heldHands; render();
+  const rowShift = Math.max(...withCards.map((v, i) => Math.abs(v - emptied[i])));
+
   return {
     dimmedWaiting, dimmedFollowing, forbidden,
     overlap: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--overlap')),
@@ -566,7 +586,7 @@ const measure = () => {
     raisedAbove: Math.round(table.top - raised.top),
     raisedBelowFold: Math.round(raised.bottom - window.innerHeight),
     sayClip: Math.round(sayShown ? Math.max(0, nameH - say.height) : 0),
-    raisedLift, saysNext,
+    raisedLift, saysNext, rowShift,
     gapTop: Math.round(trick.top - oppHand.bottom),
     sayMissing: !sayShown,
     gapBot: Math.round((sayShown ? say.top : youHand.top) - Math.max(trick.bottom, tallone.bottom)),
@@ -592,6 +612,9 @@ const tableFaults = r => [
   r.belowFold > 0 && `your seat — hand and name plate — is ${r.belowFold}px below the fold`,
   r.overflow > 0 && `your seat overflows the table by ${r.overflow}px`,
   r.hScroll && 'table scrolls sideways',
+  r.rowShift > 1 &&
+    `the table moves ${r.rowShift}px as the hands empty: the last trick shifts the ` +
+    'row the player is reaching into',
   // Both terms are needed. The ratio alone misjudges a viewport so tight the
   // card sits on its floor, where an ordinary gap is a large share of a small
   // card; the absolute alone misjudges a big screen, where a wide gap beside a
@@ -748,7 +771,7 @@ async function checkDeal(browser) {
   };
 
   let plays = 0;
-  let keyTried = false, placeTried = false;
+  let keyTried = false;
   for (let i = 0; i < 600 && plays < 20; i++) {
     await page.waitForTimeout(90);
     // The first legal card. Which one it is does not matter; that a legal one
@@ -790,8 +813,13 @@ async function checkDeal(browser) {
     // that indexed slots rather than places satisfied it by raising the wrong
     // legal card instead. Once per deal, on a card the rule allows, so the
     // press gets as far as raising something.
-    if (!placeTried) {
-      placeTried = true;
+    // Every play, not once a deal. Once a deal it fired on legal[0], which when
+    // you lead is always slot 0 — and a keyboard indexing slots is only visible
+    // when that card's place differs from its slot, which over 20,000 dealt
+    // hands is all but 10.0% of them. An assertion that misses its own
+    // motivating break one run in ten is rule 7's defect wearing rule 1's
+    // clothes. One keypress a play closes it.
+    {
       const key = move.place === 9 ? '0' : String(move.place + 1);
       await page.keyboard.press(key);
       const up = await page.evaluate(() => {
@@ -869,6 +897,20 @@ async function checkDeal(browser) {
         return 'the fan has a hole in it: a hidden card sits before a shown one';
       const cards = visible.map(c => state.hands[BASSO][Number(c.dataset.slot)]);
       if (cards.some(c => !c)) return 'a card in the fan points at an empty slot';
+      // The sprite, not just the mapping. A place in the fan names a slot in
+      // data-slot and paints a face from --col/--row, and the two are set on
+      // different lines: a render that painted its neighbour's card while
+      // naming its own slot showed ten wrong faces and nothing said a word,
+      // because the click, the assertion below and the deal pass all went by
+      // the name. Since this change made a button a place rather than a card,
+      // this is how the fan can now lie.
+      for (let i = 0; i < visible.length; i++){
+        const col = visible[i].style.getPropertyValue('--col');
+        const row = visible[i].style.getPropertyValue('--row');
+        if (Number(col) !== cards[i].n - 1 || Number(row) !== cards[i].s)
+          return `place ${i} names ${SUITS[cards[i].s]} ${cards[i].n} and shows ` +
+                 `${SUITS[Number(row)]} ${Number(col) + 1}`;
+      }
       for (let i = 1; i < cards.length; i++){
         const a = cards[i - 1], b = cards[i];
         if (b.s < a.s) return `suits out of order at place ${i}: ${SUITS[a.s]} then ${SUITS[b.s]}`;

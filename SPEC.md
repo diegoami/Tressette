@@ -247,8 +247,9 @@ else. The engine does not do the sorting and must not be made to. A slot is a
 card's identity there (`mosseLegali` answers in slots, `gioca` takes one,
 `compGioca` breaks ties on the lowest), so reordering `hands` would change the
 opponent's play in every deal and invalidate the golden fixture. `ordinaMano`
-returns the fan's order as slot indices and mutates nothing; `render` is its
-only caller.
+returns the fan's order as slot indices and mutates nothing, and the page is
+its only caller — `render`, and the keydown handler that turns a number key
+into a place in the fan.
 
 So a card element is a **place in the fan**, not a card. It carries the engine
 slot in `data-slot` and reads it on the click rather than closing over its

@@ -1364,10 +1364,37 @@ so the run before it was green and the run after it was not, on identical code.
 Clearing the selection after the assertion fixes it, and three consecutive runs
 on three different deals are green.
 
+**And the review found the regression none of that caught.** A hand that closes
+up ends the deal with nothing in it, and a flex row with nothing in it is zero
+tall — so the table re-centred itself twice in the last trick, moving the
+player's own hand **74px up at 393x852, 101px at 1440x900, while they were
+choosing the card that decides the deal**. `min-height: var(--ch)` on `.hand`
+fixes it, and the numbers go back to the ones `main` measures exactly.
+
+It is this document's oldest rule arriving from the other side. CLAUDE.md says
+a row that costs nothing while empty moves every card below it the moment it
+fills; this was a row that had cost something all deal and then stopped. And it
+went unseen for the usual reason: `measure()` runs on a table that has just
+been dealt, and the deal pass reads the hand's *order* after every play but
+never its geometry. **An assertion only ever sees the states the check
+renders** — the third rule, on the change that retired the second half of the
+seventh. The table pass empties both hands and re-renders now, at every
+viewport and in every deck, and asserts the three rows have not moved.
+
+The same review found three more, each one line: the fan never compared a
+card's *picture* to the slot it names, so a render painting its neighbour's
+face passed everything, because the click, the reachability rule and the deal
+pass all go by the name; the keyboard-place assertion fired once a deal on
+`legal[0]`, which when you lead is slot 0, and a slot-indexing keyboard is only
+visible when a card's place differs from its slot — true of all but 10.0% of
+dealt hands, so it would have missed its own motivating break one run in ten;
+and a hidden place kept `aria-pressed="true"`, so a query for the raised card
+could find a node with no slot to its name.
+
 Which is a seventh rule, and the sharpest one the deal pass has taught:
-**a pass that drives the page has to leave it as it found it.** §7.6's earlier
-clause said a pass that drives the page is not the same as a pass that reads
-it. This is the other half: a pass that drives the page is also a pass that can
+**a pass that drives the page has to leave it as it found it.** The clause
+issue #7 added to §4's iteration-4 record said a pass that drives the page is
+not the same as a pass that reads it. This is the other half: a pass that drives the page is also a pass that can
 *change* it, and an assertion whose own side effect reaches the next assertion
 is not measuring the page any more. A check that fails one run in three is
 worse than one that never fails, because the first thing anyone does with it is

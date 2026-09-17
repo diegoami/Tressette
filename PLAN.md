@@ -1283,7 +1283,7 @@ repo's `SPEC.md` and `ROADMAP.md` to anyone who guessed the names.
 
 `SPEC.md` is written for a stranger and says the things this document says only
 in passing: the engine contract, the two weights that make the roster, where
-every number came from, the five rules the reviews bought, and the known gaps —
+every number came from, the six rules the reviews bought, and the known gaps —
 the unsaved deal in progress, the 28ms search, Piero's thin variety, and the
 seven weights that move almost nothing.
 

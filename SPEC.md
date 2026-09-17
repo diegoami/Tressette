@@ -31,7 +31,7 @@ tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
 tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
-tools/check_ui.mjs       the UI check: three passes, ~100 rows
+tools/check_ui.mjs       the UI check: four passes, 111 rows
 tools/pack_cards.py      carried from Discola, for repacking a deck
 netlify.toml         publish public/, cache the decks hard, never the page
 RULES.md / REGOLE.md the rules as this game plays them, English and Italian
@@ -117,27 +117,43 @@ there is a player in each:
 |---|---|---|---|
 | **Franco** | no | yes | the house standard, tuned by coordinate ascent |
 | **Graziano** | yes | no | another game, not a worse one |
-| **Piero** | yes | yes | his other nine weights rolled per session |
+| **Piero** | yes | yes | all eleven weights rolled per session |
 | **Valerio** | no | no | the loosest of the four |
 
-On seeds 5001+, which no tuning ever saw, 500 mirrored deals each:
+On seeds 90001+, which nothing has been tuned or reported on, 2,000 mirrored
+deals a matchup (`SEED_FROM=90001 node tools/selfplay.mjs 1000`):
 
 | | vs random-legal | vs greedy-take |
 |---|---|---|
-| Franco | 86.6% | 84.8% |
-| Valerio | 87.6% | 80.6% |
-| Graziano | 88.4% | 86.8% |
-| Piero (one session) | 86.8% | 81.8% |
+| Franco | 85.5% ± 1.5 | 86.6% ± 1.5 |
+| Valerio | 85.8% ± 1.5 | 81.3% ± 1.7 |
+| Graziano | 87.0% ± 1.5 | 86.5% ± 1.5 |
+| Piero (one session) | 84.7% ± 1.6 | 80.3% ± 1.7 |
 
-Head to head the six pairs run 42% to 60%. The share of *choices the weights
-actually make* on which two of them differ runs from 11.6% (Graziano and Piero,
-who share a corner's long suit) to 28.0% (Valerio and Piero).
+Head to head the six pairs run 44% to 58%. The share of *choices the weights
+actually make* on which two of them differ runs from 10.8% (Graziano and Piero,
+who share a corner's long suit) to 26.8% (Valerio and Piero).
 
-**Piero's two deciding weights are not rolled**; he stands in his corner and his
-other nine are drawn fresh each session, as they were in 1997 where
-`SetProfiles` ran from `FormCreate`. Most of those nine barely move a play, so
-his sessions differ less than his weights do: eight sessions ran 82.1–85.8%
-against greedy-take, three of them identical to the decimal.
+**§3.4 of `PLAN.md` asks for 82% against random-legal and 78% against
+greedy-take**, and every profile above clears both. Those floors were 85% and
+80% until the review of iteration 5: they had been set from one profile on
+about a thousand deals, before the endgame search existed, and a rolled Piero
+lands on either side of 85% depending on the seed range rather than on the
+player. **The table above is the claim about how strong these players are; the
+floors are a regression guard.**
+
+**All eleven of Piero's weights are drawn**, four of them from bands narrow
+enough to hold his corner and seven from the wide ranges. He is rolled once per
+session, as in 1997 where `SetProfiles` ran from `FormCreate`. Most of the seven
+barely move a play, so his sessions differ less than his weight vectors do:
+twenty rolls (`SEED_FROM=90001 … --piero 8 500` and `… --piero 12 400`) ran
+80.5–85.2% against greedy-take and 18.9–24.3% away from Franco, with five of
+the twelve falling into two groups identical to the decimal.
+
+The four bands cost him about two points against greedy-take, and buy the
+corner: with all eleven drawn wide, one roll in eight comes out 5.6% from
+Franco — Franco under another name, which is what retired the name Valerio the
+first time.
 
 ### Measuring any of this
 
@@ -147,7 +163,7 @@ node tools/selfplay.mjs                     all four against both baselines,
 node tools/selfplay.mjs --differ 200        how often each pair differs
 node tools/selfplay.mjs --ladder KEY 1,2,3  what one weight costs and buys
 node tools/selfplay.mjs --try KEY=V,KEY=V   a whole candidate vector
-node tools/selfplay.mjs --piero 8           what a rolled Piero is worth
+node tools/selfplay.mjs --piero 8 500       what a rolled Piero is worth
 SEED_FROM=5001 node tools/selfplay.mjs      any of them, on held-out seeds
 ```
 
@@ -185,17 +201,17 @@ a declaration can run to three lines — floats over the table instead.
 
 ```sh
 node --test 'tools/**/*.test.mjs'   46 tests, no dependencies
-node tools/check_ui.mjs             ~100 rows, needs playwright-core + Chromium
+node tools/check_ui.mjs             111 rows, needs playwright-core + Chromium
 ```
 
 Both run in CI on every pull request; a red check does not merge.
 
-The UI check has three passes: the **document** (four head tags that cannot be
+The UI check has four passes: the **document** (four head tags that cannot be
 layout assertions), the **screens** (every screen and every state worth looking
-at, at five device shapes), the **table** (19 viewports × 5 decks, then the
-tightest five again with the spacing tokens inflated), and a **deal** — twenty
-cards tapped through the fan, a result, a history entry, and a second deal
-abandoned through the confirm. `.claude/skills/ui-check/SKILL.md` explains what
+at, at five device shapes, every opponent included), the **table** (19
+viewports × 5 decks, then the tightest five again with the spacing tokens
+inflated), and a **deal** — twenty cards tapped through the fan, a result, a
+history entry, and a second deal abandoned through the confirm. `.claude/skills/ui-check/SKILL.md` explains what
 each threshold is calibrated against.
 
 **Every threshold in it was calibrated against a defect that actually shipped.**
@@ -220,7 +236,7 @@ Discola.
 
 ## 9. What this project learned, which is most of its value
 
-Five rules, each bought by a review finding something that was green and wrong.
+Six rules, each bought by a review finding something that was green and wrong.
 They are in `PLAN.md` beside the iteration that paid for them, and they are the
 part worth carrying to another project:
 
@@ -241,6 +257,11 @@ part worth carrying to another project:
    Iteration 5 concluded that character costs a point of win rate per percent
    of plays changed, from a ladder that had never priced one of the two weights
    that matter. Every figure not followed by how it was obtained is a claim.
+6. **A fix can orphan a measurement.** Warming `rngSeed` changed which deals
+   seeds 5001+ produce, and every number measured before it silently stopped
+   reproducing from the command printed beside it — including the table the
+   round turned on. A change to an rng is a change to the code that produced
+   every measurement.
 
 ## 10. Known gaps
 
@@ -248,9 +269,11 @@ part worth carrying to another project:
 - **The opponent's search is exact but not fast**: the first searched decision
   is a median 28ms and a p95 of 64ms. Alpha-beta and `CODA_FROM = 12` is the
   named next move, and it would need the late weights re-measured.
-- **Piero's variety is thinner than his name promises.** His two deciding
-  weights are fixed so that he cannot roll into another player's game, and most
-  of the nine that are rolled barely move a play.
+- **Piero's variety is thinner than his name promises.** Four of his eleven
+  weights are drawn from bands narrow enough that he cannot roll into another
+  player's game, and most of the seven drawn wide barely move a play. The
+  bands cost him about two points of win rate; without them one roll in eight
+  is Franco under another name, so the trade is deliberate and priced.
 - **Seven of the eleven weights move almost nothing.** `DISCARD_GUARD_PENALTY`
   moves 2 choices in 3,437 at one end of its range and none at all at the
   other. They are disclosed in the settings sheet because they are what the

@@ -101,10 +101,26 @@ weight that cannot move a play does not belong in the eleven.
 Piero's weights are rolled once per session, as in Discola, where `SetProfiles`
 ran from `FormCreate`. It is a house tradition now, not a Delphi accident.
 
+## The about screen says the rules, and says them twice
+
+It is the one screen here that is *read* rather than glanced at, and it carries
+the rules in Italian and in English — `RULES.md` and `REGOLE.md` are the long
+form, this is the short one, and the two are not independent: a rule stated
+twice in two places drifts, so a change to one is a change to both.
+
+Each language is a `section[lang]`, and that is not decoration. "The rules are
+in both languages" asserted as *a `lang` attribute exists somewhere* passes a
+page whose English paragraphs are tagged Italian, which is what a screen reader
+and a hyphenator would then go by. The check measures each section on its own —
+enough blocks and enough words to be the rules rather than a note, and the four
+things a tressette player has to be told — and it clicks Back, because a Back
+that always lands on the start sheet abandons the hand of anyone who opened the
+rules mid-deal to check what a napoletana is worth.
+
 ## Conventions
 
-- Player-facing text is Italian. Comments, commit messages and documents are
-  English.
+- Player-facing text is Italian, except on the about screen, which says
+  everything twice. Comments, commit messages and documents are English.
 - No build step and no runtime dependencies. `playwright-core` is for the UI
   check only and is gitignored.
 - The card art is the original 1997 bitmaps, copied byte for byte from Discola.

@@ -2,6 +2,10 @@
 # No trailing slash: this is often a symlink, which "node_modules/" would miss.
 node_modules
 
+# The check's own output, when a run is redirected to a file rather than read
+# off the terminal. It is not a record of anything: re-run it.
+*.log
+
 # That npm install also writes these. They are not dependencies of the game —
 # there are none — and committing them would say otherwise.
 package.json

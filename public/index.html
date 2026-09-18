@@ -728,6 +728,18 @@ button.card:disabled{ cursor: default; }
 .prose strong{ color: var(--ivory); }
 .prose a{ color: var(--brass); }
 .prose p{ margin: 0 0 .85rem; }
+/* The about sheet says the same rules twice, once per language, so each half
+   needs a heading to be told from the other. Sized from --t-body rather than
+   set in px: the body copy around it is a token and a heading that does not
+   move with it stops being a heading on the screen that disagrees. */
+.prose h3{
+  font-family: var(--font-display);
+  font-size: calc(var(--t-body) * 1.08);
+  font-weight: 600;
+  color: var(--ivory);
+  margin: 1.6rem 0 .6rem;
+}
+.prose section:first-child h3{ margin-top: 0; }
 
 .weights{ width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .92rem; }
 .weights td{ padding: .12rem 0; }
@@ -1107,33 +1119,88 @@ button.card:disabled{ cursor: default; }
   </header>
   <div class="sheet-body">
     <div class="sheet-inner prose">
-      <p><strong>Tressette a due</strong>, con il tallone: dieci carte a testa,
-      venti prese, e si pesca dopo ogni presa finché il tallone dura.</p>
+      <!-- The language belongs on the section, not on each paragraph: half a
+           page carrying the other half's lang is what a screen reader and a
+           hyphenator go by, and it is also what the check measures. -->
+      <section lang="it">
+        <h3>Le regole</h3>
 
-      <p>L&rsquo;ordine delle carte è quello del tressette: <strong>3, 2, asso, re,
-      cavallo, fante, 7, 6, 5, 4</strong>. Non c&rsquo;è briscola. L&rsquo;asso vale
-      un punto intero, il 3, il 2 e le figure un terzo di punto ciascuno, le
-      cartine niente. L&rsquo;ultima presa vale un punto. Sono undici punti in
-      tutto, più gli accusi.</p>
+        <p><strong>Tressette a due</strong>, con il tallone: dieci carte a testa,
+        venti prese, e si pesca dopo ogni presa finché il tallone dura.</p>
 
-      <p>Gli <strong>accusi</strong> valgono solo dalle dieci carte servite:
-      napoletana (asso, 2 e 3 dello stesso seme) tre punti, tre carte uguali fra
-      assi, 2 e 3 tre punti, quattro uguali quattro punti. Si annunciano da soli
-      quando chi li ha gioca la prima carta.</p>
+        <p>L&rsquo;ordine delle carte è quello del tressette: <strong>3, 2, asso, re,
+        cavallo, fante, 7, 6, 5, 4</strong>. Non c&rsquo;è briscola. L&rsquo;asso vale
+        un punto intero, il 3, il 2 e le figure un terzo di punto ciascuno, le
+        cartine niente. L&rsquo;ultima presa vale un punto. Sono undici punti in
+        tutto, più gli accusi.</p>
 
-      <p>È obbligatorio <strong>rispondere a colore</strong>: se hai il seme
-      giocato devi giocarlo. Le carte che la regola vieta restano spente e non
-      si possono toccare.</p>
+        <p>Gli <strong>accusi</strong> valgono solo dalle dieci carte servite:
+        napoletana (asso, 2 e 3 dello stesso seme) tre punti, tre carte uguali fra
+        assi, 2 e 3 tre punti, quattro uguali quattro punti. Si annunciano da soli
+        quando chi li ha gioca la prima carta.</p>
 
-      <p>Una carta si sceglie con un tocco e si gioca con il secondo, o con i
-      tasti <strong>1</strong>–<strong>9</strong> e <strong>0</strong> e
-      <strong>Invio</strong>. Lo storico delle mani resta in questo browser, su
-      questo dispositivo.</p>
+        <p>È obbligatorio <strong>rispondere a colore</strong>: se hai il seme
+        giocato devi giocarlo, dalla prima presa all&rsquo;ultima, tallone o no.
+        Le carte che la regola vieta restano spente e non si possono toccare.</p>
 
-      <p>Le carte sono le immagini originali del <strong>Discola</strong> del
-      1997, in cinque mazzi: Trevisane, Piacentine, Napoletane, Romagnole e
-      Francesi. L&rsquo;avversario invece è di questo gioco: il tressette non
-      c&rsquo;era nell&rsquo;originale.</p>
+        <p>A fine mano i terzi di ciascuno si arrotondano <strong>per
+        difetto</strong>, e il resto non va a nessuno: il mazzo ne contiene
+        trentadue e l&rsquo;ultima presa ne vale tre, e trentacinque diviso tre
+        lascia due, per cui i due punteggi fanno sempre undici. Gli accusi si
+        sommano sopra. Undici è dispari: senza accusi il pareggio non esiste,
+        con gli accusi sì.</p>
+
+        <p>Una carta si sceglie con un tocco e si gioca con il secondo, o con i
+        tasti <strong>1</strong>–<strong>9</strong> e <strong>0</strong> e
+        <strong>Invio</strong>. Lo storico delle mani resta in questo browser, su
+        questo dispositivo.</p>
+
+        <p>Le carte sono le immagini originali del <strong>Discola</strong> del
+        1997, in cinque mazzi: Trevisane, Piacentine, Napoletane, Romagnole e
+        Francesi. L&rsquo;avversario invece è di questo gioco: il tressette non
+        c&rsquo;era nell&rsquo;originale.</p>
+      </section>
+
+      <section lang="en">
+        <h3>The rules</h3>
+
+        <p><strong>Tressette for two</strong>, with a stock: ten cards each,
+        twenty tricks, and a card drawn after every trick for as long as the
+        stock lasts.</p>
+
+        <p>The card order is tressette&rsquo;s own: <strong>3, 2, ace, king,
+        knight, jack, 7, 6, 5, 4</strong>. There is no trump suit. An ace is a
+        whole point; the 3, the 2 and the three face cards are a third of a point
+        each; the low cards are worth nothing. The last trick is one point. That
+        is eleven points in all, plus the declarations.</p>
+
+        <p><strong>Declarations</strong> count only from the ten cards you were
+        dealt: a <em>napoletana</em> (ace, 2 and 3 of one suit) is three points,
+        three of a kind among aces, 2s and 3s is three points, four of a kind is
+        four. They announce themselves when whoever holds them plays their first
+        card.</p>
+
+        <p><strong>Following suit is compulsory</strong>: if you hold the suit
+        led, you must play it — from the first trick to the last, stock or no
+        stock. Cards the rule forbids are dimmed and cannot be touched.</p>
+
+        <p>At the end of the hand each side&rsquo;s thirds are rounded
+        <strong>down</strong>, and the remainder goes to nobody: the deck holds
+        thirty-two of them and the last trick is worth three, and thirty-five
+        divided by three leaves two — so the two scores always add up to eleven.
+        Declarations are added on top. Eleven is odd, so without them a draw is
+        impossible; with them it is not.</p>
+
+        <p>A card is chosen with one tap and played with the second, or with the
+        keys <strong>1</strong>–<strong>9</strong> and <strong>0</strong> and
+        <strong>Enter</strong>. The record of past hands stays in this browser,
+        on this device.</p>
+
+        <p>The cards are the original bitmaps from <strong>Discola</strong> of
+        1997, in five decks: Trevisane, Piacentine, Napoletane, Romagnole and
+        Francesi. The opponent is this game&rsquo;s own: there was no tressette
+        in the original.</p>
+      </section>
 
       <p style="margin:0">
         <a href="https://github.com/diegoami/Tressette">Sorgente di questo gioco</a> &middot;

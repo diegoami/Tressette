@@ -219,7 +219,42 @@ const SCREENS = [
     check: () => [...document.querySelectorAll('#historyBody button')]
       .some(b => /Cancella/.test(b.textContent))
       ? [] : ['the history has no way to clear itself'] },
-  { name: 'about', open: async p => { await p.click('#play'); await p.click('#btnAbout'); } },
+  // The one screen here that is READ rather than glanced at, and since the
+  // owner asked for it, the one that says the same rules twice. Both halves are
+  // asserted, because "the rules are in both languages" checked as *a lang
+  // attribute exists somewhere* passes a page whose English is tagged Italian.
+  { name: 'about', open: async p => { await p.click('#play'); await p.click('#btnAbout'); },
+    check: () => {
+      const out = [];
+      const blocks = lang => {
+        const sec = document.querySelector(`#viewAbout section[lang="${lang}"]`);
+        return sec ? [...sec.querySelectorAll('p, h3')]
+          .map(e => e.textContent.replace(/\s+/g, ' ').trim()) : [];
+      };
+      for (const lang of ['it', 'en']) {
+        const bs = blocks(lang);
+        const words = bs.join(' ').split(' ').filter(Boolean).length;
+        if (bs.length < 5)
+          out.push(`the rules have ${bs.length} block(s) in ${lang}, want at least 5`);
+        if (words < 200)
+          out.push(`the rules run to ${words} words in ${lang}, which is a note and not the rules`);
+        // The four things a tressette player has to be told, and the two that
+        // are easiest to leave out of a translation.
+        const text = bs.join(' ').toLowerCase();
+        for (const [what, re] of [['card order', /3, 2, (asso|ace)/],
+                                  ['declarations', /napoletana/],
+                                  ['following suit', /(a colore|follow)/],
+                                  ['eleven points', /undici|eleven/]])
+          if (!re.test(text)) out.push(`the rules in ${lang} never state the ${what}`);
+      }
+      // And back goes to the deal it was opened from: a Back that always lands
+      // on the start sheet abandons the hand of anyone who opened the rules to
+      // check what a napoletana is worth.
+      document.querySelector('#viewAbout [data-back]').click();
+      if (document.getElementById('viewTable').hidden)
+        out.push('the rules were opened from the table and went back to the start sheet');
+      return out;
+    } },
   { name: 'the abandon confirm', open: async p => { await p.click('#play'); await p.click('#again'); },
     // Without this the row passes on a page that never asks: a new deal is a
     // perfectly good screen, and the audit has nothing to object to.

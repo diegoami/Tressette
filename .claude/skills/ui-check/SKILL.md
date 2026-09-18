@@ -64,6 +64,16 @@ entries some other build wrote; about; the abandon confirm; and the result
 dialog three ways — with both players declaring, reached from a sheet, and
 reached over the confirm.
 
+**The about screen is the one that is read**, so it carries the rules in
+Italian and in English, and its row asserts both halves rather than the page as
+a whole: each `section[lang]` has to hold at least five blocks and two hundred
+words, and to state the card order, the declarations, following suit and the
+eleven points. Checked as *a `lang` attribute exists somewhere*, the rule passes
+a page whose English is tagged Italian — which is what a screen reader and a
+hyphenator then go by. The row also clicks Back and asserts it lands on the
+table, because a Back that always returns to the start sheet abandons the hand
+of anyone who opened the rules mid-deal.
+
 Two mechanics, both of them a bug once. A row's `open` has to *put the page in
 the state*: its `check` runs after the audit, so a disclosure opened there is
 never audited. And the audit skips what a closed `<details>` is hiding, because

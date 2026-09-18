@@ -117,6 +117,15 @@ things a tressette player has to be told — and it clicks Back, because a Back
 that always lands on the start sheet abandons the hand of anyone who opened the
 rules mid-deal to check what a napoletana is worth.
 
+**And each probe is in the language it is probing.** The first version of this
+row asked whether the text said `/undici|eleven/` and `/3, 2, (asso|ace)/`,
+which reads like thoroughness and is the opposite: a page whose English half
+was the Italian text under an `en` tag passed every one of them, because every
+one of them matched the Italian. That is the exact defect the row exists to
+catch, and the row could not catch it. A probe that accepts either language
+cannot tell the two apart, so the table is per language, and `napoletana` — the
+same word in both — is never the only thing asked.
+
 ## Conventions
 
 - Player-facing text is Italian, except on the about screen, which says

@@ -68,11 +68,13 @@ reached over the confirm.
 Italian and in English, and its row asserts both halves rather than the page as
 a whole: each `section[lang]` has to hold at least five blocks and two hundred
 words, and to state the card order, the declarations, following suit and the
-eleven points. Checked as *a `lang` attribute exists somewhere*, the rule passes
-a page whose English is tagged Italian — which is what a screen reader and a
-hyphenator then go by. The row also clicks Back and asserts it lands on the
-table, because a Back that always returns to the start sheet abandons the hand
-of anyone who opened the rules mid-deal.
+eleven points — **each asked in that language**. Checked as *a `lang` attribute
+exists somewhere*, the rule passes a page whose English is tagged Italian; and
+checked with probes that match either language, so does a page whose English
+half *is* the Italian text, which is how the first version of this row went in.
+The row also clicks Back and asserts it lands on the table, because a Back that
+always returns to the start sheet abandons the hand of anyone who opened the
+rules mid-deal.
 
 Two mechanics, both of them a bug once. A row's `open` has to *put the page in
 the state*: its `check` runs after the audit, so a disclosure opened there is
@@ -188,6 +190,7 @@ shipped — in Discola, which is the same table and the same budget:
 | a card cannot be tapped where it looks free | the hand kept its holes, each slot overlaps the one before it, and an empty slot is a button that swallows the tap meant for the card underneath — worse the thinner the hand gets. A sorted hand closes up and has no holes, so the rule now guards the shape rather than that instance of it |
 | the table moves as the hands empty | a hand that closes up ends the deal with nothing in it, and an empty flex row is zero tall, so the table re-centred twice in the last trick and moved the player's own hand 74px up while they chose the card that decides the deal |
 | a place in the fan shows a card it does not name | a button carries its engine slot in `data-slot` and its face in `--col`/`--row`, set on different lines; the click, the reachability rule and the deal pass all go by the name, so ten wrong faces passed everything |
+| the rules are in one language wearing two tags | the English half was the Italian text under an `en` tag, and every content probe matched either language, so the row written to catch exactly this passed it |
 | a number key raises the wrong card | the keys count places in the fan and the hand is sorted, so a keyboard that indexed slots raised a different, legal card — which the forbidden-card assertion, being one-sided, was happy with |
 | a raised card does not lift far enough | at 18% of a card the lift was shorter than the strip the card came out of, so the second tap read as a repeat of the first |
 

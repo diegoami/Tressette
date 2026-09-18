@@ -1320,6 +1320,43 @@ publishes, and a human asserts the URL.
 
 **Total: 7–8 days**, with the opponent the one estimate that can slip.
 
+### After it shipped — the about screen says the rules, twice
+
+Issue #13, from the owner. `RULES.md` had promised since iteration 0 that the
+about screen would carry the Italian rules; it carries both languages now, in
+short, and both documents say that the screen and the document are not
+independent — a rule written twice in two places drifts.
+
+**The prose is a statement about `engine.js`, and a false one reads exactly
+like a true one.** No assertion can tell them apart and neither can a reviewer
+who does not open the engine, which is why the two house rules this game does
+*not* play were checked against the source before being written down rather
+than after: following suit is compulsory from the first trick, not from when
+the tallone runs out (`mosseLegali` filters on the led suit with no test on
+`state.next`), and a hand is not worth one point or two by the margin — the
+terzi are floored, the deck holds 32 of them, the ultima is worth 3, and 35 mod
+3 is 2, so **the two scores always sum to exactly 11**. Both are real rules
+somewhere, which is what makes them easy to write down by mistake.
+
+**Each language is a `section[lang]`, and the check reads each on its own.**
+"The rules are in both languages" asserted as *a `lang` attribute exists
+somewhere* passes a page whose English paragraphs are tagged Italian — what a
+screen reader and a hyphenator then go by.
+
+**And the sharper half of the same lesson, which seven breaks found.** Six of
+them — no `lang` on the English, both halves tagged `it`, the eleven points
+cut, the English cut to four blocks, Back always going home, following suit cut
+— failed by name. The seventh was the English half replaced by the Italian
+text under an `en` tag, which is the defect the row exists to catch, and **the
+row passed it**: every content probe was written to match either language
+(`/undici|eleven/`, `/3, 2, (asso|ace)/`), which reads like thoroughness and is
+the opposite. A probe that accepts either language cannot tell the two apart.
+The table is per language now and the break fails four ways.
+
+That is last round's rule arriving in a new place: **an assertion has to be
+broken in the direction the change can actually go wrong.** Here the direction
+was the one the assertion's own comment named.
+
 ### After it shipped — the hand is held sorted
 
 The owner, playing the shipped game: a hand must always be sorted by suit and,

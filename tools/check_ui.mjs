@@ -226,8 +226,9 @@ const SCREENS = [
   { name: 'about', open: async p => { await p.click('#play'); await p.click('#btnAbout'); },
     check: () => {
       const out = [];
+      const section = lang => document.querySelector(`#viewAbout section[lang="${lang}"]`);
       const blocks = lang => {
-        const sec = document.querySelector(`#viewAbout section[lang="${lang}"]`);
+        const sec = section(lang);
         return sec ? [...sec.querySelectorAll('p, h3')]
           .map(e => e.textContent.replace(/\s+/g, ' ').trim()) : [];
       };
@@ -239,11 +240,18 @@ const SCREENS = [
       // is the defect this row exists to catch, so the probes have to be able
       // to tell the two apart. `napoletana` is the same word in both and
       // cannot, which is why it is not the only one.
+      // Five, because the review of the first version found the screen gave the
+      // rank order, said there is no briscola, and never said who *takes* the
+      // trick — the one rule a player cannot do without. A rule missing from
+      // both halves is not drift, so nothing that compares the halves can see
+      // it; only a rule that names it can.
       const SAYS = {
         it: [['card order', /3, 2, asso/], ['declarations', /napoletana/],
-             ['following suit', /a colore/], ['eleven points', /undici/]],
+             ['following suit', /a colore/], ['eleven points', /undici/],
+             ['trick-taking rule', /carta più alta/]],
         en: [['card order', /3, 2, ace/], ['declarations', /napoletana/],
-             ['following suit', /follow/], ['eleven points', /eleven/]],
+             ['following suit', /follow/], ['eleven points', /eleven/],
+             ['trick-taking rule', /highest card/]],
       };
       const said = {};
       for (const lang of ['it', 'en']) {
@@ -257,6 +265,14 @@ const SCREENS = [
         said[lang] = text;
         for (const [what, re] of SAYS[lang])
           if (!re.test(text)) out.push(`the rules in ${lang} never state the ${what}`);
+        // Everything above reads textContent, which a half that is not painted
+        // still has: `section[lang="en"]{ display: none }` passed every rule in
+        // this row. In a project whose defects are all invisible in the diff and
+        // throw no error, a rule that cannot tell a rendered half from a hidden
+        // one is not measuring the screen.
+        const sec = section(lang);
+        if (sec && !sec.getClientRects().length)
+          out.push(`the rules in ${lang} are in the page but not on the screen`);
       }
       // And the cheapest statement of the same thing: two halves that are the
       // same text are one half told twice, whatever they are tagged.
@@ -265,9 +281,18 @@ const SCREENS = [
       // And back goes to the deal it was opened from: a Back that always lands
       // on the start sheet abandons the hand of anyone who opened the rules to
       // check what a napoletana is worth.
-      document.querySelector('#viewAbout [data-back]').click();
-      if (document.getElementById('viewTable').hidden)
-        out.push('the rules were opened from the table and went back to the start sheet');
+      const backButton = document.querySelector('#viewAbout [data-back]');
+      if (!backButton) {
+        // Unguarded, this threw inside page.evaluate and took the whole run
+        // with it: the table, tight-token and deal passes never ran, so one
+        // missing attribute hid every other assertion in the file. A row
+        // reports; it does not decide whether the rest of the check happens.
+        out.push('the rules have no Back button');
+      } else {
+        backButton.click();
+        if (document.getElementById('viewTable').hidden)
+          out.push('the rules were opened from the table and went back to the start sheet');
+      }
       return out;
     } },
   { name: 'the abandon confirm', open: async p => { await p.click('#play'); await p.click('#again'); },

@@ -4,9 +4,10 @@ Il tressette ha tante varianti quante sono le case in cui si gioca. Questa è la
 versione che il programma distribuisce, detta chiaramente, così da poter
 giudicare se è il tressette che conosci. La versione inglese è `RULES.md`.
 
-La schermata «Il gioco», dentro al programma, porta le stesse regole in
-entrambe le lingue, in breve: sette paragrafi per lingua, quel che sta in una
-schermata che si legge sul telefono a mano iniziata. Questo file è la versione
+La schermata delle informazioni, dentro al programma — il pulsante in alto a
+destra sul tavolo — porta le stesse regole in entrambe le lingue, in breve:
+otto paragrafi per lingua, quel che sta in una schermata che si legge sul
+telefono a mano iniziata. Questo file è la versione
 lunga, e le due non sono indipendenti — una regola scritta due volte in due
 posti prima o poi diverge — perciò quando qui cambia una regola cambia anche
 come la dice la schermata, e `node tools/check_ui.mjs` verifica che le due metà

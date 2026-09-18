@@ -128,8 +128,9 @@ same word in both — is never the only thing asked.
 
 ## Conventions
 
-- Player-facing text is Italian, except on the about screen, which says
-  everything twice. Comments, commit messages and documents are English.
+- Player-facing text is Italian. The about screen says the *rules* twice, once
+  per language; its heading, its Back button and its footer line are Italian
+  like everything else. Comments, commit messages and documents are English.
 - No build step and no runtime dependencies. `playwright-core` is for the UI
   check only and is gitignored.
 - The card art is the original 1997 bitmaps, copied byte for byte from Discola.

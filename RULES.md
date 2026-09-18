@@ -2,8 +2,14 @@
 
 Tressette has as many house rules as it has houses. This is the version the
 game deals, stated plainly, so that you can tell whether it is playing the
-Tressette you know. The Italian version is `REGOLE.md`, and it is the one the
-game's about screen will use.
+Tressette you know. The Italian version is `REGOLE.md`.
+
+The about screen inside the game carries the same rules in both languages, in
+short: eight paragraphs a side, which is what fits a screen somebody reads on a
+phone mid-hand. This file is the long form and the two are not independent — a
+rule stated twice in two places drifts — so when a rule changes here, the
+screen's wording of it changes with it, and `node tools/check_ui.mjs` asserts
+that both halves of that screen are still the rules rather than a note.
 
 ## The deck
 

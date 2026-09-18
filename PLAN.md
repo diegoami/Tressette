@@ -1394,11 +1394,70 @@ could find a node with no slot to its name.
 Which is a seventh rule, and the sharpest one the deal pass has taught:
 **a pass that drives the page has to leave it as it found it.** The clause
 issue #7 added to §4's iteration-4 record said a pass that drives the page is
-not the same as a pass that reads it. This is the other half: a pass that drives the page is also a pass that can
-*change* it, and an assertion whose own side effect reaches the next assertion
-is not measuring the page any more. A check that fails one run in three is
-worse than one that never fails, because the first thing anyone does with it is
+not the same as a pass that reads it. This is the other half: a pass that
+drives the page is also a pass that can *change* it, and an assertion whose own
+side effect reaches the next assertion is not measuring the page any more. A
+check that fails one run in three is worse than one that never fails, because the first thing anyone does with it is
 run it again.
+
+### After it shipped — the about screen says the rules, twice
+
+Issue #13, from the owner. `RULES.md` had promised since iteration 0 that the
+about screen would carry the Italian rules; it carries both languages now, in
+short, and both documents say that the screen and the document are not
+independent — a rule written twice in two places drifts.
+
+**The prose is a statement about `engine.js`, and a false one reads exactly
+like a true one.** No assertion can tell them apart and neither can a reviewer
+who does not open the engine, which is why the two house rules this game does
+*not* play were checked against the source before being written down rather
+than after: following suit is compulsory from the first trick, not from when
+the tallone runs out (`mosseLegali` filters on the led suit with no test on
+`state.next`), and a hand is not worth one point or two by the margin — the
+terzi are floored, the deck holds 32 of them, the ultima is worth 3, and 35 mod
+3 is 2, so **the two scores always sum to exactly 11**. Both are real rules
+somewhere, which is what makes them easy to write down by mistake.
+
+**Each language is a `section[lang]`, and the check reads each on its own.**
+"The rules are in both languages" asserted as *a `lang` attribute exists
+somewhere* passes a page whose English paragraphs are tagged Italian — what a
+screen reader and a hyphenator then go by.
+
+**And the sharper half of the same lesson, which seven breaks found.** Six of
+them — no `lang` on the English, both halves tagged `it`, the eleven points
+cut, the English cut to four blocks, Back always going home, following suit cut
+— failed by name. The seventh was the English half replaced by the Italian
+text under an `en` tag, which is the defect the row exists to catch, and **the
+row passed it**: every content probe was written to match either language
+(`/undici|eleven/`, `/3, 2, (asso|ace)/`), which reads like thoroughness and is
+the opposite. A probe that accepts either language cannot tell the two apart.
+The table is per language now and the break fails four ways.
+
+That is last round's rule arriving in a new place: **an assertion has to be
+broken in the direction the change can actually go wrong.** Here the direction
+was the one the assertion's own comment named.
+
+**What the review then found, which no break would have.** The screen gave the
+rank order, said there is no briscola, and never said **who takes the
+trick** — the one rule a player cannot do without, and the one `REGOLE.md`
+calls the first thing that surprises anyone coming from briscola. Nor that the winner
+takes both cards' terzi, draws first and leads next, which left "i terzi di
+ciascuno" with nothing to refer back to: the reader was told what cards are
+worth and never told how one comes to hold them. A paragraph a side, checked
+against `resolveTrick` before it was written. **A rule that is absent from both
+halves is not drift, and nothing that compares the halves can see it.**
+
+It also found the row could abort the run rather than fail it: the Back click
+was unguarded, so renaming one attribute threw inside `page.evaluate` and took
+the table, tight-token and deal passes with it — one missing attribute hiding
+every other assertion in the file. A row reports; it does not decide whether
+the rest of the check happens.
+
+And one gap the seven breaks left: `section[lang="en"]{ display: none }` passed
+every rule in the row, because every rule reads `textContent`, which a half
+that is not painted still has. In a project whose defects are all invisible in
+the diff and throw no error, that one belongs in the row, so each section has
+to have a box as well as words.
 
 ## 5. Out of scope, deliberately
 

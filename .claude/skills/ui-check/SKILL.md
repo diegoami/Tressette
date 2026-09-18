@@ -64,6 +64,29 @@ entries some other build wrote; about; the abandon confirm; and the result
 dialog three ways — with both players declaring, reached from a sheet, and
 reached over the confirm.
 
+**The about screen is the one that is read**, so it carries the rules in
+Italian and in English, and its row asserts both halves rather than the page as
+a whole: each `section[lang]` has to hold at least five blocks and two hundred
+words, and to state the card order, the declarations, following suit, the
+eleven points and **who takes the trick** — asked in that language wherever the
+two differ, which is four of the five; `napoletana` is the same word in both
+and cannot tell them apart, which is why it is never the only thing asked. The
+fifth is there because the first version of the screen never said who takes a
+trick at all: a rule missing from *both* halves is not drift, so nothing that
+compares the halves can see it, and only a rule that names it can. Each section
+also has to have a box as well as words — `display: none` on one half left
+every `textContent` rule happy. Checked as *a `lang`
+attribute exists somewhere*, the rule passes a page whose English is tagged
+Italian; and
+checked with probes that match either language, so does a page whose English
+half *is* the Italian text, which is how the first version of this row went in.
+The row also clicks Back and asserts it lands on the table, because a Back that
+always returns to the start sheet abandons the hand of anyone who opened the
+rules mid-deal — and it looks that button up defensively, because unguarded the
+lookup threw inside `page.evaluate` and took the table, tight-token and deal
+passes down with it. **A row reports; it does not decide whether the rest of
+the check happens.**
+
 Two mechanics, both of them a bug once. A row's `open` has to *put the page in
 the state*: its `check` runs after the audit, so a disclosure opened there is
 never audited. And the audit skips what a closed `<details>` is hiding, because
@@ -178,6 +201,10 @@ shipped — in Discola, which is the same table and the same budget:
 | a card cannot be tapped where it looks free | the hand kept its holes, each slot overlaps the one before it, and an empty slot is a button that swallows the tap meant for the card underneath — worse the thinner the hand gets. A sorted hand closes up and has no holes, so the rule now guards the shape rather than that instance of it |
 | the table moves as the hands empty | a hand that closes up ends the deal with nothing in it, and an empty flex row is zero tall, so the table re-centred twice in the last trick and moved the player's own hand 74px up while they chose the card that decides the deal |
 | a place in the fan shows a card it does not name | a button carries its engine slot in `data-slot` and its face in `--col`/`--row`, set on different lines; the click, the reachability rule and the deal pass all go by the name, so ten wrong faces passed everything |
+| the rules never say who takes a trick | the screen gave the rank order and said there is no briscola, and stopped there: the reader was told what cards are worth and never how one comes to hold them. Absent from both halves, so no comparison of the two could see it |
+| a row aborts the run instead of failing | the about row's Back lookup was unguarded, so renaming one attribute threw and the table, tight-token and deal passes never ran |
+| half the rules are in the page but not on the screen | every rule in the row reads `textContent`, which `display: none` does not remove |
+| the rules are in one language wearing two tags | the English half was the Italian text under an `en` tag, and every content probe matched either language, so the row written to catch exactly this passed it |
 | a number key raises the wrong card | the keys count places in the fan and the hand is sorted, so a keyboard that indexed slots raised a different, legal card — which the forbidden-card assertion, being one-sided, was happy with |
 | a raised card does not lift far enough | at 18% of a card the lift was shorter than the strip the card came out of, so the second tap read as a repeat of the first |
 

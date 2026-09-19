@@ -420,9 +420,17 @@ test("the transposition table changes the speed and not the answer", () => {
   // looks right: a key that loses the led card, or whose turn it is, returns a
   // real answer to a different question. Ask the same positions with the memo
   // doing nothing and compare.
-  const naked = readFileSync(here("../public/engine.js"), "utf8")
+  // Newlines normalised first. This reads the file as text and cuts two lines
+  // out of it by name, so on a Windows checkout — where the working copy is
+  // CRLF — the pattern matched nothing, the "un-memoised" search was the
+  // memoised one, and the test compared the search against itself. It failed
+  // on the assertion below rather than passing quietly, which is the only
+  // reason it was ever noticed.
+  const source = readFileSync(here("../public/engine.js"), "utf8")
+    .replace(/\r\n/g, "\n");
+  const naked = source
     .replace("  const seen = memo.get(key);\n  if (seen !== undefined) return seen;", "");
-  assert.notEqual(naked, readFileSync(here("../public/engine.js"), "utf8"),
+  assert.notEqual(naked, source,
     "the memo lookup has to be the thing that was removed");
   const bare = createContext({});
   runInContext(naked, bare);

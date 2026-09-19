@@ -3,11 +3,65 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tressette</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700&family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&display=swap">
+<!-- The tre di denari, cut from the Trevisane sheet by tools/make_icons.mjs:
+     the highest card in the game, and three of something at any size. The 32px
+     one is the middle coin alone, because three coins at 32px are three
+     smudges. Declaring an icon is also what stops the browser asking for
+     /favicon.ico and logging a 404 on every load. -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0d2620">
+<!-- No <link rel=preload> for the fonts. A font preload has to carry
+     `crossorigin`, which makes it a CORS fetch, and over file:// the origin is
+     "null" so the browser blocks it and logs an error on every load. Opening
+     public/index.html straight from disk is a supported way to play this, so
+     the preload costs more than the few milliseconds it saves: the @font-face
+     rules below fetch the same files from the same directory either way. -->
 
 <style>
+/* ---------------------------------------------------------------------------
+   The three faces, served from fonts/ rather than fonts.googleapis.com.
+
+   They used to be a <link> to Google, forked from Discola along with the rest
+   of this sheet. That is fine on the web and wrong everywhere else: with the
+   network down none of them loaded, Bodoni Moda fell back to a generic serif,
+   and the wordmark set some 12% narrower than every threshold in
+   tools/check_ui.mjs is calibrated against — silently, because a font that
+   does not arrive throws nothing. It also made "nothing leaves the device"
+   untrue, since every cold start told Google's CDN the device's IP, and it
+   ruled out an APK, which is supposed to run with the radio off.
+
+   The files are the latin subset, ~0.2 MB for all six faces; Bodoni Moda is
+   one variable file covering 400 to 700. The fonts pass of the UI check keeps
+   them honest: every character on the page is inside the subset, every rule
+   below loads with the network cut, and no subresource comes from the network.
+   --------------------------------------------------------------------------- */
+@font-face{
+  font-family:'Bodoni Moda'; font-style:normal; font-weight:400 700; font-display:swap;
+  src:url(fonts/bodoni-moda.woff2) format('woff2');
+}
+@font-face{
+  font-family:'Barlow'; font-style:normal; font-weight:400; font-display:swap;
+  src:url(fonts/barlow-400.woff2) format('woff2');
+}
+@font-face{
+  font-family:'Barlow'; font-style:normal; font-weight:500; font-display:swap;
+  src:url(fonts/barlow-500.woff2) format('woff2');
+}
+@font-face{
+  font-family:'Barlow'; font-style:normal; font-weight:600; font-display:swap;
+  src:url(fonts/barlow-600.woff2) format('woff2');
+}
+@font-face{
+  font-family:'Barlow Condensed'; font-style:normal; font-weight:500; font-display:swap;
+  src:url(fonts/barlow-condensed-500.woff2) format('woff2');
+}
+@font-face{
+  font-family:'Barlow Condensed'; font-style:normal; font-weight:600; font-display:swap;
+  src:url(fonts/barlow-condensed-600.woff2) format('woff2');
+}
+
 /* ---------------------------------------------------------------------------
    Tressette — a card table, lit from above. Forked from Discola's sheet, and
    the same committed visual world: green baize under warm light, so no theme
@@ -102,7 +156,6 @@
   --t-cta:   1.22rem;
   --t-btn:   .95rem;
   --t-tiny:  .8rem;
-  --deck-sw: clamp(34px, 11.5vw, 58px);
 
   --font-display: "Bodoni Moda", "Didot", "Times New Roman", serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -659,14 +712,17 @@ button.card:disabled{ cursor: default; }
 }
 
 
-/* One row of five real cards. The chosen deck is named beside the section
-   label instead of under every swatch, which is what let the row fit. */
-.decks{ display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
+/* One row of real cards, however many decks there are: the column count is set
+   from JS (--deck-cols = the size of the deck table) and the previews shrink to
+   fit rather than wrapping. The chosen deck is named beside the section label
+   instead of under every swatch, which is what let the row fit at all. */
+.decks{ display: grid; grid-template-columns: repeat(var(--deck-cols, 6), 1fr); gap: .4rem; }
 
 .deck-opt{
   display: grid;
   justify-items: center;
-  padding: .4rem;
+  min-width: 0;               /* let the grid item shrink so the row never overflows */
+  padding: .3rem;
   border: 1px solid var(--rail-line);
   border-radius: 4px;
   background: rgba(0,0,0,.16);
@@ -675,11 +731,19 @@ button.card:disabled{ cursor: default; }
 }
 .deck-opt:hover{ border-color: var(--brass-dim); }
 .deck-opt[aria-pressed="true"]{ border-color: var(--brass); background: rgba(200,162,74,.12); }
-/* Both --cw and --ch are redeclared here: --ch on :root was already substituted
-   against the root's --cw, so overriding --cw alone would not resize anything. */
+/* A preview fills its column rather than taking a width of its own, so the
+   decks fit one row at any count. It overrides the card's geometry outright
+   rather than its --cw token: --ch on :root was already substituted against
+   the root's --cw, so setting --cw alone here would resize nothing.
+   Always the top-left cell, the asso di denari — the 11x4 sheet is scaled so
+   that one cell fills the element, whatever the element measures, which is
+   why the cell is stated here and not on the span. */
 .deck-opt .card{
-  --cw: var(--deck-sw);
-  --ch: calc(var(--deck-sw) * var(--ratio));
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / var(--ratio);
+  background-size: 1100% 400%;
+  background-position: 0 0;
 }
 
 /* ---- controls ------------------------------------------------------------- */
@@ -711,6 +775,12 @@ button.card:disabled{ cursor: default; }
   border-radius: 3px;
   padding: .3rem .4rem;
 }
+/* The dropdown popup is drawn by the OS. With a transparent select it fell back
+   to light text on a white system menu — the unselected deck names were nearly
+   invisible on Windows. Give the select and its options an explicit dark ground
+   and light ink so the whole list is legible everywhere. */
+.field select{ color: var(--ivory); background-color: var(--rail); }
+.field select option{ color: var(--ivory); background-color: var(--rail); }
 .field input[type="color"]{ width: 46px; height: 30px; padding: 2px; cursor: pointer; }
 .field input[type="range"]{ width: 140px; accent-color: var(--brass); }
 
@@ -927,7 +997,6 @@ button.card:disabled{ cursor: default; }
     --t-cta:   clamp(19px, 5.2vw, 46px);
     --t-btn:   clamp(15px, 4vw,   32px);
     --t-tiny:  clamp(12.5px, 3.2vw, 28px);
-    --deck-sw: clamp(40px, 13vw, 120px);
   }
   .sheet-inner{ width: 100%; }
   .start-foot .btn{ width: 100%; }
@@ -1063,6 +1132,7 @@ button.card:disabled{ cursor: default; }
             <option value="Napoletane">Napoletane</option>
             <option value="Romagnole">Romagnole</option>
             <option value="Francesi">Francesi</option>
+            <option value="Bresciane">Bresciane</option>
           </select>
         </label>
         <label class="field" for="feltSel">Panno
@@ -1161,10 +1231,11 @@ button.card:disabled{ cursor: default; }
         <strong>Invio</strong>. Lo storico delle mani resta in questo browser, su
         questo dispositivo.</p>
 
-        <p>Le carte sono le immagini originali del <strong>Discola</strong> del
-        1997, in cinque mazzi: Trevisane, Piacentine, Napoletane, Romagnole e
-        Francesi. L&rsquo;avversario invece è di questo gioco: il tressette non
-        c&rsquo;era nell&rsquo;originale.</p>
+        <p>Le carte dei cinque mazzi originali &mdash; Trevisane, Piacentine,
+        Napoletane, Romagnole e Francesi &mdash; sono le immagini del
+        <strong>Discola</strong> del 1997. A queste si aggiunge un sesto mazzo,
+        le Bresciane. L&rsquo;avversario invece è di questo gioco: il tressette
+        non c&rsquo;era nell&rsquo;originale.</p>
       </section>
 
       <section lang="en">
@@ -1208,10 +1279,11 @@ button.card:disabled{ cursor: default; }
         <strong>Enter</strong>. The record of past hands stays in this browser,
         on this device.</p>
 
-        <p>The cards are the original bitmaps from <strong>Discola</strong> of
-        1997, in five decks: Trevisane, Piacentine, Napoletane, Romagnole and
-        Francesi. The opponent is this game&rsquo;s own: there was no tressette
-        in the original.</p>
+        <p>The cards of the five original decks &mdash; Trevisane, Piacentine,
+        Napoletane, Romagnole and Francesi &mdash; are the bitmaps of
+        <strong>Discola</strong> of 1997. A sixth, Bresciane, is added to them.
+        The opponent is this game&rsquo;s own: there was no tressette in the
+        original.</p>
       </section>
 
       <p style="margin:0">
@@ -1271,10 +1343,16 @@ button.card:disabled{ cursor: default; }
 
 const DECK_RATIO = {
   Trevisane: 125 / 60, Romagnole: 112 / 71, Napoletane: 128 / 78,
-  Piacentine: 128 / 74, Francesi: 128 / 75
+  Piacentine: 128 / 74, Francesi: 128 / 75, Bresciane: 486 / 232
 };
 const SHEET = { Trevisane: "trevisane", Piacentine: "piacentine", Napoletane: "napoletane",
-                Romagnole: "romagnole", Francesi: "francesi" };
+                Romagnole: "romagnole", Francesi: "francesi", Bresciane: "bresciane" };
+// Five decks are packed PNG sprite sheets, the 1997 bitmaps. Bresciane is a
+// photographic scan (tools/import_bresciane.mjs), and lossless PNG of it runs
+// to ~12 MB, so it ships as a JPEG — hence an extension per deck rather than a
+// hard-coded ".png" in the two places that name a sheet.
+const DECK_EXT = { Bresciane: "jpg" };
+const deckSheet = name => `url("decks/${SHEET[name]}.${DECK_EXT[name] || "png"}")`;
 
 const NOMI = ["asso", "due", "tre", "quattro", "cinque", "sei", "sette",
               "fante", "cavallo", "re"];
@@ -1877,7 +1955,7 @@ function renderHistory(){
 function applyDeck(name){
   state.deck = name;
   const root = document.documentElement;
-  root.style.setProperty("--sheet", `url("decks/${SHEET[name]}.png")`);
+  root.style.setProperty("--sheet", deckSheet(name));
   root.style.setProperty("--ratio", DECK_RATIO[name]);
   if (el.deckSel) el.deckSel.value = name;
   if (el.deckName) el.deckName.textContent = name;
@@ -1915,9 +1993,13 @@ function buildOpponents(){
 }
 
 // Each option shows a real card from its deck — the asso, the most
-// characteristic card in all five. The name goes beside the section label, not
-// under the swatch, so all five fit one row on a phone.
+// characteristic card in any of them. The name goes beside the section label,
+// not under the swatch, which is what lets them fit one row on a phone.
 function buildDecks(){
+  // The column count comes from the deck table, not from the stylesheet: a
+  // sixth deck against a hard-coded repeat(5, 1fr) wraps onto a second row and
+  // pushes the settings sheet's own controls down, quietly.
+  el.decks.style.setProperty("--deck-cols", Object.keys(SHEET).length);
   el.decks.replaceChildren(...Object.keys(SHEET).map(name => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1925,12 +2007,12 @@ function buildDecks(){
     b.dataset.deck = name;
     b.title = name;
     b.setAttribute("aria-label", `Mazzo ${name}`);
-    b.style.setProperty("--sheet", `url("decks/${SHEET[name]}.png")`);
+    b.style.setProperty("--sheet", deckSheet(name));
     b.style.setProperty("--ratio", DECK_RATIO[name]);
+    // No --col/--row here: .deck-opt .card pins the background to the top-left
+    // cell itself, and a cell named in two places is a cell named wrong in one.
     const c = document.createElement("span");
     c.className = "card";
-    c.style.setProperty("--col", 0);
-    c.style.setProperty("--row", 0);
     b.append(c);
     b.addEventListener("click", () => { applyDeck(name); save(); });
     return b;

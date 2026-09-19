@@ -151,13 +151,22 @@ records 60–60. Whoever did not lead this deal leads the next.
 ```
 public/index.html   markup, CSS, and the UI script: screens, rendering, input, storage
 public/engine.js    rules + opponent. Pure functions over a plain state object. No DOM.
-public/decks/*.png  the five sprite sheets, byte-identical copies from discola-web
+public/decks/*      six sprite sheets: five byte-identical copies from discola-web,
+                    and Bresciane, imported and photographic, hence .jpg
+public/fonts/*.woff2  Bodoni Moda and Barlow, latin subset, so the page needs no network
+public/icons/*.png  the tre di denari, for the tab and the home screen
+assets/*.png        the same icon at 1024, the launcher's source, not served
 tools/check_ui.mjs  the UI check, forked from Discola and extended for the fan (§3.7)
 tools/engine.test.mjs  unit tests on node --test, no dependencies
 tools/selfplay.mjs  headless matches: profile vs profile, vs baselines; the tuning loop
+tools/serve.mjs     public/ over http, for what file:// cannot do
+tools/make_icons.mjs, tools/import_bresciane.mjs  the two asset makers
+tools/package_release.mjs, tools/publish_release.mjs  the APK, built and released
 tools/pack_cards.py the packer, carried over unchanged in case a deck is ever repacked
+mobile/             the Capacitor wrapper: webDir ../public, no build step (ANDROID.md)
 netlify.toml        publish "public", cache decks/* for a year, revalidate index.html
-CLAUDE.md, README.md, SPEC.md (when built), .claude/skills/ui-check/
+package.json        the scripts, and playwright-core as the one dev dependency
+CLAUDE.md, README.md, SPEC.md (when built), ANDROID.md, .claude/skills/ui-check/
 ```
 
 Only `public/` is the site. Everything that is served lives there, and
@@ -1459,6 +1468,56 @@ that is not painted still has. In a project whose defects are all invisible in
 the diff and throw no error, that one belongs in the row, so each section has
 to have a box as well as words.
 
+### After it shipped — the divergences Discola made after the fork
+
+Issue #15, from the owner: a list of six things `diegoami/discola-web` had changed
+since this project forked its page, its tooling and its decks. Discola is a
+moving reference — §7.5 said so — and this is the first time that cost
+something to reconcile. Each item was verified against this copy before it was
+adopted, and one of the six turned out not to apply.
+
+**The fonts were the one that mattered, and the check could not see it.** The
+three faces came from `fonts.googleapis.com`. Nothing fails when they do not
+arrive: the browser falls back to a generic serif, the wordmark sets some 12%
+narrower, and every threshold in the check is calibrated against metrics the
+offline page never has — while the check itself always runs with the network
+up. That is the project's own lesson in a new place: **the check measures the
+states it renders**, and it had never rendered the page without a network. It
+does now, with every non-`file://` request aborted, and the page carries its own
+subset. The same pass asserts that no subresource comes from outside at all,
+which is what makes "nothing leaves the device" a fact rather than a claim.
+
+**A sixth deck is a sixth ratio, and a hard-coded five.** Bresciane is
+photographic, so it is a JPEG and the two places that named a sheet had
+`.png` written into them; the picker's `repeat(5, 1fr)` would have wrapped it
+onto a second row and pushed the sheet's own controls down, quietly, in the one
+place a player changes something. Both are now derived from the deck table.
+The deck is also not 1997 art, and the about screen, the README and the SPEC
+say so in the same breath as they name it — the provenance is part of the
+sentence, not a footnote somewhere else.
+
+**The dropdown defect is the shape this project keeps meeting.** A `<select>`
+with `background: transparent` opens a popup the operating system draws, in
+this page's ivory ink on the system's white ground: illegible on Windows,
+perfect in every screenshot, and invisible to any assertion that measures a
+box, because the popup is not in the document. The assertion that catches it
+asks the only thing that decides it — whether the select and its options paint
+an opaque ground of their own — and it was run against the broken page first.
+
+**One of the six was already fixed here.** Discola's cards flashed back to full
+view for a frame after a trick, because its sweep stripped the animation class
+on a timer and emptied the slots in a later one. `flushSweep()` does both in the
+same task, so there is no frame in between. A list of another project's fixes
+is a list of *its* defects: the reconciliation is checking, not copying.
+
+**And the packaging, which the fonts had been blocking.** Capacitor wraps
+`public/` unchanged — no build step, `webDir` is the directory Netlify serves —
+and a debug APK builds at 7.4 MB. It has not been launched: there is no device
+and no emulator image on this machine, and the offline behaviour an APK exists
+to have is asserted by the fonts pass rather than observed. `ANDROID.md` says
+so, and says which of the remaining steps are the owner's because they are a
+secret or are outward-facing.
+
 ## 5. Out of scope, deliberately
 
 | Not built | Why |
@@ -1603,6 +1662,7 @@ iteration that forks checks for movement first.
 |---|---|---|
 | decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
 | CSS and table markup | `22c4b9c`, still Discola's head when iteration 3 forked | iteration 3 |
+| self-hosted fonts, the fonts pass, `serve.mjs`, the Bresciane deck, the Capacitor wrapper and the two release scripts | `5307c14` | issue #15, after it shipped |
 
 ### 7.6 The owner's part
 

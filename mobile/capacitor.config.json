@@ -1,0 +1,8 @@
+{
+  "appId": "com.tressette.app",
+  "appName": "Tressette",
+  "webDir": "../public",
+  "android": {
+    "allowMixedContent": false
+  }
+}

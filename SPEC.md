@@ -16,8 +16,10 @@ it), so nothing in the repository asserts that it serves; see §7 of `PLAN.md`.
 
 A two-player Tressette a due for the browser: one static page, no build step, no
 runtime dependencies, the 1997 card art from
-[Discola](https://github.com/diegoami/discola-web) in five decks. You against
-one of four opponents, one deal at a time, everything kept in the browser.
+[Discola](https://github.com/diegoami/discola-web) in five decks, plus an
+imported sixth (§10, §11). Nothing it draws with comes from the network. You
+against one of four opponents, one deal at a time, everything kept in the
+browser.
 
 Player-facing text is Italian. Comments, commit messages and documents are
 English.
@@ -29,22 +31,36 @@ public/index.html    the whole page: styles, markup, and the code that
                      renders a state object and turns taps into calls
 public/engine.js     the rules and the opponent, as functions over one
                      mutable state object and nothing else
-public/decks/        five sprite sheets, the original 1997 bitmaps
+public/decks/        six sprite sheets: five are the original 1997 bitmaps,
+                     the sixth (Bresciane) is an imported scan, §10
+public/fonts/        Bodoni Moda and Barlow, latin subset, ~0.2 MB
+public/icons/        the tre di denari, for the tab and the home screen
+assets/              the same icon at 1024, for @capacitor/assets
 tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
 tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
-tools/check_ui.mjs       the UI check: four passes, 111 rows
+tools/check_ui.mjs       the UI check: five passes, 114 rows
+tools/serve.mjs          public/ over http, standard library only
+tools/make_icons.mjs     cuts the icon out of the Trevisane sheet
+tools/import_bresciane.mjs  builds the sixth deck from its source repo
+tools/package_release.mjs   signed APK into dist-release/
+tools/publish_release.mjs   that APK to the releases repo, on --confirm
 tools/pack_cards.py      carried from Discola, for repacking a deck
+mobile/              the Capacitor wrapper and the Android project
 .github/workflows/check.yml  the two CI jobs: the tests, and the UI check
 netlify.toml         publish public/, cache the decks hard, never the page
+package.json         scripts, and playwright-core as the one dev dependency
 RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
+ANDROID.md           the APK: what is done, what is left, and whose
 CLAUDE.md            the four rules a builder has to follow
 ```
 
-Nothing is generated at build time. `npm i playwright-core` and a Chromium are
-needed only to run the UI check, and are gitignored.
+Nothing is generated at build time and nothing under `public/` imports
+anything: the page opens from a folder, and every byte it draws with sits
+beside it. `playwright-core` and a Chromium are needed only to run the UI
+check; `npm run setup` installs them and `node_modules` is gitignored.
 
 ## 3. The engine contract
 
@@ -268,19 +284,21 @@ a declaration can run to three lines — floats over the table instead.
 ## 7. The checks
 
 ```sh
-node --test 'tools/**/*.test.mjs'   46 tests, no dependencies
-node tools/check_ui.mjs             111 rows, needs playwright-core + Chromium
+npm test                            47 tests, no dependencies
+npm run check                       114 rows, needs playwright-core + Chromium
 ```
 
 Both run in CI on every pull request; a red check does not merge.
 
-The UI check has four passes: the **document** (the four facts a layout
+The UI check has five passes: the **document** (the four facts a layout
 assertion cannot reach — the viewport meta, the doctype, the charset and
-`<html lang>`), the **screens** (every screen and every state worth looking
-at, at five device shapes, every opponent included), the **table** (19
-viewports × 5 decks, then the tightest five again with the spacing tokens
-inflated), and a **deal** — twenty cards tapped through the fan, a result, a
-history entry, and a second deal abandoned through the confirm.
+`<html lang>`), the **fonts** (every character on the page is inside the
+shipped subset, every `@font-face` loads with the network cut off, and no
+subresource comes from outside), the **screens** (every screen and every state
+worth looking at, at five device shapes, every opponent included), the
+**table** (19 viewports × 6 decks, then the tightest five again with the
+spacing tokens inflated), and a **deal** — twenty cards tapped through the fan,
+a result, a history entry, and a second deal abandoned through the confirm.
 `.claude/skills/ui-check/SKILL.md` explains what each threshold is calibrated
 against.
 
@@ -358,6 +376,15 @@ part worth carrying to another project:
   says why each is out of scope.
 - **The UI check needs a browser**, so it is the one thing in the repository
   with a dependency.
+- **Every deck sheet loads on the start screen**, because the picker previews
+  all of them. Adding a deck grows that eager load; the Bresciane JPEG adds
+  ~0.6 MB. Lazy-loading the previews is the fix if it ever bites.
+- **The Bresciane deck is not cleanly licensed.** It is a scan of a commercial
+  Dal Negro deck — the same copyright grey area as the original art, a
+  deliberate choice, documented in the README and in the import script.
+- **The APK has been built but never launched.** There is no device and no
+  emulator image on the machine it was built on; `ANDROID.md` §6 says what is
+  left, and the signing key and the releases repo are the owner's to make.
 
 ## 11. Provenance
 
@@ -366,8 +393,19 @@ byte for byte from `diegoami/discola-web`, which packed them from the BMPs in
 `diegoami/briscola-JS`. Do not redraw them. `tools/pack_cards.py` is carried
 over in case a deck is ever repacked.
 
+The sixth deck is not 1997 art: `tools/import_bresciane.mjs` composes it from
+[`mhamilt/Italian-decks`](https://github.com/mhamilt/Italian-decks), whose
+images are a scan of a commercial Teodomiro Dal Negro deck. The app icon is a
+crop of the Trevisane sheet, nearest-neighbour scaled by
+`tools/make_icons.mjs`, so every pixel of it is still a 1997 pixel.
+
+The typefaces are Bodoni Moda and Barlow (SIL Open Font License), subset to
+latin and served from `public/fonts/`.
+
 The page and its stylesheet are forked from Discola at `22c4b9c` and changed
 where a ten-card fan and a trumpless game needed something different. The
+fonts, the dev server, the release scripts, the Capacitor wrapper and the sixth
+deck were adopted from Discola at `5307c14`, after it diverged — issue #15. The
 opponent is this game's own: there was no 1997 Tressette to transcribe, which
 is §0's first decision and the reason the formula had to be designed and tuned
 here.

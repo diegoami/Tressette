@@ -1,0 +1,15 @@
+# The signing key and its passwords. Losing the key means no installed copy of
+# the app can ever be updated again; committing it means anyone can sign as us.
+keystore.properties
+*.jks
+*.keystore
+
+node_modules
+
+# Gradle's outputs. android/ itself IS committed once `cap add android` has
+# generated it — these are the parts of it that are rebuilt every time.
+android/build
+android/app/build
+android/.gradle
+android/local.properties
+android/capacitor-cordova-android-plugins

@@ -1,0 +1,17 @@
+{
+  "name": "tressette",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A two-player Tressette game for the browser, in the spirit of Discola",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "check": "node tools/check_ui.mjs",
+    "test": "node --test \"tools/**/*.test.mjs\"",
+    "setup": "npm install && npx playwright-core install chromium"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

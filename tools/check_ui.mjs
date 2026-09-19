@@ -5,22 +5,27 @@
  *   node tools/check_ui.mjs [path-to-index.html]   # defaults to public/index.html
  *
  * Needs playwright-core and a Chromium binary:
- *   npm i playwright-core && npx playwright-core install chromium
+ *   npm run setup                                    # or npm i && npx playwright-core install chromium
  *   CHROME=/path/to/chrome node tools/check_ui.mjs   # or name one yourself
  *
- * Four passes. The middle two are Discola's, because the failures that project
+ * Five passes. The middle two are Discola's, because the failures that project
  * shipped came in two different shapes; the last plays a deal, because a table
  * can measure perfectly and still not be wired to the engine.
  *
  * 0. DOCUMENT — the four document facts that cannot be expressed as a layout
  *    assertion: the viewport meta, the doctype, the charset and <html lang>.
  *
- * 1. SCREENS — every screen and both dialogs, at a handful of real device
+ * 1. FONTS — the page must not need the internet: every character it sets is
+ *    inside the subset in fonts/, every @font-face loads with the network cut,
+ *    and nothing at all is fetched from outside. A face that does not arrive
+ *    throws nothing and simply sets narrower than every threshold below.
+ *
+ * 2. SCREENS — every screen and both dialogs, at a handful of real device
  *    shapes. Catches things that are wrong anywhere: more than one screen
  *    visible at once, text set too small to read, clipped labels, tap targets
  *    below the thumb, sideways scroll, script errors.
  *
- * 2. TABLE — the card table only, at every viewport and in all five decks, and
+ * 3. TABLE — the card table only, at every viewport and in all six decks, and
  *    then the tightest five again with the spacing tokens inflated.
  *    The card size is a budget, (viewport height - chrome) / rows, and when
  *    that budget is wrong nothing throws and nothing looks broken in review:
@@ -28,7 +33,7 @@
  *    rows drift apart until the table stops reading as one surface. Each of
  *    those shipped once. They are assertions now.
  *
- * 3. DEAL — one whole deal against the house opponent, played through the fan by tapping,
+ * 4. DEAL — one whole deal against the house opponent, played through the fan by tapping,
  *    at one viewport in one deck, then a second deal abandoned through the
  *    confirm. It asserts the game can be finished, recorded and walked away
  *    from, not how it looks.
@@ -38,10 +43,16 @@
  */
 import { chromium } from 'playwright-core';
 import path from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const FILE = path.resolve(process.argv[2] ?? new URL('../public/index.html', import.meta.url).pathname);
-const URL_ = 'file://' + FILE;
+// fileURLToPath, not URL.pathname, and pathToFileURL, not 'file://' + path.
+// On Windows a file URL's pathname is "/C:/...", which path.resolve then reads
+// as a relative path and prefixes with the cwd's drive, producing "C:\C:\..." —
+// the check could not find the page it exists to measure, on the platform this
+// game is most often built on. These two node:url helpers are right on both.
+const FILE = path.resolve(process.argv[2] ?? fileURLToPath(new URL('../public/index.html', import.meta.url)));
+const URL_ = pathToFileURL(FILE).href;
 
 // Three ways to find a Chromium, in order: the one CHROME names, the one this
 // development container ships, and the one `playwright-core install chromium`
@@ -86,7 +97,10 @@ const SCREEN_VIEWPORTS = ['Android small', 'iPhone Pro Max', 'tablet portrait',
 // The tightest ones; worth re-running the table budget against inflated spacing.
 const TIGHT = ['phone landscape', 'laptop short', 'iPad', 'tablet portrait', 'Android small'];
 
-const DECKS = ['Trevisane', 'Romagnole', 'Napoletane', 'Piacentine', 'Francesi'];
+// Every deck the page offers, and the table pass renders all of them: each one
+// has its own --ratio, and the card budget is divided by that ratio, so a deck
+// is a different table. Bresciane is the tallest of the six.
+const DECKS = ['Trevisane', 'Romagnole', 'Napoletane', 'Piacentine', 'Francesi', 'Bresciane'];
 
 // Raising a card is a transition, and every measurement below is taken on the
 // tick that starts it — where the box is still the unraised one. The raised-card
@@ -407,6 +421,39 @@ const audit = () => {
       + `vs 0…${window.innerWidth})`);
   }
 
+  // The deck picker is one row, whatever the deck table holds. A sixth deck
+  // against a hard-coded repeat(5, 1fr) wraps onto a second row and pushes the
+  // controls under it down — no overflow, no clipped text, no small tap
+  // target, so every other rule here passes a picker that has quietly folded
+  // in half. Sharing a top is the whole of "one row", and it is what says the
+  // column count JS sets and the deck table it comes from are still in step.
+  // Not the CSS fallback beside it: buildDecks sets --deck-cols before the
+  // element has any children, so a fallback that disagreed would never be
+  // painted, never mind measured.
+  const opts = [...document.querySelectorAll('.deck-opt')];
+  if (opts.length) {
+    const tops = new Set(opts.map(b => Math.round(b.getBoundingClientRect().top)));
+    if (tops.size !== 1)
+      out.push(`the deck picker is on ${tops.size} rows, not one `
+        + `(${opts.length} decks at tops ${[...tops].join(', ')})`);
+  }
+
+  // The dropdown a <select> opens is drawn by the operating system, not by
+  // this stylesheet, and it inherits the page's ink without inheriting the
+  // page's ground: a select left `background: transparent` opened a white
+  // system menu with ivory text on it, and the deck names were all but
+  // invisible on Windows. Nothing here can measure that popup — which is why
+  // this asks the only thing that decides it, and why the options are asked
+  // separately from the select. An option inside a closed select reports no
+  // box at all, so the loop below never sees one.
+  for (const el of document.querySelectorAll('select, select option')) {
+    const bg = getComputedStyle(el).backgroundColor;
+    const alpha = Number(/^rgba?\(([^)]*)\)/.exec(bg)?.[1].split(',')[3] ?? 1);
+    if (!(alpha >= 1))
+      out.push(`${name(el)} <${el.tagName.toLowerCase()}> has no ground of its own `
+        + `(background-color ${bg}) — the OS draws its popup white`);
+  }
+
   for (const el of document.querySelectorAll('body *')) {
     if (!shown(el)) continue;
     // A closed <details> still hands out live geometry for what it is hiding,
@@ -467,8 +514,11 @@ const audit = () => {
   return out;
 };
 
-// Local runs have no network, so the Google Fonts stylesheet always fails.
-const noise = m => /ERR_CERT_AUTHORITY_INVALID|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED|fonts\.googleapis/.test(m);
+// This used to swallow the Google Fonts stylesheet failing on a machine with
+// no network. The fonts are served from fonts/ now, so every request the page
+// makes is a file:// one and a network error means the page reached for the
+// internet, which is a defect rather than noise. Nothing is filtered.
+const noise = () => false;
 
 /* ---- pass 0: the document itself ------------------------------------------- */
 
@@ -502,7 +552,101 @@ async function checkDocument(browser) {
   return bad.length ? 1 : 0;
 }
 
-/* ---- pass 1: every screen -------------------------------------------------- */
+/* ---- pass 1: the fonts ----------------------------------------------------- */
+
+// The three faces used to be a <link> to fonts.googleapis.com. Nothing failed
+// when they did not load: the browser fell back to a generic serif and the
+// wordmark set some 12% narrower than every threshold below is calibrated
+// against. This check never saw it, because this check has always had the
+// network up — and an APK, which is meant to run with the radio off, is where
+// that fallback would have shipped. These three assertions are why it cannot
+// come back, and the first of them is why the copy cannot outgrow the subset
+// without saying so.
+
+// The latin subset the woff2 files were cut to. A character outside it has no
+// glyph in what we ship and falls back on its own, mid-word.
+const LATIN = (cp) =>
+  cp <= 0xFF || cp === 0x131 || (cp >= 0x152 && cp <= 0x153) || (cp >= 0x2BB && cp <= 0x2BC) ||
+  cp === 0x2C6 || cp === 0x2DA || cp === 0x2DC || cp === 0x304 || cp === 0x308 || cp === 0x329 ||
+  (cp >= 0x2000 && cp <= 0x206F) || cp === 0x20AC || cp === 0x2122 || cp === 0x2191 ||
+  cp === 0x2193 || cp === 0x2212 || cp === 0x2215 || cp === 0xFEFF || cp === 0xFFFD;
+
+// Only the ones the page uses; an unknown entity is left alone and will read as
+// ASCII, which is harmless here because ASCII is inside the subset anyway.
+const ENTITIES = {
+  rsquo: 0x2019, lsquo: 0x2018, ldquo: 0x201C, rdquo: 0x201D, laquo: 0xAB, raquo: 0xBB,
+  middot: 0xB7, nbsp: 0xA0, mdash: 0x2014, ndash: 0x2013, hellip: 0x2026,
+};
+
+async function checkFonts(browser) {
+  console.log('\nfonts');
+  let failed = 0;
+
+  // Both files that ship, and every kind of entity. engine.js holds the
+  // opponents' names and the em dashes of its own comments, so "every
+  // character in the page" that reads only index.html is a claim about half
+  // the source; and a numeric reference is a character the page sets just as
+  // much as a named one is.
+  const source = [FILE, path.join(path.dirname(FILE), 'engine.js')]
+    .filter(f => existsSync(f))
+    .map(f => readFileSync(f, 'utf8'))
+    .join('\n')
+    .replace(/&#x([0-9a-f]+);/gi, (m, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (m, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&([a-z]+);/gi, (m, name) => (ENTITIES[name] ? String.fromCodePoint(ENTITIES[name]) : m));
+  const outside = new Map();
+  for (const ch of source) {
+    const cp = ch.codePointAt(0);
+    if (cp > 0x7F && !LATIN(cp)) outside.set(ch, 'U+' + cp.toString(16).toUpperCase().padStart(4, '0'));
+  }
+  console.log(`  ${outside.size ? 'FAIL' : 'pass'}  every character is in the latin subset`);
+  if (outside.size) {
+    failed++;
+    for (const [ch, cp] of outside)
+      console.log(`        ${cp} ${ch} — no glyph in fonts/; widen the subset or do not use it`);
+  }
+
+  // Everything but the page itself is cut off, which is what an APK sees.
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  const external = [];
+  await page.route('**', (route) => {
+    const url = route.request().url();
+    if (url.startsWith('file://') || url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
+    external.push(url);
+    return route.abort();
+  });
+  await page.goto(URL_);
+  // Ask for each face explicitly. A browser only fetches a face when something
+  // on the current screen uses it, so reading .status after load tells you
+  // which weights the start screen happens to draw with — not whether the
+  // files are there. load() is the question we actually mean.
+  const faces = await page.evaluate(async () => {
+    const declared = [...document.fonts];
+    return Promise.all(declared.map(async (f) => {
+      try { await f.load(); } catch { /* status below carries the verdict */ }
+      return { family: f.family, weight: f.weight, status: f.status };
+    }));
+  });
+  await page.close();
+
+  const unloaded = faces.filter((f) => f.status !== 'loaded');
+  const ok = faces.length > 0 && unloaded.length === 0;
+  console.log(`  ${ok ? 'pass' : 'FAIL'}  all ${faces.length} @font-face rules load with the network down`);
+  if (!ok) {
+    failed++;
+    if (!faces.length) console.log('        no @font-face rules at all — the page is on system fonts');
+    unloaded.forEach((f) => console.log(`        ${f.family} ${f.weight}: ${f.status}`));
+  }
+
+  console.log(`  ${external.length ? 'FAIL' : 'pass'}  no subresource comes from the network`);
+  if (external.length) {
+    failed++;
+    [...new Set(external)].forEach((u) => console.log(`        ${u}`));
+  }
+  return failed;
+}
+
+/* ---- pass 2: every screen -------------------------------------------------- */
 
 async function checkScreens(browser) {
   console.log('\nscreens');
@@ -539,7 +683,7 @@ async function checkScreens(browser) {
   return failed;
 }
 
-/* ---- pass 2: the card table ----------------------------------------------- */
+/* ---- pass 3: the card table ----------------------------------------------- */
 
 const measure = () => {
   const r = s => document.querySelector(s).getBoundingClientRect();
@@ -777,7 +921,7 @@ async function checkTable(browser, only, inflate) {
   return failed;
 }
 
-/* ---- pass 3: a whole deal, through the table ------------------------------- */
+/* ---- pass 4: a whole deal, through the table ------------------------------- */
 
 // Iteration 3 is done when a full deal can be played against the opponent, and that
 // is a wiring claim the two passes above cannot make: they measure a table that
@@ -1166,6 +1310,7 @@ async function checkDeal(browser) {
 const browser = await chromium.launch({ ...(CHROME && { executablePath: CHROME }), args: ['--no-sandbox'] });
 let failed = 0;
 failed += await checkDocument(browser);
+failed += await checkFonts(browser);
 failed += await checkScreens(browser);
 failed += await checkTable(browser, null, false);
 failed += await checkTable(browser, TIGHT, true);

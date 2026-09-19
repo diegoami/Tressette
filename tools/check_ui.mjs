@@ -292,6 +292,20 @@ const SCREENS = [
       // same text are one half told twice, whatever they are tagged.
       if (said.it && said.it === said.en)
         out.push('both halves of the rules are the same text');
+      // The download link is the newest thing on this screen and the easiest to
+      // add to one half only — a sentence written in one language, pasted into
+      // the section that is read by everyone who does not read that language.
+      // It has to be a link rather than a mention, because the point of it is
+      // that it can be followed, and it has to be absolute: /android is a
+      // Netlify redirect, and this page also runs from a folder and inside the
+      // APK, where a root-relative href goes nowhere.
+      for (const lang of ['it', 'en']) {
+        const sec = section(lang);
+        if (!sec) continue;
+        const to = [...sec.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
+        if (!to.some(h => h.startsWith('http') && h.includes('tressette-releases')))
+          out.push(`the rules in ${lang} do not link to the Android app`);
+      }
       // And back goes to the deal it was opened from: a Back that always lands
       // on the start sheet abandons the hand of anyone who opened the rules to
       // check what a napoletana is worth.

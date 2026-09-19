@@ -110,6 +110,18 @@ Then copy `mobile/android/keystore.properties.example` to
 `keystore.properties` and fill it in. That file and the `.jks` are gitignored
 and must stay that way: committing them lets anyone sign as us.
 
+**The key exists.** v1.0.0 is signed with it, and `apksigner verify` reports:
+
+```
+Signer #1 certificate DN: CN=Diego Amicabile, OU=Unknown, O=Unknown, L=Berlin, ST=Berlin, C=DE
+Signer #1 certificate SHA-256 digest: 5143a96256f142b37bee8929b4e53257e5b5cd9a55ae80eee9c26fd5061aaae4
+```
+
+That fingerprint is recorded here because it is the thing every future release
+has to match: an APK signed by anything else is a different app to Android, and
+no installed copy will take it as an update. `package_release.mjs` prints it on
+every build — if it ever differs from the line above, stop.
+
 Android identifies the app by this signature forever — an update installs over
 an existing copy only if it is signed with the same key — and the password
 cannot be recovered. It is encrypted with a key derived from itself: no reset,
@@ -148,24 +160,17 @@ ever grows.
 survives every release, and because the release page is where the notes and the
 checksum are, which is what somebody about to sideload an APK should read.
 
-The about screen does **not** link to it yet: until the first release exists
-that link is a 404, and the page it would sit on is the one screen here that is
-read rather than glanced at.
+The about screen carries the link now — a **pair** of lines, one per
+`section[lang]`, because that screen carries its body twice and a sentence
+added to one half only is exactly the drift `CLAUDE.md` warns about.
 
-Adding it is a **pair** of lines, one per `section[lang]`, because that screen
-carries its body twice and a sentence added to one half only is exactly the
-drift `CLAUDE.md` warns about. It is a UI change like any other, so run
-`node tools/check_ui.mjs` after it:
-
-```html
-<!-- in section[lang="it"] -->
-<p>C&rsquo;è anche un&rsquo;<a href="/android">app per Android</a>: lo stesso
-gioco, da installare sul telefono e giocare senza connessione.</p>
-
-<!-- in section[lang="en"] -->
-<p>There is also an <a href="/android">Android app</a>: the same game, to
-install on a phone and play with no connection.</p>
-```
+**It is the release page's own URL there, not `/android`.** The redirect only
+exists on Netlify, and this page has two other homes: a folder on disk, where
+`/android` resolves against the filesystem root, and the APK, where it resolves
+against the app's local origin and 404s out of the app's own assets. An
+absolute URL works in all three. `/android` stays what it is — a short link
+worth saying out loud and putting in a message — rather than something the page
+itself depends on.
 
 **A Netlify build plugin is the wrong tool for any of this.** Plugins run
 inside the Netlify build, which has no Android SDK, is time-limited, and would
@@ -174,13 +179,29 @@ deploy, to produce an artifact that changes only at release time.
 
 ## 6. What is left
 
-| # | Step | Whose |
-|---|---|---|
-| 1 | Generate the release key and write `keystore.properties` | owner — it is a secret |
-| 2 | Create the public `diegoami/tressette-releases` | owner — outward-facing |
-| 3 | `node tools/package_release.mjs`, then `publish_release.mjs --confirm` | either, after 1 and 2 |
-| 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here |
-| 5 | Add the about-screen link, run the check | either, after 3 |
+v1.0.0 is out: **<https://github.com/diegoami/tressette-releases/releases/tag/v1.0.0>**,
+signed, verified, 6.4 MB, with `SHA256SUMS.txt` beside it.
+
+| # | Step | Whose | |
+|---|---|---|---|
+| 1 | Generate the release key and write `keystore.properties` | owner — it is a secret | **done** |
+| 2 | Create the public `diegoami/tressette-releases` | owner — outward-facing | **done** |
+| 3 | `node tools/package_release.mjs`, then `publish_release.mjs --confirm` | either, after 1 and 2 | **done** |
+| 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here | open |
+| 5 | Add the about-screen link, run the check | either, after 3 | **done** |
+
+Two things worth knowing for the next release, both learned the hard way:
+`storeFile` in `keystore.properties` is read as a Java properties value, so a
+Windows path needs forward slashes or doubled backslashes; and GitHub will not
+create a release on a repository with no commits — the releases repo needed its
+README pushed before the first `--confirm` could work.
+
+**Step 4 is the one that matters now.** Nothing in this project has ever
+launched the APK. What an install checks is that the WebView accepts the
+`http://localhost` origin Capacitor serves the page over; if it does not, the
+symptom is a blank white screen rather than an error, and nothing here can see
+it. A bad build is replaced by bumping `versionCode` and `versionName` and
+cutting v1.0.1 — a tag is never re-used.
 
 ## 7. Still open
 

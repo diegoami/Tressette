@@ -34,7 +34,7 @@ public/engine.js     the rules and the opponent, as functions over one
 public/decks/        six sprite sheets: five are the original 1997 bitmaps,
                      the sixth (Bresciane) is an imported scan, §10
 public/fonts/        Bodoni Moda and Barlow, latin subset, ~0.2 MB
-public/icons/        the tre di denari, for the tab and the home screen
+public/icons/        the tre di coppe, for the tab and the home screen
 assets/              the same icon at 1024, for @capacitor/assets
 tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
@@ -42,7 +42,7 @@ tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
 tools/check_ui.mjs       the UI check: five passes, 114 rows
 tools/serve.mjs          public/ over http, standard library only
-tools/make_icons.mjs     cuts the icon out of the Trevisane sheet
+tools/make_icons.mjs     cuts the icon out of the Napoletane sheet
 tools/import_bresciane.mjs  builds the sixth deck from its source repo
 tools/package_release.mjs   signed APK into dist-release/
 tools/publish_release.mjs   that APK to the releases repo, on --confirm
@@ -396,7 +396,7 @@ over in case a deck is ever repacked.
 The sixth deck is not 1997 art: `tools/import_bresciane.mjs` composes it from
 [`mhamilt/Italian-decks`](https://github.com/mhamilt/Italian-decks), whose
 images are a scan of a commercial Teodomiro Dal Negro deck. The app icon is a
-crop of the Trevisane sheet, nearest-neighbour scaled by
+crop of the Napoletane sheet, nearest-neighbour scaled by
 `tools/make_icons.mjs`, so every pixel of it is still a 1997 pixel.
 
 The typefaces are Bodoni Moda and Barlow (SIL Open Font License), subset to

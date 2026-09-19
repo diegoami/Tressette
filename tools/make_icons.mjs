@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Cut the app icon out of the Trevisane sheet.
+ * Cut the app icon out of the Napoletane sheet.
  *
  *   node tools/make_icons.mjs            # writes assets/ and public/icons/
  *
- * The icon is the tre di denari: the highest card in tressette, and the one
- * that names the game twice over. Three coins, and at a glance they read as
- * three of something — which is all an icon has to do.
+ * The icon is the top half of the tre di coppe, Napoletane: the tre is the
+ * highest card in tressette, and a cup at this size reads as an object rather
+ * than as a pattern. The top half is where the card puts its subject — a cup
+ * whole, and the top of the second — which is also how Italian court cards are
+ * drawn and how Discola cut its own icon.
  *
  * Nothing here redraws anything. The crop is nearest-neighbour scaled
  * (`image-rendering: pixelated`), so every output pixel is one source pixel
@@ -15,10 +17,10 @@
  * that the card art is not to be redrawn. Interpolation invents pixels, which
  * is redrawing by another name.
  *
- * Two crops, not one. The whole card is the icon everywhere it is drawn at
- * 48px or more; at 32px the three coins collapse into three smudges, so the
- * favicon is the middle coin alone, filling the square. The card is still what
- * a tab shows when the tab is large enough to show anything.
+ * Two crops, not one. The half card is the icon everywhere it is drawn at
+ * 48px or more; at 32px two cups in one square are two smudges, so the favicon
+ * is the top cup alone, filling it. The card is still what a tab shows when
+ * the tab is large enough to show anything.
  *
  * Outputs, and who consumes them:
  *
@@ -41,18 +43,19 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SHEET = 'data:image/png;base64,' +
-  readFileSync(ROOT + 'public/decks/trevisane.png').toString('base64');
+  readFileSync(ROOT + 'public/decks/napoletane.png').toString('base64');
 
-// The Trevisane cell, on pack_cards.py's 11x4 grid: columns 0..9 are card
+// The Napoletane cell, on pack_cards.py's 11x4 grid: columns 0..9 are card
 // numbers 1..10, rows 0..3 are the suits in TSeme order (Denari, Coppe, Spade,
-// Bastoni). The tre di denari is column 2, row 0.
-const CW = 60, CH = 125, COL = 2, ROW = 0;
+// Bastoni). The tre di coppe is column 2, row 1.
+const CW = 78, CH = 128, COL = 2, ROW = 1;
 
-// Crops inside that cell, in card pixels, measured off the 60x125 cell: the
-// three coins run from y 5 to y 118 between x 7 and x 53, and the middle one
-// sits at y 44..84.
-const CARD = { x: 7, y: 5, w: 46, h: 113 };
-const COIN = { x: 10, y: 44, w: 40, h: 40 };
+// Crops inside that cell, in card pixels, measured off the 78x128 cell. HALF
+// is the top half of the card, taken just inside its printed border so the
+// rounded corners do not clip into the felt; CUP is the upper cup alone, which
+// sits at y 11..61 between x 6 and x 42.
+const HALF = { x: 3, y: 3, w: 72, h: 58 };
+const CUP = { x: 6, y: 11, w: 36, h: 50 };
 
 // The ground under the card. --felt and --rail from public/index.html: the
 // icon is the same table, lit the same way.
@@ -62,12 +65,12 @@ const FELT = '#1e5140', FELT_LIT = '#2a6b54';
 // foreground needs much more of it: Android masks an adaptive icon to a shape
 // that can cut a quarter off every edge, so the card has to sit well inside.
 const OUT = [
-  ['assets/icon-only.png',             1024, CARD, 0.12],
-  ['assets/icon-foreground.png',       1024, CARD, 0.26],
-  ['public/icons/icon-512.png',         512, CARD, 0.12],
-  ['public/icons/icon-192.png',         192, CARD, 0.12],
-  ['public/icons/apple-touch-icon.png', 180, CARD, 0.12],
-  ['public/icons/favicon-32.png',        32, COIN, 0.05],
+  ['assets/icon-only.png',             1024, HALF, 0.12],
+  ['assets/icon-foreground.png',       1024, HALF, 0.26],
+  ['public/icons/icon-512.png',         512, HALF, 0.12],
+  ['public/icons/icon-192.png',         192, HALF, 0.12],
+  ['public/icons/apple-touch-icon.png', 180, HALF, 0.12],
+  ['public/icons/favicon-32.png',        32, CUP, 0.05],
 ];
 
 const square = (size, crop, pad) => {

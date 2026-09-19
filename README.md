@@ -119,9 +119,9 @@ Teodomiro Dal Negro deck — the asso di denari carries the maker's stamp. The
 same copyright grey area as the original art, and a deliberate choice rather
 than a surprise.
 
-The app icon is the tre di denari, cut from the Trevisane sheet by
-`tools/make_icons.mjs` and scaled nearest-neighbour, so every pixel of it is
-still a 1997 pixel.
+The app icon is the top half of the tre di coppe, cut from the Napoletane
+sheet by `tools/make_icons.mjs` and scaled nearest-neighbour, so every pixel of
+it is still a 1997 pixel.
 
 The typefaces are Bodoni Moda and Barlow, the latin subset, served from
 `public/fonts/`.

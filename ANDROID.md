@@ -24,10 +24,10 @@ and the check's `fonts` pass asserts that the page needs no network at all:
 every character is inside the subset, every `@font-face` loads with requests
 cut off, and no subresource comes from outside.
 
-**The icon.** `tools/make_icons.mjs` cuts the tre di denari out of the
-Trevisane sheet — the highest card in the game, and three of something at any
-size — and writes `assets/` for `@capacitor/assets` and `public/icons/` for the
-tab. Nearest-neighbour scaled: every output pixel is one source pixel repeated,
+**The icon.** `tools/make_icons.mjs` cuts the top half of the tre di coppe out
+of the Napoletane sheet — the tre is the highest card in the game, and a cup
+reads as an object at any size — and writes `assets/` for `@capacitor/assets`
+and `public/icons/` for the tab. Nearest-neighbour scaled: every output pixel is one source pixel repeated,
 because `CLAUDE.md` is explicit that the card art is not redrawn, and
 interpolation is redrawing by another name.
 
@@ -66,7 +66,7 @@ On this machine, past tense:
 - Identity in the generated project is `com.tressette.app` / `Tressette`,
   matching `capacitor.config.json`. `versionName "1.0.0"`, `versionCode 1`.
 - Launcher icons generated at every density from `assets/` by
-  `@capacitor/assets` — the tre di denari on the felt.
+  `@capacitor/assets` — the tre di coppe on the felt.
 - **A debug APK builds**: `gradlew assembleDebug`, 7.4 MB, and it carries
   `index.html`, all six decks, the six fonts and the icons under
   `assets/public/`. JDK 21 and the SDK at `%LOCALAPPDATA%\Android\Sdk`
@@ -180,14 +180,21 @@ deploy, to produce an artifact that changes only at release time.
 ## 6. What is left
 
 v1.0.0 is out: **<https://github.com/diegoami/tressette-releases/releases/tag/v1.0.0>**,
-signed, verified, 6.4 MB, with `SHA256SUMS.txt` beside it.
+signed, verified, 6.4 MB, with `SHA256SUMS.txt` beside it. **It installs and
+runs** — the owner sideloaded it and played, which is step 4 below and the one
+thing no check here could answer.
+
+`versionName` is **1.0.1** / `versionCode 2` now, because the icon changed. A
+version identifies what is inside the APK, so a build that differs from a
+published one takes its own number rather than re-using a tag, and
+`versionCode` only ever increases.
 
 | # | Step | Whose | |
 |---|---|---|---|
 | 1 | Generate the release key and write `keystore.properties` | owner — it is a secret | **done** |
 | 2 | Create the public `diegoami/tressette-releases` | owner — outward-facing | **done** |
 | 3 | `node tools/package_release.mjs`, then `publish_release.mjs --confirm` | either, after 1 and 2 | **done** |
-| 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here | open |
+| 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here | **done** — it runs |
 | 5 | Add the about-screen link, run the check | either, after 3 | **done** |
 
 Two things worth knowing for the next release, both learned the hard way:

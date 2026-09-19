@@ -23,6 +23,7 @@ jobs:
           node-version: lts/*
       # Not `--test tools/`: Node 22 reads a bare directory as a module path and
       # fails with MODULE_NOT_FOUND. A glob is what the current LTS discovers.
+      # No install first: the engine and its tests still have no dependencies.
       - run: node --test 'tools/**/*.test.mjs'
 
   ui:
@@ -32,10 +33,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      # playwright-core is deliberately not committed — the game has no
-      # dependencies and a package.json would say otherwise — so it is
-      # installed here rather than restored from a lockfile. --with-deps is
-      # what makes Chromium start on a bare runner.
-      - run: npm i --no-save playwright-core
+      # playwright-core is the one dependency this repo has, and it is a dev
+      # one: it belongs to the check, not to the game. `npm ci` restores the
+      # exact version the lockfile names, so CI and a local run measure the
+      # page with the same browser build. --with-deps is what makes Chromium
+      # start on a bare runner.
+      - run: npm ci
       - run: npx playwright-core install --with-deps chromium
-      - run: node tools/check_ui.mjs
+      - run: npm run check

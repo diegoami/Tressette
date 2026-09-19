@@ -1,8 +1,19 @@
-# Local tooling for tools/check_ui.mjs (npm i playwright-core)
+# The dev dependency of tools/check_ui.mjs (npm run setup). The game itself
+# still has none: nothing under public/ imports anything.
 # No trailing slash: this is often a symlink, which "node_modules/" would miss.
 node_modules
 
-# That npm install also writes these. They are not dependencies of the game —
-# there are none — and committing them would say otherwise.
-package.json
-package-lock.json
+# Packaged release artifacts (built by tools/package_release.mjs).
+dist-release
+
+# The Android wrapper's own installs and build outputs. mobile/android/ itself
+# is committed — it is generated once and then edited — but nothing Gradle or
+# the SDK writes into it is.
+mobile/android/build
+mobile/android/app/build
+mobile/android/.gradle
+mobile/android/local.properties
+mobile/android/keystore.properties
+mobile/android/capacitor-cordova-android-plugins
+*.jks
+*.keystore

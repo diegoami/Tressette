@@ -159,15 +159,72 @@ const SCREENS = [
       await p.click('#btnSettings');
       await p.evaluate(() => { document.querySelector('#viewSettings details').open = true; });
     } },
+  // The start sheet's own icon bar, which it did not have: settings, history
+  // and the rules were reachable only from the table, so changing the deck or
+  // reading what a napoletana is worth meant dealing a hand first and
+  // abandoning it. Discola's start screen has carried these three since it
+  // shipped; this is that row.
+  //
+  // It drives the three buttons rather than counting them. A bar whose buttons
+  // open nothing looks identical to this row's alternative — the tools are
+  // there, the audit is happy, and every one of them is dead — and the Back it
+  // presses afterwards is the other half: back() asks whether a hand is in
+  // play, so a sheet opened before the deal has to return here and not to a
+  // table that does not exist yet.
+  { name: 'start, the tools reach the sheets', open: async () => {}, check: () => {
+      const out = [];
+      const shown = () => [...document.querySelectorAll('.view')]
+        .filter(v => !v.hidden).map(v => v.id).join(',');
+      for (const [nav, view] of [['settings', 'viewSettings'],
+                                 ['history', 'viewHistory'],
+                                 ['about', 'viewAbout']]) {
+        const tool = document.querySelector(`#viewStart [data-nav="${nav}"]`);
+        if (!tool) { out.push(`the start sheet has no ${nav} tool`); continue; }
+        const r = tool.getBoundingClientRect();
+        if (Math.min(r.width, r.height) < 32)
+          out.push(`the start sheet's ${nav} tool is ${Math.round(r.width)}x${Math.round(r.height)}, want 32`);
+        tool.click();
+        if (shown() !== view) { out.push(`the start sheet's ${nav} tool opened ${shown() || 'nothing'}`); continue; }
+        const back = document.querySelector(`#${view} [data-back]`);
+        if (!back) { out.push(`${view} has no Back button`); continue; }
+        back.click();
+        if (shown() !== 'viewStart')
+          out.push(`Back from ${nav}, opened before a deal, landed on ${shown() || 'nothing'}`);
+      }
+      return out;
+    } },
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
     // type pushed it past the fold once; a pinned footer is the fix, and this
     // is what stops it drifting back.
     check: () => {
+      const out = [];
       const r = document.querySelector('#play').getBoundingClientRect();
-      return (r.bottom > window.innerHeight + 1 || r.top < -1)
-        ? [`Gioca is off screen (bottom ${Math.round(r.bottom)} vs viewport ${window.innerHeight})`]
-        : [];
+      if (r.bottom > window.innerHeight + 1 || r.top < -1)
+        out.push(`Gioca is off screen (bottom ${Math.round(r.bottom)} vs viewport ${window.innerHeight})`);
+      // The one line out of the game: the rules in full and the APK, both on
+      // the releases repo. It is asserted here rather than left to the about
+      // screen because this is the screen somebody lands on, and because a
+      // link nobody can see is the same as no link — the audit measures type
+      // and clipping, so a painted box is what is asked for.
+      // The sheet starts where the bar ends. Giving the start screen an icon
+      // bar without giving its grid a row for it put the bar in the 1fr row
+      // and left 101px of bare rail under it — the felt began a third of the
+      // way down the screen, and every rule here passed, because an empty grid
+      // row is not an overflow, clips nothing and is not text.
+      const bar = document.querySelector('#viewStart .topbar');
+      const body = document.querySelector('#viewStart .sheet-body');
+      if (bar && body) {
+        const gap = Math.round(body.getBoundingClientRect().top - bar.getBoundingClientRect().bottom);
+        if (gap > 1) out.push(`${gap}px of nothing between the icon bar and the start sheet`);
+      }
+
+      const link = document.querySelector('#viewStart .hero-link a');
+      if (!link || !link.getAttribute('href').includes('tressette-releases'))
+        out.push('the start sheet does not link to the rules and the download');
+      else if (!link.getClientRects().length)
+        out.push('the start sheet\'s link to the rules is in the page but not on the screen');
+      return out;
     } },
   { name: 'table',  open: async p => { await p.click('#play'); } },
   // The longest thing the game can say: a hand of ten can hold a napoletana and

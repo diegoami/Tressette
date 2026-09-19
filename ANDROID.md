@@ -184,10 +184,11 @@ signed, verified, 6.4 MB, with `SHA256SUMS.txt` beside it. **It installs and
 runs** — the owner sideloaded it and played, which is step 4 below and the one
 thing no check here could answer.
 
-`versionName` is **1.0.1** / `versionCode 2` now, because the icon changed. A
-version identifies what is inside the APK, so a build that differs from a
-published one takes its own number rather than re-using a tag, and
-`versionCode` only ever increases.
+`versionName` is **1.0.2** / `versionCode 3` now: 1.0.1 was the icon, 1.0.2 is
+the about screen saying that a void can be drawn back into. A version
+identifies what is inside the APK, so a build that differs from a published one
+takes its own number rather than re-using a tag, and `versionCode` only ever
+increases.
 
 | # | Step | Whose | |
 |---|---|---|---|

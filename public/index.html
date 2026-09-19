@@ -731,12 +731,14 @@ button.card:disabled{ cursor: default; }
 }
 .deck-opt:hover{ border-color: var(--brass-dim); }
 .deck-opt[aria-pressed="true"]{ border-color: var(--brass); background: rgba(200,162,74,.12); }
-/* Both --cw and --ch are redeclared here: --ch on :root was already substituted
-   against the root's --cw, so overriding --cw alone would not resize anything. */
+/* A preview fills its column rather than taking a width of its own, so the
+   decks fit one row at any count. It overrides the card's geometry outright
+   rather than its --cw token: --ch on :root was already substituted against
+   the root's --cw, so setting --cw alone here would resize nothing.
+   Always the top-left cell, the asso di denari — the 11x4 sheet is scaled so
+   that one cell fills the element, whatever the element measures, which is
+   why the cell is stated here and not on the span. */
 .deck-opt .card{
-  /* Fill the column rather than a fixed width, so the decks fit one row at any
-     count. Always the top-left cell (asso di denari): the 11x4 sheet is scaled
-     so a single cell fills the element, whatever that element measures. */
   width: 100%;
   height: auto;
   aspect-ratio: 1 / var(--ratio);
@@ -2007,10 +2009,10 @@ function buildDecks(){
     b.setAttribute("aria-label", `Mazzo ${name}`);
     b.style.setProperty("--sheet", deckSheet(name));
     b.style.setProperty("--ratio", DECK_RATIO[name]);
+    // No --col/--row here: .deck-opt .card pins the background to the top-left
+    // cell itself, and a cell named in two places is a cell named wrong in one.
     const c = document.createElement("span");
     c.className = "card";
-    c.style.setProperty("--col", 0);
-    c.style.setProperty("--row", 0);
     b.append(c);
     b.addEventListener("click", () => { applyDeck(name); save(); });
     return b;

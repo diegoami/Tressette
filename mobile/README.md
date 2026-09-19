@@ -39,6 +39,8 @@ npx cap add android      # needs ANDROID_HOME
 npx cap sync android
 ```
 
-Then re-apply the two edits that are not Capacitor's defaults — the release
-signing block in `android/app/build.gradle` and the version numbers — and
-regenerate the launcher icons with `npx @capacitor/assets generate --android`.
+Then re-apply what is not Capacitor's default — the release signing block in
+`android/app/build.gradle`, the version numbers, and the comment on the
+`INTERNET` permission in `AndroidManifest.xml` (`../ANDROID.md` §2 says why it
+is there) — and regenerate the launcher icons with
+`npx @capacitor/assets generate --android`.

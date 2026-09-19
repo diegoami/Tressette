@@ -31,5 +31,12 @@
 
     <!-- Permissions -->
 
+    <!-- The app makes no network requests: everything it draws with is in
+         assets/public/, which is the point of the fonts pass in
+         tools/check_ui.mjs. This permission is still here because Capacitor
+         does not load the page from file:// — it serves it to the WebView over
+         an intercepted http://localhost origin, and a WebView will not load an
+         http URL without it. ANDROID.md §2 and §7: dropping it can only be
+         verified by installing the result, so it waits for a device. -->
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

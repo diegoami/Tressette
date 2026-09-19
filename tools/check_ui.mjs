@@ -421,6 +421,20 @@ const audit = () => {
       + `vs 0…${window.innerWidth})`);
   }
 
+  // The deck picker is one row, whatever the deck table holds. A sixth deck
+  // against a hard-coded repeat(5, 1fr) wraps onto a second row and pushes the
+  // controls under it down — no overflow, no clipped text, no small tap
+  // target, so every other rule here passes a picker that has quietly folded
+  // in half. Sharing a top is the whole of "one row", and it is the only thing
+  // that can say the column count and the deck table are still in step.
+  const opts = [...document.querySelectorAll('.deck-opt')];
+  if (opts.length) {
+    const tops = new Set(opts.map(b => Math.round(b.getBoundingClientRect().top)));
+    if (tops.size !== 1)
+      out.push(`the deck picker is on ${tops.size} rows, not one `
+        + `(${opts.length} decks at tops ${[...tops].join(', ')})`);
+  }
+
   // The dropdown a <select> opens is drawn by the operating system, not by
   // this stylesheet, and it inherits the page's ink without inheriting the
   // page's ground: a select left `background: transparent` opened a white
@@ -431,7 +445,7 @@ const audit = () => {
   // box at all, so the loop below never sees one.
   for (const el of document.querySelectorAll('select, select option')) {
     const bg = getComputedStyle(el).backgroundColor;
-    const alpha = Number(/^rgba?(([^)]*))/.exec(bg)?.[1].split(',')[3] ?? 1);
+    const alpha = Number(/^rgba?\(([^)]*)\)/.exec(bg)?.[1].split(',')[3] ?? 1);
     if (!(alpha >= 1))
       out.push(`${name(el)} <${el.tagName.toLowerCase()}> has no ground of its own `
         + `(background-color ${bg}) — the OS draws its popup white`);
@@ -565,7 +579,17 @@ async function checkFonts(browser) {
   console.log('\nfonts');
   let failed = 0;
 
-  const source = readFileSync(FILE, 'utf8')
+  // Both files that ship, and every kind of entity. engine.js holds the
+  // opponents' names and the em dashes of its own comments, so "every
+  // character in the page" that reads only index.html is a claim about half
+  // the source; and a numeric reference is a character the page sets just as
+  // much as a named one is.
+  const source = [FILE, path.join(path.dirname(FILE), 'engine.js')]
+    .filter(f => existsSync(f))
+    .map(f => readFileSync(f, 'utf8'))
+    .join('\n')
+    .replace(/&#x([0-9a-f]+);/gi, (m, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (m, dec) => String.fromCodePoint(Number(dec)))
     .replace(/&([a-z]+);/gi, (m, name) => (ENTITIES[name] ? String.fromCodePoint(ENTITIES[name]) : m));
   const outside = new Map();
   for (const ch of source) {

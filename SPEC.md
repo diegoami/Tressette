@@ -16,8 +16,10 @@ it), so nothing in the repository asserts that it serves; see §7 of `PLAN.md`.
 
 A two-player Tressette a due for the browser: one static page, no build step, no
 runtime dependencies, the 1997 card art from
-[Discola](https://github.com/diegoami/discola-web) in five decks. You against
-one of four opponents, one deal at a time, everything kept in the browser.
+[Discola](https://github.com/diegoami/discola-web) in five decks, plus an
+imported sixth (§10, §11). Nothing it draws with comes from the network. You
+against one of four opponents, one deal at a time, everything kept in the
+browser.
 
 Player-facing text is Italian. Comments, commit messages and documents are
 English.

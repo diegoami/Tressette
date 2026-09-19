@@ -155,6 +155,7 @@ public/decks/*      six sprite sheets: five byte-identical copies from discola-w
                     and Bresciane, imported and photographic, hence .jpg
 public/fonts/*.woff2  Bodoni Moda and Barlow, latin subset, so the page needs no network
 public/icons/*.png  the tre di denari, for the tab and the home screen
+assets/*.png        the same icon at 1024, the launcher's source, not served
 tools/check_ui.mjs  the UI check, forked from Discola and extended for the fan (§3.7)
 tools/engine.test.mjs  unit tests on node --test, no dependencies
 tools/selfplay.mjs  headless matches: profile vs profile, vs baselines; the tuning loop

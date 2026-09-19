@@ -75,6 +75,17 @@ On this machine, past tense:
   and stays unsigned when absent, so a debug build and a fresh clone both still
   work.
 
+**The manifest asks for `android.permission.INTERNET`, and the app makes no
+network requests.** Both are true, and the permission is Capacitor's default
+rather than an oversight: the page is not loaded from `file://` in the APK but
+served to the WebView over an intercepted `http://localhost` origin, which is
+what gives it a real origin and working `localStorage`, and a WebView will not
+load an `http` URL at all without it. Every request the page then makes is
+answered from the APK's own assets — that is what the fonts pass asserts, with
+everything external cut off. Dropping the line is the kind of change that can
+only be verified by installing the result and watching it either work or show a
+blank white screen, so it waits for a device; it is in §7.
+
 Not done on this machine, and why: **no device and no emulator image**, so the
 APK has not been launched. The offline behaviour it would be launched to check
 is what the `fonts` pass asserts with every non-`file://` request aborted, but
@@ -139,12 +150,21 @@ checksum are, which is what somebody about to sideload an APK should read.
 
 The about screen does **not** link to it yet: until the first release exists
 that link is a 404, and the page it would sit on is the one screen here that is
-read rather than glanced at. Adding the line is a UI change like any other —
-run `node tools/check_ui.mjs` after it:
+read rather than glanced at.
+
+Adding it is a **pair** of lines, one per `section[lang]`, because that screen
+carries its body twice and a sentence added to one half only is exactly the
+drift `CLAUDE.md` warns about. It is a UI change like any other, so run
+`node tools/check_ui.mjs` after it:
 
 ```html
+<!-- in section[lang="it"] -->
 <p>C&rsquo;è anche un&rsquo;<a href="/android">app per Android</a>: lo stesso
 gioco, da installare sul telefono e giocare senza connessione.</p>
+
+<!-- in section[lang="en"] -->
+<p>There is also an <a href="/android">Android app</a>: the same game, to
+install on a phone and play with no connection.</p>
 ```
 
 **A Netlify build plugin is the wrong tool for any of this.** Plugins run
@@ -172,3 +192,8 @@ deploy, to produce an artifact that changes only at release time.
    start, and a changelog is worth adding when there is a second release.
 3. **A Play Store listing** is deliberately not in the table above: sideloading
    needs none of the paperwork, and the paperwork outweighs the code.
+4. **Can `android.permission.INTERNET` be dropped?** See §2. It would make the
+   permission list match what the app actually does, and the only honest test
+   is an install: with it gone, either the page loads from the assets as
+   before, or the WebView refuses the `http://localhost` origin and shows
+   white. Worth trying on the first device this lands on.

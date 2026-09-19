@@ -593,7 +593,16 @@ button.card:disabled{ cursor: default; }
    scroll on a small phone, but the primary action never leaves the screen.
    Making the text readable pushed the button past the fold at 393px, and the
    answer to that is to pin the button, not to shrink the text again. */
-#viewStart{ grid-template-rows: minmax(0,1fr) auto; }
+/* Three rows now, not two: the icon bar, the sheet, the Gioca footer. With
+   two, the bar took the 1fr row and left 100px of rail under it — the felt
+   started a third of the way down the screen and nothing errored, because an
+   empty grid row is not an overflow. */
+#viewStart{ grid-template-rows: auto minmax(0,1fr) auto; }
+
+/* The start screen's copy of the icon bar. It carries no wordmark, so the
+   tools go to the right on their own; the table's bar keeps space-between
+   because it has the wordmark to separate them from. */
+.topbar--start{ justify-content: flex-end; }
 
 .start-foot{
   display: grid;
@@ -658,6 +667,8 @@ button.card:disabled{ cursor: default; }
   line-height: .95;
 }
 .hero p{ margin: 0; color: var(--ivory-dim); font-size: var(--t-body); line-height: 1.5; }
+.hero-link{ margin: .1rem 0 0; font-size: var(--t-tiny); }
+.hero-link a{ color: var(--brass); }
 
 .last-result{
   font-family: var(--font-label);
@@ -1087,11 +1098,36 @@ button.card:disabled{ cursor: default; }
 
 <!-- ============================ start ============================ -->
 <div class="view" id="viewStart">
+  <!-- The same tools as the table, so the settings, the history and the rules
+       are reachable before a hand is dealt rather than only during one. No
+       wordmark: the hero below is the title. No "nuova mano" either, which is
+       what the Gioca button already is. Back from any of these sheets lands
+       here again, because back() asks whether a hand is in play rather than
+       where the sheet was opened from. -->
+  <header class="topbar topbar--start">
+    <nav class="tools">
+      <button class="tool" data-nav="history" type="button" title="Storico mani" aria-label="Storico mani">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/></svg>
+      </button>
+      <button class="tool" data-nav="settings" type="button" title="Impostazioni" aria-label="Impostazioni">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="16" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
+      </button>
+      <button class="tool" data-nav="about" type="button" title="Informazioni" aria-label="Informazioni">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.3"/><path d="M12 7.6v1"/></svg>
+      </button>
+    </nav>
+  </header>
   <div class="sheet-body">
     <div class="sheet-inner">
       <div class="hero">
         <h1>Tressette</h1>
         <p>Tressette a due. Una mano, venti prese, undici punti più gli accusi.</p>
+        <!-- One line for the two things somebody wants from outside the game:
+             the rules in full and the Android build. Both live on the releases
+             repo, which is the only public face this project has — the source
+             is private, and release assets on a private repository cannot be
+             downloaded at all. -->
+        <p class="hero-link"><a href="https://github.com/diegoami/tressette-releases">Regole, download e crediti</a></p>
         <p class="last-result" id="lastResult" hidden></p>
       </div>
 
@@ -2144,6 +2180,12 @@ el.again.addEventListener("click", () => askAbandon(() => newDealHere()));
 el.btnHistory.addEventListener("click", () => show("history"));
 el.btnSettings.addEventListener("click", () => show("settings"));
 el.btnAbout.addEventListener("click", () => show("about"));
+
+// The start screen's three, by attribute rather than by id: they open the same
+// screens as the table's, and naming each one twice is how the two bars drift
+// apart.
+for (const b of document.querySelectorAll("[data-nav]"))
+  b.addEventListener("click", () => show(b.dataset.nav));
 
 el.confirmNo.addEventListener("click", closeConfirm);
 el.confirmYes.addEventListener("click", () => {

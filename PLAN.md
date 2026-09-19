@@ -1575,6 +1575,24 @@ price the change was not allowed to charge.
 the engine already knows — `fuori`, the set of cards not played and not mine.
 §3.4 still names eleven and the settings sheet still shows eleven.
 
+**And the eleventh was re-laddered, because its meaning changed.**
+`LEAD_INTO_VOID_PENALTY` was tuned when the term always fired at full
+strength; under the decay its average strength is lower, so its optimum could
+have moved with it. A ladder at 300 seeds suggested it had — 87.0% at −4
+climbing to 87.7% at −12 — and the suggestion did not survive being asked
+properly. On held-out seeds at four times the sample:
+
+| LEAD_INTO_VOID_PENALTY | vs greedy | vs random | differs from Franco |
+|---|---|---|---|
+| −4 (unchanged) | 86.7% | 87.1% | — |
+| −8 | 86.7% | 87.2% | 3.6% |
+| −12 | 86.3% | 87.3% | 4.0% |
+
+1,200 deals each, all inside the harness's noise floor, which is the rule in
+`SPEC.md` for calling a difference nothing. The weight stays at −4. This is
+recorded because a recalibration that was checked and a recalibration that was
+skipped leave exactly the same diff.
+
 **The golden fixture was re-baselined**, the first time since it was frozen:
 6 of its 60 deals and 332 of its 9,540 plays changed. That is the fixture
 doing its job rather than failing — it exists to make a change to the

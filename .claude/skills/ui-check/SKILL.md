@@ -108,7 +108,15 @@ screens. Asserts exactly one screen is visible, no sideways
 scroll, no text below its size floor, no text clipped by a container that
 cannot scroll, no tap target under 32px, and no script or console errors.
 
-One rule in the audit measures something that is not on the page: a `<select>`
+One rule in the audit measures the deck picker as a row rather than as
+elements: every `.deck-opt` must share a `top`. A sixth deck against a
+hard-coded `repeat(5, 1fr)` folds the picker onto a second row and pushes the
+controls below it down, and nothing else here notices — there is no overflow,
+no clipped text and no small tap target, just a picker in half. On any screen
+but the start sheet the options have no box at all, so the rule is quiet there
+and live on the three start-screen states.
+
+Another measures something that is not on the page at all: a `<select>`
 and its `<option>`s must paint an opaque background. The popup a select opens
 is drawn by the operating system, which takes the page's ink and not its
 ground, so a transparent select was ivory text on a white Windows menu — and

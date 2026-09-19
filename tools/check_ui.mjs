@@ -425,8 +425,11 @@ const audit = () => {
   // against a hard-coded repeat(5, 1fr) wraps onto a second row and pushes the
   // controls under it down — no overflow, no clipped text, no small tap
   // target, so every other rule here passes a picker that has quietly folded
-  // in half. Sharing a top is the whole of "one row", and it is the only thing
-  // that can say the column count and the deck table are still in step.
+  // in half. Sharing a top is the whole of "one row", and it is what says the
+  // column count JS sets and the deck table it comes from are still in step.
+  // Not the CSS fallback beside it: buildDecks sets --deck-cols before the
+  // element has any children, so a fallback that disagreed would never be
+  // painted, never mind measured.
   const opts = [...document.querySelectorAll('.deck-opt')];
   if (opts.length) {
     const tops = new Set(opts.map(b => Math.round(b.getBoundingClientRect().top)));

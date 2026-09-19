@@ -146,5 +146,5 @@ same word in both — is never the only thing asked.
   in case a deck is ever repacked, from the BMPs in `diegoami/briscola-JS`.
   The sixth deck, Bresciane, is not 1997 art and says so wherever it is named;
   `tools/import_bresciane.mjs` records where it comes from. The icon is a crop
-  of the Trevisane sheet, nearest-neighbour scaled by `tools/make_icons.mjs`,
+  of the Napoletane sheet, nearest-neighbour scaled by `tools/make_icons.mjs`,
   because interpolation is redrawing by another name.

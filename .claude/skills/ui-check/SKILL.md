@@ -6,7 +6,7 @@ description: Run Tressette's UI checks across every screen, dialog and viewport.
 # UI check
 
 Tressette is one HTML file — five screens and two dialogs — and it has to work
-from a 360px phone to a 1920px desktop, in both orientations, with five decks
+from a 360px phone to a 1920px desktop, in both orientations, with six decks
 whose cards have different aspect ratios. Nearly every UI defect this
 check was written for was invisible to code review and threw no error. It
 exists because reading the diff was repeatedly not enough — in Discola, where
@@ -34,7 +34,7 @@ interrupting it.
 It needs `playwright-core` and a Chromium binary:
 
 ```sh
-npm i playwright-core && npx playwright-core install chromium
+npm run setup                                       # both, from package.json
 CHROME=/path/to/chrome node tools/check_ui.mjs      # if Chromium is elsewhere
 ```
 
@@ -54,6 +54,17 @@ its layout: a viewport meta setting `width=device-width`, standards mode, UTF-8,
 and a `lang` on `<html>`. These cannot be layout assertions, because Playwright's
 `viewport` option sets the layout viewport directly and the tag is only consulted
 under mobile emulation — the page measures identically with or without it.
+
+**Fonts pass** — the page must not need the internet. Three assertions: every
+character in the source is inside the latin subset the `woff2` files were cut
+to; every `@font-face` loads with every non-`file://` request aborted, asked
+face by face with `FontFace.load()` rather than read off `.status`, which only
+tells you what the start screen happened to draw with; and no subresource is
+fetched from outside at all. The faces used to come from `fonts.googleapis.com`,
+and a face that does not arrive throws nothing — it falls back to a generic
+serif and sets some 12% narrower than every threshold below is calibrated
+against. This check had never seen it, because this check had always run with
+the network up.
 
 **Screens pass** — every screen the page has, and every state worth looking at,
 at five real device shapes: the start sheet, empty and after a hand; the table,
@@ -97,7 +108,14 @@ screens. Asserts exactly one screen is visible, no sideways
 scroll, no text below its size floor, no text clipped by a container that
 cannot scroll, no tap target under 32px, and no script or console errors.
 
-**Table pass** — the card table at all nineteen viewports in all five decks.
+One rule in the audit measures something that is not on the page: a `<select>`
+and its `<option>`s must paint an opaque background. The popup a select opens
+is drawn by the operating system, which takes the page's ink and not its
+ground, so a transparent select was ivory text on a white Windows menu — and
+nothing that measures a box can see a popup that is not in the document. The
+computed background is the only thing that decides it.
+
+**Table pass** — the card table at all nineteen viewports in all six decks.
 Asserts the trick never overlaps either hand, your hand is never below the
 fold, nothing overflows the table, no element runs past the screen edge, and
 the rows never drift apart. Then it

@@ -131,8 +131,20 @@ same word in both — is never the only thing asked.
 - Player-facing text is Italian. The about screen says the *rules* twice, once
   per language; its heading, its Back button and its footer line are Italian
   like everything else. Comments, commit messages and documents are English.
-- No build step and no runtime dependencies. `playwright-core` is for the UI
-  check only and is gitignored.
+- No build step and no runtime dependencies. Nothing under `public/` imports
+  anything, and the page opens from a folder. `playwright-core` is a dev
+  dependency of the UI check, pinned in `package.json` so CI and a local run
+  measure the page with the same browser; `node_modules` stays gitignored.
+  `mobile/` is packaging tooling and is not part of the game.
+- Nothing the page loads comes from the network. The fonts are the subset in
+  `public/fonts/`, and the check's `fonts` pass asserts that no subresource is
+  fetched from outside — the Google Fonts link it replaced set the wordmark 12%
+  narrower whenever it failed to load, silently, and made "nothing leaves the
+  device" untrue.
 - The card art is the original 1997 bitmaps, copied byte for byte from Discola.
   Do not redraw it and do not repack it. `tools/pack_cards.py` is carried over
   in case a deck is ever repacked, from the BMPs in `diegoami/briscola-JS`.
+  The sixth deck, Bresciane, is not 1997 art and says so wherever it is named;
+  `tools/import_bresciane.mjs` records where it comes from. The icon is a crop
+  of the Trevisane sheet, nearest-neighbour scaled by `tools/make_icons.mjs`,
+  because interpolation is redrawing by another name.

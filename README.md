@@ -2,7 +2,9 @@
 
 A two-player **Tressette a due** for the browser: one static page, no build
 step, no runtime dependencies, and the 1997 card art from
-[Discola](https://github.com/diegoami/discola-web) in five decks.
+[Discola](https://github.com/diegoami/discola-web) in five decks, plus a sixth.
+Nothing it draws with comes from the network — the fonts ship with the page —
+so it plays from a folder, or from an APK with the radio off.
 
 **Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
 
@@ -83,10 +85,16 @@ playing.
 ## Working on it
 
 ```sh
-node --test 'tools/**/*.test.mjs'   # 46 tests, no dependencies
-node tools/check_ui.mjs             # the UI check: needs playwright-core
+npm run setup                       # playwright-core and a Chromium, once
+npm test                            # 47 engine tests, no dependencies
+npm run check                       # the UI check: five passes
+npm start                           # public/ on http://localhost:8080
 node tools/selfplay.mjs             # the opponents against the baselines
 ```
+
+`playwright-core` is the only dependency and it is a dev one: it belongs to the
+check, not to the game. The dev server exists because `file://` is enough for
+the check but not for a real origin, which the Android wrapper needs.
 
 Both checks run in CI on every pull request, and a red one does not merge.
 **[`SPEC.md`](SPEC.md)** is the handover document: the architecture, the
@@ -100,6 +108,26 @@ The cards are the original bitmaps from the Delphi 3 **Discola** of 1997,
 copied byte for byte, in five decks: Trevisane, Piacentine, Napoletane,
 Romagnole and Francesi. The page and its stylesheet are forked from
 [`diegoami/discola-web`](https://github.com/diegoami/discola-web).
+
+A sixth deck, **Bresciane**, is not 1997 art. It is imported from
+[`mhamilt/Italian-decks`](https://github.com/mhamilt/Italian-decks) by
+`tools/import_bresciane.mjs`, which composes the source's per-card images into
+the same 11x4 sheet and writes `public/decks/bresciane.jpg` — a JPEG, not a
+PNG, because the source is photographic and lossless PNG of it runs to ~12 MB.
+Plainly: that repo is labelled GPLv3, but the images are a scan of a commercial
+Teodomiro Dal Negro deck — the asso di denari carries the maker's stamp. The
+same copyright grey area as the original art, and a deliberate choice rather
+than a surprise.
+
+The app icon is the tre di denari, cut from the Trevisane sheet by
+`tools/make_icons.mjs` and scaled nearest-neighbour, so every pixel of it is
+still a 1997 pixel.
+
+The typefaces are Bodoni Moda and Barlow, the latin subset, served from
+`public/fonts/`.
+
+There is an Android wrapper in `mobile/` — the same `public/` directory in an
+APK, no build step — described in [`ANDROID.md`](ANDROID.md).
 
 The opponent is this game's own. There was no 1997 Tressette to transcribe, so
 the formula was designed here and tuned by self-play.

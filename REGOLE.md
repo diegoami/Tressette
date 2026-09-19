@@ -69,6 +69,14 @@ poco.
 Il tallone dura dieci prese. Dopo, le mani si assottigliano soltanto, e la mano
 finisce dopo venti prese, quando entrambi sono a carte finite.
 
+**Finché c'è il tallone un vuoto non è per sempre, ed è la cosa che sembra un
+imbroglio.** Se l'avversario risponde al tuo bastoni con un altro seme, di
+bastoni non ne ha *in quel momento* — ma pesca dopo ognuna delle prime dieci
+prese, e alla nona può risponderti con un bastoni pescato alla settima. È
+regolare, e capita in circa una mano su tre. Dall'undicesima presa non si pesca
+più e un vuoto è definitivo: chi in quel momento è fuori da un seme ci resta
+fino alla fine della mano.
+
 ## Gli accusi
 
 Certe mani valgono punti prima ancora di giocare una carta. Si viene pagati per
@@ -102,6 +110,8 @@ Quattro cose, se non ci hai mai giocato:
 3. **Guarda cosa non riesce a rispondere.** Nel momento in cui qualcuno non
    risponde a colore, sai qualcosa di tutta la sua mano — e siccome non c'è
    briscola, un seme che non può rispondere è una presa che non può prendere.
+   Ricorda che finché c'è il tallone quel che sai scade, come sopra: vale di
+   più dall'undicesima presa in avanti, quando non si pesca più.
 4. **Conta fino all'ultima.** Vale un punto pieno, come un asso, e la decide la
    carta che tieni, non quella che giochi.
 

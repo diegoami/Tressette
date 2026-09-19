@@ -259,13 +259,21 @@ const SCREENS = [
       // trick — the one rule a player cannot do without. A rule missing from
       // both halves is not drift, so nothing that compares the halves can see
       // it; only a rule that names it can.
+      // Six, because a deal that was played looked like cheating: the opponent
+      // discarded on a led bastoni and two tricks later followed with one. It
+      // had drawn it — a void expires while the tallone lasts — and the screen
+      // somebody opens mid-hand to check that is this one. The rule is only
+      // useful with its other half, that a void after the tallone is
+      // permanent, which is why the probe asks for that half.
       const SAYS = {
         it: [['card order', /3, 2, asso/], ['declarations', /napoletana/],
              ['following suit', /a colore/], ['eleven points', /undici/],
-             ['trick-taking rule', /carta più alta/]],
+             ['trick-taking rule', /carta più alta/],
+             ['void the tallone can refill', /un vuoto è definitivo/]],
         en: [['card order', /3, 2, ace/], ['declarations', /napoletana/],
              ['following suit', /follow/], ['eleven points', /eleven/],
-             ['trick-taking rule', /highest card/]],
+             ['trick-taking rule', /highest card/],
+             ['void the tallone can refill', /a void is permanent/]],
       };
       const said = {};
       for (const lang of ['it', 'en']) {

@@ -619,3 +619,74 @@ test("Piero is rolled once per session, and the same roll twice is the same Pier
   }
   assert.equal(rolled.size, 7, "two sessions drew the same Piero: the roll is not rolling");
 });
+
+// Reported from a real deal: the opponent discarded on a led bastoni and two
+// tricks later played one. That is the tallone, not a rule break — for the
+// first ten tricks both players draw after every trick, so a void shown at
+// trick 3 says nothing about trick 9 — but nothing in this suite said so, and
+// "did the opponent just cheat?" deserves an answer that is checked rather
+// than argued.
+//
+// The check does not trust `state.perPrimo`. The led card is whatever is
+// already on the table when a player acts, whoever put it there: if perPrimo
+// were ever wrong, gioca's own legality test would be asking the wrong
+// question and would let an off-suit card through without throwing, which is
+// exactly the defect this names. Asking the position directly is the only way
+// to see that.
+test("it follows suit whenever it holds the led suit, and the tallone is why it can look otherwise", () => {
+  const profiles = rollProfiles(rngSeed(1));
+  let following = 0, drewBackIn = 0, dryVoids = 0;
+
+  for (const who of Object.keys(profiles)){
+    for (let seed = 1; seed <= 30; seed++){
+      const state = newDeal({ hands: [], partitaPrimo: seed % 2 ? BASSO : ALTO }, rngSeed(seed * 7919));
+      // Voids each seat has actually shown, by this test's own bookkeeping,
+      // and which of them were shown with the tallone already empty.
+      const shown = [[false, false, false, false], [false, false, false, false]];
+      const dry = [new Set(), new Set()];
+
+      while (!state.over){
+        const me = state.deveGiocare;
+        const other = me === BASSO ? ALTO : BASSO;
+        const led = state.played[other];
+        const hand = state.hands[me].filter(Boolean);
+        const drawsLeft = state.next < state.cards.length;
+        const slot = compGioca(state, profiles[who]);
+        const played = state.hands[me][slot];
+
+        if (led){
+          if (hand.some(c => c.s === led.s)){
+            following++;
+            assert.equal(played.s, led.s,
+              `${who}, seed ${seed}, trick ${state.tricks + 1}: led ${name(led)}, ` +
+              `played ${name(played)} holding ${hand.filter(c => c.s === led.s).map(name).join(", ")}`);
+          } else {
+            shown[me][led.s] = true;
+            if (!drawsLeft) dry[me].add(led.s);
+          }
+        } else if (shown[me][played.s]){
+          // It led a suit it had shown void in: it drew one. This is the thing
+          // that looks like cheating and is not, and it has to keep happening
+          // or the count below would be asserting nothing.
+          drewBackIn++;
+        }
+
+        // A void shown with the tallone empty is permanent — no card can reach
+        // that hand any more — so holding that suit again would be a real
+        // defect rather than the draw explaining it away.
+        if (dry[me].has(played.s))
+          assert.fail(`${who}, seed ${seed}, trick ${state.tricks + 1}: played ${name(played)} ` +
+            `after showing void in ${SUITS[played.s]} with the tallone already empty`);
+
+        gioca(state, me, slot);
+      }
+      dryVoids += dry[BASSO].size + dry[ALTO].size;
+    }
+  }
+
+  assert.ok(following > 1500, `only ${following} decisions where the suit could be followed`);
+  assert.ok(drewBackIn > 10,
+    `a void was drawn back into only ${drewBackIn} times — either the tallone stopped ` +
+    `being dealt from, or this test is no longer watching the thing it was written for`);
+  assert.ok(dryVoids > 10, `only ${dryVoids} voids shown after the tallone ran out`);
+});

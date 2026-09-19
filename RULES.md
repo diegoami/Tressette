@@ -98,7 +98,10 @@ Four things, if you have never played:
    later.
 3. **Watch what they cannot follow.** The moment someone fails to follow a
    suit, you know something about their whole hand — and because there is no
-   trump, a suit they cannot follow is a trick they cannot take.
+   trump, a suit they cannot follow is a trick they cannot take. **While the
+   tallone lasts, that knowledge expires**: they draw a card after every trick,
+   so a suit they were void in at trick 3 may be back in their hand at trick 9.
+   From the eleventh trick nothing is drawn and a void is permanent.
 4. **Count to the last trick.** It is worth a whole point, as much as an asso,
    and it is decided by which card you keep, not by which you play.
 

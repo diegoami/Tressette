@@ -102,6 +102,9 @@ Quattro cose, se non ci hai mai giocato:
 3. **Guarda cosa non riesce a rispondere.** Nel momento in cui qualcuno non
    risponde a colore, sai qualcosa di tutta la sua mano — e siccome non c'è
    briscola, un seme che non può rispondere è una presa che non può prendere.
+   **Finché c'è il tallone, però, quel che sai scade**: si pesca dopo ogni
+   presa, e un seme che mancava alla terza presa può essere tornato in mano
+   alla nona. Dall'undicesima non si pesca più e un vuoto è definitivo.
 4. **Conta fino all'ultima.** Vale un punto pieno, come un asso, e la decide la
    carta che tieni, non quella che giochi.
 

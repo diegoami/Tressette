@@ -57,6 +57,7 @@ function table({ alto, basso, led = null, gone = [], tricks = 0, tallone = [],
     hands: [basso.slice(), alto.slice()],
     played, terzi: [0, 0],
     voids: [[false, false, false, false], [false, false, false, false]],
+    voidAt: [[-1, -1, -1, -1], [-1, -1, -1, -1]],
     seen: [], accusi: [[], []], detti: [true, true],
     tricks, over: false,
     perPrimo: led ? BASSO : ALTO,
@@ -413,6 +414,71 @@ test("the ultima is worth three terzi, not one and not six", () => {
     tricks: 16, endgame: true
   });
   chooses(tooDear, card(1, 2), "priced at three, the due di coppe takes this trick");
+});
+
+// The inference this game is played on, and the one that expires. A player who
+// cannot follow says so publicly — and then draws, and the card is unknown, so
+// what they said stops being certain. The opponent used to believe it whole
+// for the rest of the deal: 72% of the leads that scored a suit as "they
+// cannot take this" were scoring a void the drawer had already had a chance to
+// fill (552 of 764, over 480 deals).
+//
+// Dropping it on the first draw was measured and is worse — 46.9% of 800
+// mirrored games against believing it whole, because one unknown card rarely
+// fills a suit. So it decays instead: p is the chance no card they drew since
+// was of that suit, the eleventh weight is multiplied by it, and there is no
+// twelfth.
+test("a void decays as they draw, and is permanent once the tallone is empty", () => {
+  const state = newDeal({ hands: [], partitaPrimo: BASSO }, rngSeed(169 * 7919));
+
+  // Shown this instant: nothing has been drawn since, so it is worth all of it.
+  state.voids[ALTO][3] = true;
+  state.voidAt[ALTO][3] = state.next;
+  assert.equal(stillVoid(state, fuori(state, BASSO), ALTO, 3), 1,
+    "a void shown with no draw since is certain");
+
+  // Four cards out of the tallone, two of them theirs: p is the chance neither
+  // was that suit, so it is below 1 and above 0, and falls as they draw again.
+  const before = state.next;
+  state.next += 4;
+  const two = stillVoid(state, fuori(state, BASSO), ALTO, 3);
+  state.next += 4;
+  const four = stillVoid(state, fuori(state, BASSO), ALTO, 3);
+  assert.ok(two < 1 && two > 0, `two draws left p at ${two}`);
+  assert.ok(four < two, `four draws (${four}) has to be worth less than two (${two})`);
+  state.next = before;
+
+  // And the half that makes the other half worth having: past the tallone
+  // state.next stops moving, so a void shown then is permanent.
+  const dry = newDeal({ hands: [], partitaPrimo: BASSO }, rngSeed(169 * 7919));
+  dry.next = dry.cards.length;
+  dry.voids[ALTO][3] = true;
+  dry.voidAt[ALTO][3] = dry.next;
+  assert.equal(stillVoid(dry, fuori(dry, BASSO), ALTO, 3), 1,
+    "with nothing left to draw, a void is a void for the rest of the deal");
+
+  // It changes a play, which is the point of it. This deal reaches trick ten
+  // with BASSO to lead and ALTO shown out of spade and bastoni; believing that
+  // whole leads the due di spade into the void, while the same position with
+  // the same voids shown five draws earlier leads the due di bastoni instead.
+  const P = rollProfiles(rngSeed(1)).Franco;
+  const deal = newDeal({ hands: [], partitaPrimo: BASSO }, rngSeed(169 * 7919));
+  while (!(deal.tricks === 9 && deal.deveGiocare === deal.perPrimo))
+    gioca(deal, deal.deveGiocare, compGioca(deal, P));
+  assert.equal(deal.deveGiocare, BASSO, "the position is BASSO's to lead");
+  assert.deepEqual(deal.voids[ALTO], [false, false, true, true],
+    "and ALTO has shown out of spade and bastoni");
+
+  const clone = () => JSON.parse(JSON.stringify(deal));
+  const fresh = clone(), stale = clone();
+  for (const suit of [2, 3]){
+    fresh.voidAt[ALTO][suit] = fresh.next;        // shown this trick
+    stale.voidAt[ALTO][suit] = stale.next - 10;   // shown five of their draws ago
+  }
+  const fromFresh = deal.hands[BASSO][compGioca(fresh, P)];
+  const fromStale = deal.hands[BASSO][compGioca(stale, P)];
+  assert.deepEqual(fromFresh, { s: 2, n: 2 }, "a fresh void is led into: the due di spade");
+  assert.deepEqual(fromStale, { s: 3, n: 2 }, "a decayed one is not: the due di bastoni");
 });
 
 test("the transposition table changes the speed and not the answer", () => {

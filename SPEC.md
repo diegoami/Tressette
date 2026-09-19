@@ -96,6 +96,15 @@ re-recorded in the same commit:
 node tools/selfplay.mjs --golden > tools/golden.json
 ```
 
+It has been re-recorded once since v1.0, for issue #21: `voids` claimed a
+certainty that a draw had already expired — 72% of the leads that scored on one
+were stale — and the term is now scaled by the chance the void survived the
+draws since. Three 800-deal matches decided the shape of the fix over the one
+the issue proposed, and PLAN.md's "the void that had stopped being true" holds
+the numbers. That is the bar for moving the formula again: measured against
+what it replaces, decided by the owner, and the fixture re-recorded in the
+commit that moves it.
+
 ## 4. The rules as implemented
 
 `RULES.md` (English) and `REGOLE.md` (Italian) state them for a player. The

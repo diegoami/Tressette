@@ -247,6 +247,9 @@ partitaPrimo       who leads the next deal; BASSO on a cold start, then alternat
 tricks             tricks completed this deal, 0..20
 seen[]             what the opponent has seen: its own draws, every card played
 voids[2][4]        suits a player has shown they cannot follow
+voidAt[2][4]       where the tallone stood when each of those was shown, so
+                   the opponent can weigh a void by how much they have drawn
+                   since; -1 is "never shown"
 selected           the slot you have raised but not yet played (§3.7)
 over, dealt, cheat
 opponent, deck, felt, speed, showPoints, sound   settings
@@ -276,7 +279,20 @@ and the opponent's own hand:
   sure and the 7 of bastoni is not, because the Re, Cavallo and Fante still
   beat it.
 - `voids[BASSO][suit]`: the human failed to follow this suit. This is the
-  inference Tressette is played on; Briscola never had it.
+  inference Tressette is played on; Briscola never had it — and while the
+  tallone lasts it is a fact with a shelf life, because every card they draw
+  afterwards may be the suit they just showed out of. It is not dropped on the
+  first draw and not believed whole either: `voidAt` records when it was
+  shown, and the term is scaled by
+
+  ```
+  p = (1 − unseen of that suit / unseen)^(draws they have taken since)
+  ```
+
+  which is 1 the moment it is shown and decays toward nothing. Past the
+  tallone nothing is drawn, p stays 1, and a void is permanent — which is
+  where this term does most of its work, and is the same rule a player is told
+  on the about screen.
 
 **Leading** — the question is which suit to open and how high.
 
@@ -287,7 +303,7 @@ liscio (v == 0):      score += LEAD_LISCIO_BONUS
                       score += (cards held in s − 1) × LEAD_LONG_SUIT
 asso not sure:        score −= LEAD_ACE_EXPOSED_PENALTY × |controls(s) above the asso|
 3 or 2, not sure:     score −= LEAD_CONTROL_PENALTY × k
-voids[BASSO][s]:      score −= LEAD_INTO_VOID_PENALTY      (they discard for free)
+voids[BASSO][s]:      score −= LEAD_INTO_VOID_PENALTY × p  (p: still void, above)
 ```
 
 **Following** — the question is whether the trick is worth what it costs.
@@ -413,7 +429,7 @@ formula freezes.
 | LEAD_LONG_SUIT | prefer the suit you hold most of |
 | LEAD_ACE_EXPOSED_PENALTY | do not lead an asso while its 3 or 2 are out |
 | LEAD_CONTROL_PENALTY | do not waste a 3 or 2 that is not yet sure |
-| LEAD_INTO_VOID_PENALTY | do not feed a suit they have shown void |
+| LEAD_INTO_VOID_PENALTY | do not feed a suit they have shown void, scaled by how likely it still is |
 | TAKE_TERZI_WEIGHT | value of points captured |
 | GIVE_TERZI_WEIGHT | cost of points handed over |
 | SPEND_CONTROL_PENALTY | cost of using a 3 or 2 on a cheap trick |
@@ -1517,6 +1533,54 @@ and no emulator image on this machine, and the offline behaviour an APK exists
 to have is asserted by the fonts pass rather than observed. `ANDROID.md` says
 so, and says which of the remaining steps are the owner's because they are a
 secret or are outward-facing.
+
+### After it shipped — the void that had stopped being true
+
+Issue #21, and the first change to the opponent since v1.0. It began as a
+player's question — the opponent discarded on a led bastoni and two tricks
+later played one, which looks exactly like cheating — and the rules answer
+that one: the tallone refills a hand, and the answer is now on the about
+screen in both languages. The machine's half took longer, because the machine
+was making the same mistake against the player.
+
+`state.voids` was set when someone failed to follow and never cleared. The
+opponent read it as current fact and led into that suit believing the trick
+was free. Measured on the shipped engine over 480 deals: of 764 leads that
+scored on a void, **552 — 72% — were stale**, the player having drawn since.
+
+**The fix the issue asked for makes it play worse, and that is why this is
+written down.** Dropping the void on the first draw is correct in the strict
+sense and loses: 800 mirrored deals, the strict version against the shipped
+one, **46.9%**, −0.24 points a deal. One unknown card rarely fills a suit, so
+the stale flag was a decent guess and throwing it away costs more than the
+occasional wrong lead.
+
+So the flag decays instead of expiring. `voidAt` records where the tallone
+stood when the void was shown, and the eleventh weight is multiplied by the
+chance that no card drawn since was that suit. Three matches, Franco, 800
+mirrored deals each:
+
+| | wins | points/deal |
+|---|---|---|
+| believing it whole (shipped) vs dropping it on a draw | 53.1% | 6.17 vs 5.93 |
+| decaying vs dropping it on a draw | 53.1% | 6.16 vs 5.94 |
+| **decaying vs believing it whole** | **49.8% ± 3.5** | 6.04 vs 6.06 |
+
+The last row is the one that decided it: the decay plays the same game as the
+version that claimed certainty — they differ in 58 deals out of 800 — while
+never claiming it. Strength was not the argument for the change; it was the
+price the change was not allowed to charge.
+
+**No twelfth weight.** p multiplies the eleventh, and is computed from what
+the engine already knows — `fuori`, the set of cards not played and not mine.
+§3.4 still names eleven and the settings sheet still shows eleven.
+
+**The golden fixture was re-baselined**, the first time since it was frozen:
+6 of its 60 deals and 332 of its 9,540 plays changed. That is the fixture
+doing its job rather than failing — it exists to make a change to the
+opponent visible, and the rule in `CLAUDE.md` is that the formula does not
+move without the owner deciding it should. This one was measured three ways
+first and decided by the owner on the numbers.
 
 ## 5. Out of scope, deliberately
 

@@ -6,6 +6,29 @@
 [build]
   publish = "public"
 
+# The self-hosted fonts are a subset cut once and never edited; like the decks
+# they never change while they keep their names, so cache them hard too.
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The icons are cut from a deck sheet and change as rarely.
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# The Android build. /android points at the latest GitHub release rather than a
+# versioned asset URL, so the link survives every release; the release page also
+# carries the notes and the checksum, which is where somebody about to sideload
+# an APK should land. Built and published outside Netlify — see ANDROID.md.
+[[redirects]]
+  from = "/android"
+  to = "https://github.com/diegoami/tressette-releases/releases/latest"
+  status = 302
+  force = true
+
 # The deck sprite sheets are the original 1997 bitmaps and never change once a
 # deck is packed, so they can be cached hard. The page itself must not be, or
 # players keep an old build after a deploy.

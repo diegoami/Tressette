@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12 (API 31) and higher.
+
+  `android:allowBackup="false"` disables cloud backup, but on devices from some
+  manufacturers it does not disable device-to-device migration. This is the
+  attribute that does, so the app's data is excluded from both here explicitly
+  (issue #24). The WebView localStorage that holds the settings and the match
+  history is app-private data; none of it belongs on another device or in a
+  backup.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

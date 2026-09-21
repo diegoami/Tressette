@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runInThisContext } from "node:vm";
 import { fileURLToPath } from "node:url";
+import { gammaStillVoid } from "./forgetting_lib.mjs";
 
 runInThisContext(readFileSync(
   fileURLToPath(new URL("../public/engine.js", import.meta.url)), "utf8"));
@@ -62,4 +63,28 @@ test("gamma=1 reproduces the shipped decision exactly", () => {
     Math.pow(ORIGINAL(state, still, who, suit), 1);
   for (let seed = 1; seed <= 20; seed++)
     assert.equal(plays(seed, identity), plays(seed, ORIGINAL));
+});
+
+test("the infinite gamma is the binary limit, not Math.pow", () => {
+  // The defect this guards: Math.pow(1, Infinity) is NaN, and stillVoid returns
+  // exactly 1 for a fresh void and for a permanent post-tallone one. The plain
+  // power therefore returned NaN for the voids that are certainly still there —
+  // poisoning `score -= LEAD_INTO_VOID_PENALTY * p` and losing the candidate for
+  // reasons unrelated to the rule.
+  assert.ok(Number.isNaN(Math.pow(1, Infinity)), "the trap is real");
+
+  const returns = v => () => v;
+  const at = (value, gamma) =>
+    gammaStillVoid(gamma, returns(value))({}, null, 0, 0);
+
+  // p === 1 (permanent, or fresh): kept whole.
+  assert.equal(at(1, Infinity), 1);
+  // anything below one: dropped, and never NaN.
+  for (const p of [0, 0.5, 0.999, 1e-9])
+    assert.equal(at(p, Infinity), 0, `p=${p} must drop, not NaN`);
+
+  // finite gammas stay the plain power, and gamma 1 is the original function.
+  assert.equal(at(0.25, 2), 0.0625);
+  const original = returns(0.3);
+  assert.equal(gammaStillVoid(1, original), original);
 });

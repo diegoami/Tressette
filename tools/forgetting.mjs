@@ -20,6 +20,7 @@
 //
 //   node tools/forgetting.mjs 500            Franco, seeds 1..500 mirrored
 //   node tools/forgetting.mjs 500 --roster   every fixed profile
+//   node tools/forgetting.mjs --validate 800 #29's strict-vs-whole anchor
 //   SEED_FROM=5001 node tools/forgetting.mjs 500
 //
 // The protocol is tools/selfplay.mjs's: each seed is played from both seats, the
@@ -28,11 +29,14 @@
 // difference.
 
 import { readFileSync } from "node:fs";
-import { runInThisContext } from "node:vm";
+import { runInThisContext, runInContext, createContext } from "node:vm";
 import { fileURLToPath } from "node:url";
+import { gammaStillVoid } from "./forgetting_lib.mjs";
 
-runInThisContext(readFileSync(
-  fileURLToPath(new URL("../public/engine.js", import.meta.url)), "utf8"));
+const ENGINE_SRC = readFileSync(
+  fileURLToPath(new URL("../public/engine.js", import.meta.url)), "utf8");
+
+runInThisContext(ENGINE_SRC);
 
 const { BASSO, ALTO, terzi, prende, mosseLegali, rngSeed, newDeal, gioca,
         scoreDeal, rollProfiles, compGioca, CODA_FROM } = globalThis;
@@ -41,13 +45,38 @@ const PROFILES = rollProfiles(rngSeed(1));
 const ORIGINAL_STILL_VOID = globalThis.stillVoid;
 
 // gamma === 1 is a no-op wrapper on purpose: the control row then measures the
-// shipped engine through the same call path as every other row.
+// shipped engine through the same call path as every other row. The wrapper has
+// one trap — `Math.pow(1, Infinity)` is NaN, and stillVoid returns exactly 1 for
+// the permanent voids — and it is handled, and asserted, in forgetting_lib.mjs.
 function setGamma(gamma){
-  globalThis.stillVoid = gamma === 1 ? ORIGINAL_STILL_VOID
-    : (state, still, who, suit) => {
-        const p = ORIGINAL_STILL_VOID(state, still, who, suit);
-        return Math.pow(p, gamma);
-      };
+  globalThis.stillVoid = gammaStillVoid(gamma, ORIGINAL_STILL_VOID);
+}
+
+// A second, isolated copy of the engine whose stillVoid is wrapped with a fixed
+// gamma and never touched again. This is what lets a variant play the shipped
+// engine head-to-head: the global swap cannot, because both seats share the one
+// stillVoid. The isolated copy reads the same plain state objects the global
+// `gioca` mutates, so the two engines play each other on one deal.
+// A fresh context per gamma kept every engine copy alive, and a roster run
+// (three profiles x eight gammas) died in the endgame search. So the experiment
+// uses one context per place it needs an engine: one for a sweep's head-to-head
+// rows (its opponent is the global engine, so it can be re-wrapped per gamma),
+// and two for a policy-vs-policy anchor. The engine holds no cross-deal state.
+// The pristine stillVoid is stashed first, so a wrap never wraps a previous one.
+function isolatedContext(){
+  const ctx = createContext({});
+  runInContext(ENGINE_SRC, ctx);
+  runInContext("globalThis.__shippedStillVoid = stillVoid;", ctx);
+  return ctx;
+}
+
+function wrapStillVoid(ctx, gamma){
+  runInContext(
+    `stillVoid = (function(orig){ return function(state, still, who, suit){
+       var p = orig(state, still, who, suit);
+       return ${gamma === Infinity ? "(p === 1 ? 1 : 0)" : `Math.pow(p, ${gamma})`};
+     }; })(globalThis.__shippedStillVoid);`, ctx);
+  return ctx.compGioca;
 }
 
 /* ---- the same baselines as tools/selfplay.mjs ------------------------------ */
@@ -124,15 +153,16 @@ const LABEL = { 0: "believe whole", 1: "shipped decay", Infinity: "drop on first
 
 function sweep(name, n){
   const P = PROFILES[name];
-  const variant = profile(P);
-  const base = profile(P);
+  const base = profile(P);          // global engine, always gamma 1
+  const variant = profile(P);       // global engine, whatever gamma is set
+  const shipped = profile(P);       // global engine, forced to gamma 1 for h2h
+  const isoCtx = isolatedContext(); // one isolated engine, re-wrapped per gamma
 
   console.log(`\n${name}, ${n} seeds mirrored (${2 * n} deals a row)` +
               `, seeds ${SEED_FROM}..${SEED_FROM + n - 1}`);
-  console.log(`  gamma   meaning                 vs greedy        vs random        pts/deal  differs from gamma=1`);
+  console.log(`  gamma   meaning                 vs greedy        vs random` +
+              `        pts/deal  differs from gamma=1   head-to-head vs shipped`);
 
-  // Baseline first, with the shipped engine, so "differs" is against exactly
-  // what ships, not against a wrapper that happens to return the same numbers.
   setGamma(1);
 
   for (const gamma of GAMMAS){
@@ -150,23 +180,54 @@ function sweep(name, n){
     setGamma(gamma);
     const g = match(n, variant, greedyTake, watch);
     const r = match(n, variant, randomLegal);
+
+    // Head-to-head: an isolated variant against the shipped opponent. The global
+    // engine must read gamma 1 for the shipped seat, hence the isolated copy.
     setGamma(1);
+    const iso = wrapStillVoid(isoCtx, gamma);
+    const h = match(n, state => iso(state, P), shipped);
+
     const gr = g.wins / g.deals;
+    const hr = h.wins / h.deals;
     const label = LABEL[gamma] ?? "";
     console.log(
       `  ${String(gamma).padStart(6)}  ${label.padEnd(22)}` +
       `${pct(gr).padStart(6)} ± ${(100 * floor95(gr, g.deals)).toFixed(1)}`.padEnd(18) +
       `${pct(r.wins / r.deals).padStart(6)}`.padEnd(17) +
       `${(g.points / g.deals).toFixed(2)}`.padEnd(10) +
-      `${pct(total ? differs / total : 0).padStart(6)}  (${differs} of ${total})`);
+      `${pct(total ? differs / total : 0).padStart(6)}  (${differs} of ${total})`.padEnd(28) +
+      `${pct(hr).padStart(6)} ± ${(100 * floor95(hr, h.deals)).toFixed(1)}`);
   }
+}
+
+/* ---- anchor against #29 ---------------------------------------------------- */
+
+// #29 measured the strict fix against the version that believed the void whole:
+// 46.9% over 800 mirrored deals. Reproducing that number through this seam is
+// what says the isolated engine and the binary limit are right, rather than
+// merely plausible. Both seats are Franco; only the void policy differs.
+function validate(n){
+  const P = PROFILES.Franco;
+  const strict = wrapStillVoid(isolatedContext(), Infinity);
+  const whole  = wrapStillVoid(isolatedContext(), 0);
+  const r = match(n, state => strict(state, P), state => whole(state, P));
+  console.log(`\nvalidate: strict (gamma=inf) vs believe-whole (gamma=0), Franco, ` +
+              `${n} seeds mirrored (${2 * n} deals)\n`);
+  console.log(`  strict wins ${pct(r.wins / r.deals)} ± ${(100 * floor95(r.wins / r.deals, r.deals)).toFixed(1)}` +
+              `   won ${r.wins} lost ${r.losses} drew ${r.draws}` +
+              `   ${(r.points / r.deals).toFixed(2)} points/deal`);
+  console.log(`  #29 reported 46.9% for this match over 800 deals.`);
 }
 
 /* ---- run ------------------------------------------------------------------- */
 
 const argv = process.argv.slice(2).filter(a => a !== "--roster");
-const n = Number(argv[0] ?? 500);
-const roster = process.argv.includes("--roster");
 
-const names = roster ? ["Franco", "Valerio", "Graziano"] : ["Franco"];
-for (const name of names) sweep(name, n);
+if (argv[0] === "--validate"){
+  validate(Number(argv[1] ?? 800));
+} else {
+  const n = Number(argv[0] ?? 500);
+  const roster = process.argv.includes("--roster");
+  const names = roster ? ["Franco", "Valerio", "Graziano"] : ["Franco"];
+  for (const name of names) sweep(name, n);
+}

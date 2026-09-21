@@ -86,10 +86,11 @@ everything external cut off. Dropping the line is the kind of change that can
 only be verified by installing the result and watching it either work or show a
 blank white screen, so it waits for a device; it is in §7.
 
-Not done on this machine, and why: **no device and no emulator image**, so the
-APK has not been launched. The offline behaviour it would be launched to check
-is what the `fonts` pass asserts with every non-`file://` request aborted, but
-that is an argument, not a run. First install is the owner's.
+Not done on this machine, and why: **no device and no emulator image here**, so
+the APK was not launched during development. The offline behaviour it would be
+launched to check is what the `fonts` pass asserts with every non-`file://`
+request aborted, but that is an argument, not a run. The owner did the install
+on a phone, at v1.0.0; §6 is where that stands.
 
 ## 3. Signing
 
@@ -179,16 +180,21 @@ deploy, to produce an artifact that changes only at release time.
 
 ## 6. What is left
 
-v1.0.0 is out: **<https://github.com/diegoami/tressette-releases/releases/tag/v1.0.0>**,
-signed, verified, 6.4 MB, with `SHA256SUMS.txt` beside it. **It installs and
-runs** — the owner sideloaded it and played, which is step 4 below and the one
-thing no check here could answer.
+**This section is the release-status source of truth.** `SPEC.md` §10 links
+here rather than restating it.
 
-`versionName` is **1.0.2** / `versionCode 3` now: 1.0.1 was the icon, 1.0.2 is
-the about screen saying that a void can be drawn back into. A version
-identifies what is inside the APK, so a build that differs from a published one
-takes its own number rather than re-using a tag, and `versionCode` only ever
-increases.
+Releases **v1.0.0, v1.0.1 and v1.0.2** are published at
+<https://github.com/diegoami/tressette-releases>, each signed, verified and with
+`SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
+it and played, which is step 4 below and the one thing no check here could
+answer. 1.0.1 was the icon; 1.0.2 was the about screen saying that a void can be
+drawn back into.
+
+`versionName` is **1.0.2** / `versionCode 3` in `app/build.gradle`, matching the
+newest published tag: a version identifies what is inside the APK, so a build
+that differs from a published one takes its own number rather than re-using a
+tag, and `versionCode` only ever increases. The next release, **v1.0.3**, is
+tracked in issue #30.
 
 | # | Step | Whose | |
 |---|---|---|---|
@@ -204,12 +210,12 @@ Windows path needs forward slashes or doubled backslashes; and GitHub will not
 create a release on a repository with no commits — the releases repo needed its
 README pushed before the first `--confirm` could work.
 
-**Step 4 is the one that matters now.** Nothing in this project has ever
-launched the APK. What an install checks is that the WebView accepts the
-`http://localhost` origin Capacitor serves the page over; if it does not, the
-symptom is a blank white screen rather than an error, and nothing here can see
-it. A bad build is replaced by bumping `versionCode` and `versionName` and
-cutting v1.0.1 — a tag is never re-used.
+The one device-only question still open is in §7: whether
+`android.permission.INTERNET` can be dropped. The blank-screen question it is
+usually asked with is answered — step 4 played a hand in the app, so the WebView
+accepts the `http://localhost` origin Capacitor serves the page over. A bad build
+is replaced by bumping `versionCode` and `versionName` and cutting a new tag; a
+tag is never re-used.
 
 ## 7. Still open
 

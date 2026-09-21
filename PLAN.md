@@ -1528,11 +1528,12 @@ is a list of *its* defects: the reconciliation is checking, not copying.
 
 **And the packaging, which the fonts had been blocking.** Capacitor wraps
 `public/` unchanged — no build step, `webDir` is the directory Netlify serves —
-and a debug APK builds at 7.4 MB. It has not been launched: there is no device
-and no emulator image on this machine, and the offline behaviour an APK exists
-to have is asserted by the fonts pass rather than observed. `ANDROID.md` says
-so, and says which of the remaining steps are the owner's because they are a
-secret or are outward-facing.
+and a debug APK builds at 7.4 MB. At that point it had not been launched: there
+was no device and no emulator image on this machine, and the offline behaviour
+an APK exists to have is asserted by the fonts pass rather than observed.
+`ANDROID.md` says so, and says which of the remaining steps are the owner's
+because they are a secret or are outward-facing. (It has since been launched;
+`ANDROID.md` §6 is where that stands.)
 
 ### After it shipped — the void that had stopped being true
 

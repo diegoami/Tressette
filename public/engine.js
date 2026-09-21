@@ -692,8 +692,7 @@ function coda(state, me){
 
 // §3.4. Score every legal card and play the highest, ties to the lowest slot —
 // except from CODA_FROM on, the last seven tricks, which are enumerated
-// instead. (It was the last two when this line was written; CODA_FROM moved to
-// 13 in iteration 2 and this comment did not follow it.)
+// instead.
 function compGioca(state, P){
   const me = state.deveGiocare;
 

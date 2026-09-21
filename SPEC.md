@@ -391,9 +391,14 @@ part worth carrying to another project:
 - **The Bresciane deck is not cleanly licensed.** It is a scan of a commercial
   Dal Negro deck — the same copyright grey area as the original art, a
   deliberate choice, documented in the README and in the import script.
-- **The APK has been built but never launched.** There is no device and no
-  emulator image on the machine it was built on; `ANDROID.md` §6 says what is
-  left, and the signing key and the releases repo are the owner's to make.
+- **The APK is live, and has been installed once, at v1.0.0.** v1.0.0, v1.0.1
+  and v1.0.2 are published at `diegoami/tressette-releases`, signed and
+  checksummed; the owner sideloaded v1.0.0 and played a hand. The one
+  device-only question that remains — whether
+  `android.permission.INTERNET` can be dropped — is in `ANDROID.md` §6 and §7,
+  which is the release-status source of truth. The blank-screen question it is
+  usually asked with was answered at v1.0.0, when the hand was played over the
+  `http://localhost` origin.
 
 ## 11. Provenance
 

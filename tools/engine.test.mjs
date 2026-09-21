@@ -224,6 +224,7 @@ function position({ hands, perPrimo = BASSO, tallone = [] }){
     played: [null, null],
     terzi: [0, 0],
     voids: [[false, false, false, false], [false, false, false, false]],
+    voidAt: [[-1, -1, -1, -1], [-1, -1, -1, -1]],
     seen: [], accusi: [[], []], detti: [true, true],
     tricks: 0, over: false,
     perPrimo, deveGiocare: perPrimo, partitaPrimo: BASSO

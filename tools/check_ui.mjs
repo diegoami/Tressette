@@ -417,6 +417,25 @@ const SCREENS = [
     // perfectly good screen, and the audit has nothing to object to.
     check: () => document.querySelector('#confirmScrim').hidden
       ? ['the confirm did not open over a deal in play'] : [] },
+  // Issue #39, adopted from Discola's 3be2dcf. abandon() cancels the queued
+  // timers, and the deal must stop counting as in play: `back()` reads
+  // state.dealt to choose between the table and the start sheet, so if discard()
+  // forgets to clear it, Back from a sheet walks into the dead table — playable
+  // if it was your turn, stalled if an opponent timer was cancelled. The code is
+  // right today; this is the row that keeps it right.
+  { name: 'the start sheet after abandoning', open: async p => {
+      await p.click('#play');
+      await p.click('#btnSettings');
+      await p.click('#changeOpponent');
+      await p.click('#confirmYes');
+      await p.click('#viewStart [data-nav="settings"]');
+      await p.click('#viewSettings [data-back]');
+    },
+    check: () => {
+      const start = document.querySelector('#viewStart');
+      return start && !start.hidden ? []
+        : ['Back after abandoning landed on the table, not Start'];
+    } },
   { name: 'the result, with declarations', open: async p => {
       await p.click('#play');
       // The dialog at its longest: both players declaring, which is where the

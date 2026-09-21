@@ -71,9 +71,10 @@ at five real device shapes: the start sheet, empty and after a hand; the table,
 the table with a card raised, the table with the longest declaration the game
 can say and the table with the opponent's hand face up; settings with the
 weights disclosure open; history empty, at its hundred-hand cap, and holding
-entries some other build wrote; about; the abandon confirm; and the result
-dialog three ways — with both players declaring, reached from a sheet, and
-reached over the confirm.
+entries some other build wrote; about; the abandon confirm; the start sheet
+after abandoning, reached by abandoning a hand and pressing Back out of a sheet;
+and the result dialog three ways — with both players declaring, reached from a
+sheet, and reached over the confirm.
 
 **The about screen is the one that is read**, so it carries the rules in
 Italian and in English, and its row asserts both halves rather than the page as
@@ -221,6 +222,7 @@ shipped — in Discola, which is the same table and the same budget:
 | the trick still shows the trick before it | a play that lands before the sweep has run cancels it — `later` owns one timer and you are on turn the moment you win a trick — so the table went on painting the previous trick, sixteen plays in twenty |
 | the abandoned deal left its sweep behind | the sweep's classes animate `both` and their removal was a queued callback, so a deal thrown away mid-sweep painted every later trick transparent |
 | the new-hand button landed on start | discarding a deal went to the start sheet and then dealt a new one behind it, live, with the opponent leading into a table nobody could see |
+| Back after abandoning walked into the dead table | `abandon()` cancelled the queued timers but left the deal counting as in play, so `back()` returned to a table that was playable if it was your turn and stalled if an opponent timer had been cancelled |
 | a card was played through the abandon dialog | the card keys only checked the screen, and a dialog is a scrim over the table — `Enter` answered the dialog *and* played the raised card |
 | the result opened over a sheet | the result dialog ignored what was on screen, so it landed over the history, which still said no hand had ever been played |
 | the history has no way to clear itself | one entry written by another build threw mid-render and took the log and the wipe button with it |

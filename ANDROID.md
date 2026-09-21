@@ -199,18 +199,24 @@ deploy, to produce an artifact that changes only at release time.
 **This section is the release-status source of truth.** `SPEC.md` §10 links
 here rather than restating it.
 
-Releases **v1.0.0, v1.0.1 and v1.0.2** are published at
+Releases **v1.0.0, v1.0.1 and v1.0.2** are already published at
 <https://github.com/diegoami/tressette-releases>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
 answer. 1.0.1 was the icon; 1.0.2 was the about screen saying that a void can be
 drawn back into.
 
-`versionName` is **1.0.2** / `versionCode 3` in `app/build.gradle`, matching the
-newest published tag: a version identifies what is inside the APK, so a build
-that differs from a published one takes its own number rather than re-using a
-tag, and `versionCode` only ever increases. The next release, **v1.0.3**, is
-tracked in issue #30.
+`versionName` is **1.0.3** / `versionCode 4` in `app/build.gradle`. This release
+puts Settings, history and the bilingual rules on the start screen; lets a
+reported void decay as cards are drawn; keeps settings and match history out of
+Android backup and device transfer to the extent the platform permits; and
+drops corrupt history rows whose finite timestamp is not a real date. It also
+carries the fail-closed release checks and the lifecycle and regression-test
+documentation merged since 1.0.2. Issue #30 tracks the release.
+
+A version identifies what is inside the APK, so a build that differs from a
+published one takes its own number rather than re-using a tag, and `versionCode`
+only ever increases. Until 1.0.3 is published, 1.0.2 remains the newest tag.
 
 | # | Step | Whose | |
 |---|---|---|---|

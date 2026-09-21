@@ -1576,6 +1576,17 @@ price the change was not allowed to charge.
 the engine already knows — `fuori`, the set of cards not played and not mine.
 §3.4 still names eleven and the settings sheet still shows eleven.
 
+**And the exponent is not a weight either.** A later question — should the decay
+exponent become a tunable "coefficient of forgetting", so a profile could be
+credulous or suspicious by temperament? — was measured and rejected (PR #42).
+Across exponents from "believe the void whole" to "forget fast" the opponent
+plays the same card essentially every time, and only the instant-forget extreme
+moves 2–4% of plays without making it stronger or weaker. A real style moves
+about 20% of plays; the exponent is a belief about the world, not a preference,
+so it would be a weight that cannot move a play — the same reason there is no
+twelfth. `FORGETTING.md` and `tools/forgetting.mjs` hold the numbers and
+reproduce them.
+
 **And the eleventh was re-laddered, because its meaning changed.**
 `LEAD_INTO_VOID_PENALTY` was tuned when the term always fired at full
 strength; under the decay its average strength is lower, so its optimum could

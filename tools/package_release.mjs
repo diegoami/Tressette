@@ -25,6 +25,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, rmSyn
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { EXPECTED_CERT, newestBuildTools, signatureVerdict } from './release_lib.mjs';
 
 const WIN = process.platform === 'win32';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -83,21 +84,33 @@ if (existsSync(path.join(apkDir, 'app-release-unsigned.apk')))
 const apk = path.join(apkDir, 'app-release.apk');
 if (!existsSync(apk)) fail(`expected ${path.relative(ROOT, apk)}, but it is not there.`);
 
-// --- 4: the signature must verify ---
-const buildTools = path.join(sdk, 'build-tools');
-let signer = '(not checked: apksigner not found)';
-if (existsSync(buildTools)) {
-  const ver = readdirSync(buildTools).sort().reverse()[0];
-  const apksigner = ver && path.join(buildTools, ver, WIN ? 'apksigner.bat' : 'apksigner');
-  if (apksigner && existsSync(apksigner)) {
-    console.log('\n> apksigner verify');
-    const res = run(apksigner, ['verify', '--print-certs', apk],
-      { encoding: 'utf8', ...(javaHome ? { env: { ...env, JAVA_HOME: javaHome } } : {}) });
-    if (res.status !== 0) fail(`the APK does not verify:\n${res.stdout ?? ''}${res.stderr ?? ''}`);
-    process.stdout.write(res.stdout);
-    signer = (/SHA-256 digest:\s*([0-9a-f]+)/i.exec(res.stdout) || [])[1] || 'verified';
-  }
+// --- 4: the signature must verify, on our key, or nothing is staged ---
+// #22: this used to default to "(not checked: apksigner not found)" and stage
+// the APK anyway, and it accepted any verified certificate. Both are refusals
+// now: `signatureVerdict` fails closed on a missing verifier, a failed
+// verification and the wrong key, and the certificate must be the one recorded
+// in ANDROID.md §3.
+function findApksigner(){
+  const buildTools = path.join(sdk, 'build-tools');
+  if (!existsSync(buildTools)) return null;
+  const ver = newestBuildTools(readdirSync(buildTools));
+  if (!ver) return null;
+  const apksigner = path.join(buildTools, ver, WIN ? 'apksigner.bat' : 'apksigner');
+  return existsSync(apksigner) ? apksigner : null;
 }
+
+const apksigner = findApksigner();
+let verify = null;
+if (apksigner) {
+  console.log('\n> apksigner verify');
+  verify = run(apksigner, ['verify', '--print-certs', apk],
+    { encoding: 'utf8', ...(javaHome ? { env: { ...env, JAVA_HOME: javaHome } } : {}) });
+  process.stdout.write(verify.stdout ?? '');
+  if (verify.stderr) process.stderr.write(verify.stderr);
+}
+const verdict = signatureVerdict({ verify });
+if (!verdict.ok) fail(verdict.reason);
+const signer = verdict.signer;
 
 // --- 5: stage it, with a checksum ---
 const outDir = path.join(ROOT, 'dist-release', tag);
@@ -111,4 +124,5 @@ console.log(`\ndone.`);
 console.log(`  ${path.relative(ROOT, path.join(outDir, apkName))}`);
 console.log(`  sha256 ${sha}`);
 console.log(`  cert   ${signer}`);
+console.log(`         (expected ${EXPECTED_CERT}, ANDROID.md \u00a73)`);
 console.log(`\nnext: node tools/publish_release.mjs   (dry run; --confirm to publish)`);

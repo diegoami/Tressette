@@ -7,6 +7,17 @@ row measures. If this ever became a real change it would take §3.4's
 formula-change procedure in `SPEC.md`: measured, decided by the owner, fixture
 re-recorded in the commit that moves it.
 
+## In one paragraph
+
+The opponent's void-decay exponent should **not** become a tunable "coefficient
+of forgetting". Across γ from `0` (believe the void whole) to `8` (forget fast)
+the opponent plays the same card essentially every time, and only the extreme
+γ=∞ (forget the moment a card is drawn) changes 2–4% of plays **without making it
+stronger or weaker**. A real playing style moves about 20% of plays; the
+exponent is a belief about the world, not a preference, so exposing it would add
+a weight that cannot move a play. Keep `p` computed, and buy style on
+`LEAD_LONG_SUIT` and `LEAD_LISCIO_BONUS`.
+
 ## The question
 
 Issue #21 fixed the opponent's stale void: `state.voids` used to be set on a

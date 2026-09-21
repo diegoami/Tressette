@@ -15,6 +15,7 @@ import { existsSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { newestTag, checksumProblems, releaseCreateArgs } from './release_lib.mjs';
 
 const RELEASES_REPO = 'diegoami/tressette-releases';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,23 +24,24 @@ const CONFIRM = process.argv.includes('--confirm');
 const fail = (msg) => { console.error(`\npublish_release: ${msg}`); process.exit(1); };
 
 // --- which version: the newest dist-release/vX.Y.Z/ ---
+// #23: by number, not by string, so v1.10.0 is not mistaken for older than
+// v1.9.0 once a component reaches two digits.
 const distRoot = path.join(ROOT, 'dist-release');
 if (!existsSync(distRoot)) fail('no dist-release/ — run tools/package_release.mjs first.');
-const tags = readdirSync(distRoot).filter((d) => /^v\d+\.\d+\.\d+$/.test(d)).sort();
-if (!tags.length) fail('dist-release/ has no vX.Y.Z directory — run tools/package_release.mjs first.');
-const tag = tags[tags.length - 1];
+const tag = newestTag(readdirSync(distRoot));
+if (!tag) fail('dist-release/ has no vX.Y.Z directory — run tools/package_release.mjs first.');
 const version = tag.slice(1);
 const dir = path.join(distRoot, tag);
 const apkName = `Tressette-${version}-android.apk`;
 
 // --- the staged files must be intact ---
-for (const f of [apkName, 'SHA256SUMS.txt'])
-  if (!existsSync(path.join(dir, f))) fail(`missing ${path.relative(ROOT, path.join(dir, f))}.`);
-for (const line of readFileSync(path.join(dir, 'SHA256SUMS.txt'), 'utf8').trim().split('\n')) {
-  const [hash, name] = line.split(/\s+/);
-  const actual = createHash('sha256').update(readFileSync(path.join(dir, name))).digest('hex');
-  if (actual !== hash) fail(`${name} does not match SHA256SUMS.txt — repackage.`);
-}
+const problems = checksumProblems(
+  readFileSync(path.join(dir, 'SHA256SUMS.txt'), 'utf8'),
+  (name) => {
+    const p = path.join(dir, name);
+    return existsSync(p) ? createHash('sha256').update(readFileSync(p)).digest('hex') : null;
+  });
+if (problems.length) fail(`${problems.join('; ')} — repackage.`);
 
 // --- gh must be usable and the tag must be new ---
 const gh = (args, opts = {}) => spawnSync('gh', args, { encoding: 'utf8', ...opts });
@@ -60,7 +62,14 @@ console.log(`publish ${tag} to ${RELEASES_REPO}`);
 console.log(`  ${apkName}`);
 console.log(`  SHA256SUMS.txt`);
 
-if (!CONFIRM) {
+// The one irreversible step, behind a flag and behind a function. #26: a dry
+// run has no arguments to create a release with, so it cannot.
+const notesFile = path.join(os.tmpdir(), `tressette-${tag}-notes.md`);
+const createArgs = releaseCreateArgs({
+  confirm: CONFIRM, tag, version, dir, apkName, releasesRepo: RELEASES_REPO, notesFile,
+});
+
+if (!createArgs) {
   console.log('\n--- dry run --- nothing was published.');
   console.log('Re-run with --confirm to create the release.');
   console.log('\nNotes that would be used:\n');
@@ -68,11 +77,7 @@ if (!CONFIRM) {
   process.exit(0);
 }
 
-const notesFile = path.join(os.tmpdir(), `tressette-${tag}-notes.md`);
 writeFileSync(notesFile, notes);
-const res = gh(['release', 'create', tag,
-  path.join(dir, apkName), path.join(dir, 'SHA256SUMS.txt'),
-  '-R', RELEASES_REPO, '--title', `Tressette ${version}`, '--notes-file', notesFile],
-  { stdio: 'inherit' });
+const res = gh(createArgs, { stdio: 'inherit' });
 if (res.status !== 0) fail('gh release create failed.');
 console.log(`\npublished: https://github.com/${RELEASES_REPO}/releases/tag/${tag}`);

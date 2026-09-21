@@ -210,11 +210,12 @@ Windows path needs forward slashes or doubled backslashes; and GitHub will not
 create a release on a repository with no commits — the releases repo needed its
 README pushed before the first `--confirm` could work.
 
-The device-only questions still open are in §7: whether the
-`http://localhost` origin Capacitor serves the page over loads as a page rather
-than a blank white screen (step 4 confirmed it does, at v1.0.0), and whether
-`android.permission.INTERNET` can be dropped. A bad build is replaced by bumping
-`versionCode` and `versionName` and cutting a new tag; a tag is never re-used.
+The one device-only question still open is in §7: whether
+`android.permission.INTERNET` can be dropped. The blank-screen question it is
+usually asked with is answered — step 4 played a hand in the app, so the WebView
+accepts the `http://localhost` origin Capacitor serves the page over. A bad build
+is replaced by bumping `versionCode` and `versionName` and cutting a new tag; a
+tag is never re-used.
 
 ## 7. Still open
 

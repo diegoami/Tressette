@@ -393,11 +393,12 @@ part worth carrying to another project:
   deliberate choice, documented in the README and in the import script.
 - **The APK is live, and has been installed once, at v1.0.0.** v1.0.0, v1.0.1
   and v1.0.2 are published at `diegoami/tressette-releases`, signed and
-  checksummed; the owner sideloaded v1.0.0 and played a hand. The device-only
-  questions that remain — whether the `http://localhost` origin Capacitor
-  serves the page over loads as a page rather than a blank screen, and whether
-  `android.permission.INTERNET` can be dropped — are in `ANDROID.md` §6 and
-  §7, which is the release-status source of truth.
+  checksummed; the owner sideloaded v1.0.0 and played a hand. The one
+  device-only question that remains — whether
+  `android.permission.INTERNET` can be dropped — is in `ANDROID.md` §6 and §7,
+  which is the release-status source of truth. The blank-screen question it is
+  usually asked with was answered at v1.0.0, when the hand was played over the
+  `http://localhost` origin.
 
 ## 11. Provenance
 

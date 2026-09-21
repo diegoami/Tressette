@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The settings and the last hundred hands live in WebView localStorage,
+         and SPEC.md and the release notes promise that nothing leaves the
+         device. `allowBackup="false"` turns cloud backup off; the two rule
+         files exclude the same data from device-to-device migration, which on
+         Android 12+ (this app targets 36) some manufacturers do not disable
+         from `allowBackup` alone. `data_extraction_rules.xml` is the Android 12
+         format, `backup_rules.xml` the older one (issue #24). -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

@@ -92,6 +92,22 @@ launched to check is what the `fonts` pass asserts with every non-`file://`
 request aborted, but that is an argument, not a run. The owner did the install
 on a phone, at v1.0.0; §6 is where that stands.
 
+`android:allowBackup` is **false**, and the two rule files beside it exclude the
+app's data from backup *and* device-to-device migration. The reason is the one
+`SPEC.md` and the release notes state: the settings and the last hundred hands
+live in the WebView's `localStorage`, and they stay on the device.
+
+`allowBackup="false"` alone is not enough on Android 12+. It turns cloud backup
+off, but on devices from some manufacturers it does not stop device-to-device
+transfer, so the explicit excludes are the part that does:
+`app/src/main/res/xml/data_extraction_rules.xml` for API 31+ and
+`backup_rules.xml` for API 30 and lower, each excluding every domain. That is
+the strongest guarantee Android offers an app here — a manufacturer that ignores
+both the attribute and the rules is outside the app's reach — and it is why the
+promise is "the app does not have this backed up or transferred", not "Android
+cannot". Issue #24, and the review of its pull request, which is where the
+Android 12+ caveat came from.
+
 ## 3. Signing
 
 An unsigned APK does not install. Generate a release key once:

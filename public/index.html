@@ -1877,9 +1877,16 @@ const HCAP = 100;
 // this build — an older shape, a null, a number — threw inside renderHistory
 // and left the sheet without its log *and* without the button that clears it,
 // so there was no way out from inside the game.
+//
+// `t` gets a test beyond finiteness (issue #25): any finite number is a number,
+// but only a number inside Date's range is a date, and
+// `Intl.DateTimeFormat.format(new Date(1e100))` throws RangeError. Testing
+// `getTime()` is exactly that, and it is what keeps a corrupted row from taking
+// the sheet down before its clear button is drawn.
 function usable(m){
   return m !== null && typeof m === "object"
-    && Number.isFinite(m.t) && Number.isFinite(m.y) && Number.isFinite(m.a)
+    && Number.isFinite(m.t) && Number.isFinite(new Date(m.t).getTime())
+    && Number.isFinite(m.y) && Number.isFinite(m.a)
     && typeof m.o === "string";
 }
 

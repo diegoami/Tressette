@@ -290,6 +290,30 @@ const SCREENS = [
     check: () => [...document.querySelectorAll('#historyBody button')]
       .some(b => /Cancella/.test(b.textContent))
       ? [] : ['the history has no way to clear itself'] },
+  // Issue #25. `usable` accepted any finite number, and a finite number outside
+  // Date's range — 1e100 — is NaN to `new Date(...).getTime()`, which makes
+  // `Intl.DateTimeFormat.format` throw. So a stored row that passed the filter
+  // still took the sheet down before the clear button was rendered, the exact
+  // failure the filter exists to prevent. The bad row must be dropped and the
+  // good one still drawn, with a way to clear.
+  { name: 'history, a timestamp that is not a date', open: async p => {
+      await p.evaluate(() => {
+        localStorage.setItem('tressette.history', JSON.stringify(
+          [{ t: 1e100, o: 'Franco', d: 'Trevisane', y: 11, a: 0 },
+           { t: Date.now(), o: 'Franco', d: 'Trevisane', y: 6, a: 5 }]));
+      });
+      await p.click('#play');
+      await p.click('#btnHistory');
+    },
+    check: () => {
+      const out = [];
+      const body = document.querySelector('#historyBody');
+      if (![...body.querySelectorAll('button')].some(b => /Cancella/.test(b.textContent)))
+        out.push('the history has no way to clear itself');
+      if (!body.textContent.includes('Franco'))
+        out.push('the valid row beside the bad timestamp was dropped too');
+      return out;
+    } },
   // The one screen here that is READ rather than glanced at, and since the
   // owner asked for it, the one that says the same rules twice. Both halves are
   // asserted, because "the rules are in both languages" checked as *a lang

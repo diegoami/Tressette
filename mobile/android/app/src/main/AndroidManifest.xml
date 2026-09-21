@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup is false on purpose. The settings and the last hundred
+         hands live in WebView localStorage, and SPEC.md and the release notes
+         both promise that nothing leaves the device. With the default true,
+         Android's backup and device-transfer would carry that storage off the
+         phone, which is the opposite of the promise (issue #24). No backup
+         rules are declared: excluding the WebView's private storage by rule is
+         more machinery for the same result, and it can only be verified on a
+         device we do not have. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"

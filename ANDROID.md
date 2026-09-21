@@ -91,6 +91,15 @@ APK has not been launched. The offline behaviour it would be launched to check
 is what the `fonts` pass asserts with every non-`file://` request aborted, but
 that is an argument, not a run. First install is the owner's.
 
+`android:allowBackup` is **false**, and that one is deliberate. The settings
+and the last hundred hands live in the WebView's `localStorage`, and both this
+document and the release notes promise that nothing leaves the device; with the
+default `true`, Android's backup and device-transfer would carry that storage
+off the phone. Issue #24. Excluding the WebView storage by explicit backup
+rules would keep the default and reach the same result, but it is more
+machinery to verify on hardware nobody here has, so the plain refusal is the
+one that holds.
+
 ## 3. Signing
 
 An unsigned APK does not install. Generate a release key once:

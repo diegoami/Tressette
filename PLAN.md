@@ -1741,6 +1741,12 @@ with goes to the owner, in the pull request, not into a silent merge.
   caught it, per the `ui-check` skill: the assertion is written against the
   broken commit first. This is how every threshold in Discola's check got its
   story.
+- **A PR that completes an issue says so.** After the four parts, the body
+  ends with a footer of one `Closes #N` line per issue the PR completes —
+  design issue or defect issue. The footer is metadata, not a fifth part, and
+  it stays outside the verbatim check-output block. A reference is a link;
+  only the keyword closes. A PR that does not complete an issue (a first
+  pass, a partial fix) adds no line for it.
 - **No project board, no milestones.** The plan lives in this document, and a
   second copy goes stale. The DESIGN issue is the one issue a change opens, and
   it holds the design, not the plan.

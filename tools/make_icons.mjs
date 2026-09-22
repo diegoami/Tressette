@@ -13,7 +13,7 @@
  * Nothing here redraws anything. The crop is nearest-neighbour scaled
  * (`image-rendering: pixelated`), so every output pixel is one source pixel
  * repeated — the 1997 bitmap, larger. Smooth scaling was tried in Discola and
- * rejected: at icon sizes it turns the art to mush, and CLAUDE.md is explicit
+ * rejected: at icon sizes it turns the art to mush, and PLAN.md §7.7 is explicit
  * that the card art is not to be redrawn. Interpolation invents pixels, which
  * is redrawing by another name.
  *

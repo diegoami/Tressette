@@ -901,7 +901,7 @@ const measure = () => {
   // held sorted now, so it closes up, and a flex row with nothing in it is zero
   // tall: the table re-centred itself twice in the last trick and moved the
   // player's own hand 74px up at 393x852 — while they were choosing the card
-  // that decides the deal. It is the failure CLAUDE.md names, arriving
+  // that decides the deal. It is the failure PLAN.md §7.7 names, arriving
   // sideways: not a row that costs nothing while empty, but a row that has
   // cost something all deal and then stops.
   //

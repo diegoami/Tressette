@@ -54,7 +54,7 @@ package.json         scripts, and playwright-core as the one dev dependency
 RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
 ANDROID.md           the APK: what is done, what is left, and whose
-CLAUDE.md            the four rules a builder has to follow
+PLAN.md §7.7         the working rules a builder has to follow
 ```
 
 Nothing is generated at build time and nothing under `public/` imports

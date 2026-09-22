@@ -28,7 +28,7 @@ cut off, and no subresource comes from outside.
 of the Napoletane sheet — the tre is the highest card in the game, and a cup
 reads as an object at any size — and writes `assets/` for `@capacitor/assets`
 and `public/icons/` for the tab. Nearest-neighbour scaled: every output pixel is one source pixel repeated,
-because `CLAUDE.md` is explicit that the card art is not redrawn, and
+because `PLAN.md` §7.7 is explicit that the card art is not redrawn, and
 interpolation is redrawing by another name.
 
 ## 2. The build: Capacitor 8
@@ -179,7 +179,7 @@ checksum are, which is what somebody about to sideload an APK should read.
 
 The about screen carries the link now — a **pair** of lines, one per
 `section[lang]`, because that screen carries its body twice and a sentence
-added to one half only is exactly the drift `CLAUDE.md` warns about.
+added to one half only is exactly the drift `PLAN.md` §7.7 warns about.
 
 **It is the release page's own URL there, not `/android`.** The redirect only
 exists on Netlify, and this page has two other homes: a folder on disk, where

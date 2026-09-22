@@ -18,7 +18,7 @@ The check and this skill were copied from `discola-web` in iteration 0, before
 there was anything to check, and sat dormant while `public/index.html` held
 nothing but a title and the font links. Iteration 3 built the table, added the
 fan assertions of §3.7 — against a deliberately broken fan first — and gave
-`check.yml` the job that runs it. The rule at the top of `CLAUDE.md` now
+`check.yml` the job that runs it. The rule in `PLAN.md` §7.7 now
 applies without exception: after any UI change, run it, and a red check does
 not merge.
 

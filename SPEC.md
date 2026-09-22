@@ -40,7 +40,8 @@ tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
 tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
-tools/check_ui.mjs       the UI check: five passes, 114 rows
+tools/check_ui.mjs       the UI check: five passes, six screen shapes,
+                         20 viewports × 6 decks
 tools/serve.mjs          public/ over http, standard library only
 tools/make_icons.mjs     cuts the icon out of the Napoletane sheet
 tools/import_bresciane.mjs  builds the sixth deck from its source repo
@@ -290,11 +291,29 @@ Anything that takes vertical space on the table is in the budget and is in the
 flow whether or not it has anything in it. Anything that cannot be budgeted —
 a declaration can run to three lines — floats over the table instead.
 
+**The end of a hand is a screen over the table, not a modal over the page.**
+`#result` is an absolutely positioned child of `.table` (issue #45, Scopetta's
+shape), so it is outside the card budget: `--chrome` knows nothing about it and
+the ten-card fan keeps its size whatever the panel holds. Its body scrolls and
+its two actions are the body's sibling rather than its child, so the way on
+cannot scroll below the fold — a footer that scrolls with the content is what
+put Scopetta's own actions below the fold at 980x385 and 1100x330, the two
+shapes the check now measures this panel at. It keeps `role="dialog"
+aria-modal="true"`, and while it is up the toolbar and the seats it covers are
+`inert` with the primary action focused, and there is no Escape, because a
+choice is owed. It counts the deal out — Prese, Carte (terzi), Ultima (terzi),
+Accusi (punti) and Totale, which is `floor((Carte + Ultima) / 3) + Accusi` — and
+carries the opponent chips and the deck picker inline, saved the moment they are
+clicked, so `Ancora` deals with them. The second action opens the settings
+sheet, and Back from any sheet returns to the result rather than to Start,
+because the deal is still dealt.
+
 ## 7. The checks
 
 ```sh
 npm test                            47 tests, no dependencies
-npm run check                       114 rows, needs playwright-core + Chromium
+npm run check                       the UI check: 6 screen shapes, 20 viewports
+                                    × 6 decks; needs playwright-core + Chromium
 ```
 
 Both run in CI on every pull request; a red check does not merge.
@@ -304,10 +323,13 @@ assertion cannot reach — the viewport meta, the doctype, the charset and
 `<html lang>`), the **fonts** (every character on the page is inside the
 shipped subset, every `@font-face` loads with the network cut off, and no
 subresource comes from outside), the **screens** (every screen and every state
-worth looking at, at five device shapes, every opponent included), the
-**table** (19 viewports × 6 decks, then the tightest five again with the
+worth looking at, at six device shapes, every opponent included, and the result
+panel's own contract — covers the table, out of the card budget, body scrolls
+while its two actions stay on screen, the covered table inert), the
+**table** (20 viewports × 6 decks, then the tightest five again with the
 spacing tokens inflated), and a **deal** — twenty cards tapped through the fan,
-a result, a history entry, and a second deal abandoned through the confirm.
+a result whose counting grid is recomputed from the rules, a history entry, and
+a second deal abandoned through the confirm.
 `.claude/skills/ui-check/SKILL.md` explains what each threshold is calibrated
 against.
 

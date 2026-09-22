@@ -67,14 +67,21 @@ against. This check had never seen it, because this check had always run with
 the network up.
 
 **Screens pass** — every screen the page has, and every state worth looking at,
-at five real device shapes: the start sheet, empty and after a hand; the table,
-the table with a card raised, the table with the longest declaration the game
-can say and the table with the opponent's hand face up; settings with the
-weights disclosure open; history empty, at its hundred-hand cap, and holding
-entries some other build wrote; about; the abandon confirm; the start sheet
-after abandoning, reached by abandoning a hand and pressing Back out of a sheet;
-and the result dialog three ways — with both players declaring, reached from a
-sheet, and reached over the confirm.
+at six real device shapes — 980x385 and 1100x330 among them, because the result
+panel's pinned footer is the thing those two shapes test: the start sheet, empty
+and after a hand; the table, the table with a card raised, the table with the
+longest declaration the game can say and the table with the opponent's hand face
+up; settings with the weights disclosure open; history empty, at its
+hundred-hand cap, and holding entries some other build wrote; about; the abandon
+confirm; the start sheet after abandoning, reached by abandoning a hand and
+pressing Back out of a sheet; and the result panel four ways — with both players
+declaring, reached from a sheet, reached over the confirm, and on its setup
+route. The panel's own contract is measured wherever it appears: it covers the
+table edge for edge and is not one of its card rows, its body scrolls while the
+two actions stay in the viewport, the toolbar and seats it covers are `inert`
+with the primary action focused, and Back from Settings returns to it. At the
+two short landscape shapes the body has to actually overflow, or the pinned
+footer is being asserted about a page that never reached the state.
 
 **The about screen is the one that is read**, so it carries the rules in
 Italian and in English, and its row asserts both halves rather than the page as
@@ -145,10 +152,13 @@ looks free**, which is about what sits in front of a card where a player aims;
 card of each suit down, with the fan showing the cards in the hand and nothing
 else, and each place painting the face of the slot it names; **a number key
 counts places in the fan**, so pressing one raises the card at that place and
-cannot raise a card the follow-suit rule forbids; the result dialog's two
-numbers are what `scoreDeal` returned; the deal is written to the history under
-the same score and opponent; and a second deal abandoned through the confirm
-asks first, lands on the start sheet, and is *not* written down.
+cannot raise a card the follow-suit rule forbids; the result panel is up and its
+counting grid adds up the way the rules do — twenty tricks across the Prese,
+Carte and Ultima floored once together, Accusi on top, and `Totale` equal to
+`scoreDeal` — which is the assertion that caught the table losing prese; the
+deal is written to the history under the same score and opponent; and a second
+deal abandoned through the confirm asks first, lands on the start sheet, and is
+*not* written down.
 
 **The fan** — the assertions this game needs and Briscola did not, because a
 hand of ten cards overlaps. The step of the fan matches the page's own
@@ -235,6 +245,13 @@ shipped — in Discola, which is the same table and the same budget:
 | the rules are in one language wearing two tags | the English half was the Italian text under an `en` tag, and every content probe matched either language, so the row written to catch exactly this passed it |
 | a number key raises the wrong card | the keys count places in the fan and the hand is sorted, so a keyboard that indexed slots raised a different, legal card — which the forbidden-card assertion, being one-sided, was happy with |
 | a raised card does not lift far enough | at 18% of a card the lift was shorter than the strip the card came out of, so the second tap read as a repeat of the first |
+| the result actions below the fold | Scopetta's end screen put its actions inside the scrolling body, and at 980x385 `Ancora` sat 10px below the fold and the second action 60px, at 1100x330 38px and 88px — five shapes where the only way on looked like it was not there. Tressette forks the pinned-footer shape, and the check measures it: the body scrolls, the actions are its sibling, and scrolling the body must not move them |
+| the result panel in the card budget | it is a child of `.table`, and a panel laid out as a grid row instead of an absolute overlay shrinks the ten-card fan; the check takes the panel away and asserts every row is exactly where it was |
+| the result up before the deal is over | the panel is drawn from `state.over` and covers the fan, so a panel that failed to hide is a hand you cannot see. Asserted both ways: down on a fresh table, up when the twentieth trick is swept |
+| the result left the covered table reachable | `aria-modal` is an announcement and not a focus trap: the toolbar and the seats the panel covers are `inert` while it is up, and the primary action takes the focus, because a dialog that never moves focus drops it on `<body>` and the next Tab starts from the top of the page |
+| Back from Settings abandoned the finished deal | the result's second action opens the settings sheet, and `back()` read a dealt-but-over state as "go to Start" — a deal already recorded, with the result screen still open behind the sheet it walked away from. Back now returns to the result |
+| the counting grid does not add up | the deal pass reads all five rows and recomputes `Totale = floor((Carte + Ultima) / 3) + Accusi` per side, twenty tricks across the Prese and three terzi of ultima; a row wired to the wrong state passes every presence check and fails this |
+| the table's trick count loses tricks | `prese` was credited inside the sweep's 420ms callback, and the next play — you are on turn the moment you win a trick — flushes the sweep, so a deal played at speed counted 6 prese of 20 and the result's Prese row was false. The count moved into `flushSweep()`, where every ended sweep passes; the deal pass's twenty-trick assertion is what caught it |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

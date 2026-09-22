@@ -875,7 +875,11 @@ button.card:disabled{ cursor: default; }
   box-shadow: inset 0 0 0 1px var(--rail-line);
 }
 
-/* ---- end of match --------------------------------------------------------- */
+/* ---- the abandon confirm --------------------------------------------------
+
+   The one scrim left. The end of a hand used to be the other one; it is a
+   screen over the table now (see below), and this dialog stays a modal because
+   it asks a question rather than showing a result.                            */
 
 .scrim{
   position: fixed;
@@ -887,7 +891,7 @@ button.card:disabled{ cursor: default; }
   z-index: 20;
 }
 
-.result{
+.modal{
   width: min(380px, 100%);
   padding: 1.6rem;
   border-radius: 4px;
@@ -897,36 +901,143 @@ button.card:disabled{ cursor: default; }
   display: grid;
   gap: 1rem;
 }
-.result h2{
+.modal h2{
   font-family: var(--font-display);
   font-size: 1.9rem;
   font-weight: 700;
   margin: 0;
   text-wrap: balance;
 }
-.result__tally{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem; }
-.result__n{
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--brass);
+.modal__note{ font-size: var(--t-body); color: var(--ivory-dim); line-height: 1.5; margin: 0; }
+.modal__actions{ display: grid; gap: .5rem; }
+
+/* ---- end of match: a screen over the table --------------------------------
+
+   Not a modal over the page (issue #45): an absolutely positioned child of
+   .table, so it consumes none of the three card rows and `--chrome` knows
+   nothing about it — a long counting or the setup controls scroll inside the
+   panel instead of shrinking the ten-card fan. Scopetta's shape, forked with
+   this game's tokens, and for its reason: the body scrolls while the two
+   actions stay put, because at 980x385 and 1100x330 the actions of a footer
+   that scrolls with the content sit below the fold, and the only way on looks
+   like it is not there.
+
+   The body is the scroller and the actions are its sibling, not its child, so
+   the footer cannot scroll away.                                              */
+.table > .result{
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: clamp(.5rem, 2vw, 1rem);
+  padding: var(--pad-inline);
+  background: rgba(8, 26, 21, .94);
 }
-.result__sep{ color: var(--ivory-dim); }
-.result__note{ font-size: .95rem; color: var(--ivory-dim); line-height: 1.5; margin: 0; }
-/* The declarations, when there were any: they are scored on top of the eleven
-   points, so the dialog has to say where the extra points came from. */
-.result__accusi{
+.result__body{
+  overflow: auto;
+  /* The body reaching its end must not hand the wheel to the table behind the
+     panel, which would scroll the felt out from under a screen that covers
+     it. */
+  overscroll-behavior: contain;
+  width: 100%;
+  display: grid;
+  align-content: safe center;
+  justify-items: center;
+  gap: clamp(.5rem, 2vw, 1rem);
+}
+.result__title{
   margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--t-name);
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+}
+.result__grid{
+  display: grid;
+  grid-template-columns: auto minmax(3ch, auto) minmax(3ch, auto);
+  align-items: baseline;
+  gap: .3rem clamp(.9rem, 4vw, 2rem);
+  font-size: var(--t-label);
+}
+.result__grid > .r-head{
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--ivory-dim);
+  padding-bottom: .25rem;
+  border-bottom: 1px solid var(--rail-line);
+}
+.result__grid > .r-label{
   font-family: var(--font-label);
   text-transform: uppercase;
   letter-spacing: .08em;
-  font-size: .92rem;
+  color: var(--ivory-dim);
+}
+.result__grid > .r-num{
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* The units are not decoration: Carte and Ultima are terzi and Accusi are
+   punti, and a column that mixes the two without saying so cannot be checked
+   on sight. */
+.r-unit{
+  font-family: var(--font-label);
+  font-size: var(--t-tiny);
+  letter-spacing: .06em;
+  color: var(--brass-dim);
+}
+.result__grid > .r-total{
+  margin-top: .35rem;
+  padding-top: .4rem;
+  border-top: 1px solid var(--brass-dim);
+  font-size: var(--t-name);
+  color: var(--brass);
+}
+/* The one number that decided the hand carries the brass; the other does not,
+   so the grid says who won before the title is read. */
+.result__grid > [data-won="true"]{ color: var(--brass); font-weight: 700; }
+.result__rule{
+  margin: 0;
+  max-width: 30rem;
+  text-align: center;
+  font-size: var(--t-body);
+  line-height: 1.35;
+  color: var(--ivory-dim);
+}
+.result__note{
+  margin: 0;
+  max-width: 30rem;
+  text-align: center;
+  font-size: var(--t-body);
+  line-height: 1.4;
+  color: var(--brass);
+}
+/* The declarations, when there were any: they are scored on top of the eleven
+   points, so the panel has to say where the extra points came from. */
+.result__accusi{
+  margin: 0;
+  max-width: 30rem;
+  text-align: center;
+  font-family: var(--font-label);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: var(--t-body);
   color: var(--brass);
   line-height: 1.4;
 }
-.result__actions{ display: grid; gap: .5rem; }
+/* The two choices an ended hand most often wants changed, here rather than
+   behind Start, because the deal just played is the one that says whether the
+   opponent and the deck were the right ones. */
+.result__setup{ width: min(420px, 100%); }
+.result__actions{
+  display: grid;
+  gap: .5rem;
+  width: min(320px, 100%);
+}
 
 /* ---- portrait ------------------------------------------------------------- */
 
@@ -1045,7 +1156,10 @@ button.card:disabled{ cursor: default; }
     </nav>
   </header>
 
-  <main class="table" id="table">
+  <!-- tabindex="-1" is the focus target the result hands the keyboard back to
+       (issue #45): a dialog that never gives focus back drops it on <body>,
+       and the next Tab starts from the top of the page. -->
+  <main class="table" id="table" tabindex="-1">
     <p class="cheat-note" id="cheatNote" hidden>Carte scoperte</p>
 
     <section class="seat seat--opp">
@@ -1091,6 +1205,78 @@ button.card:disabled{ cursor: default; }
           <span class="plate__role">giocatore</span>
         </span>
         <span class="plate__score" id="youScore">0</span>
+      </div>
+    </section>
+
+    <!-- The end of the hand, as a screen over the table rather than a modal
+         over the page (issue #45). It is a child of .table so it is out of the
+         card budget — the fan keeps its size while the body scrolls — and its
+         footer is pinned for the same reason the start sheet's is: the way on
+         must not be the thing that scrolls away. The dialog semantics are
+         Scopetta's: it covers the table and blocks it, so it keeps
+         role="dialog" aria-modal="true"; the toolbar and the covered seats are
+         made inert while it is up, because aria-modal alone is an announcement
+         rather than a trap, and no Escape, because a choice is owed. -->
+    <section class="result" id="result" hidden role="dialog" aria-modal="true"
+             aria-labelledby="resultTitle">
+      <div class="result__body">
+        <h2 class="result__title" id="resultTitle">Hai vinto</h2>
+
+        <!-- Five rows, because four things make the total and each of them has
+             to be visible for the sum to be checkable: Prese is a count,
+             Carte and Ultima are terzi, Accusi are points, and Totale is
+             floor((Carte + Ultima) / 3) + Accusi, which is scoreDeal. -->
+        <div class="result__grid" id="resultGrid">
+          <div class="r-head"></div>
+          <div class="r-head">Tu</div>
+          <div class="r-head" id="gridOppName">Franco</div>
+
+          <div class="r-label">Prese</div>
+          <div class="r-num" id="gridPreseYou">0</div>
+          <div class="r-num" id="gridPreseOpp">0</div>
+
+          <div class="r-label">Carte <span class="r-unit">terzi</span></div>
+          <div class="r-num" id="gridCarteYou">0</div>
+          <div class="r-num" id="gridCarteOpp">0</div>
+
+          <div class="r-label">Ultima <span class="r-unit">terzi</span></div>
+          <div class="r-num" id="gridUltimaYou">0</div>
+          <div class="r-num" id="gridUltimaOpp">0</div>
+
+          <div class="r-label">Accusi <span class="r-unit">punti</span></div>
+          <div class="r-num" id="gridAccusiYou">0</div>
+          <div class="r-num" id="gridAccusiOpp">0</div>
+
+          <div class="r-label r-total">Totale <span class="r-unit">punti</span></div>
+          <div class="r-num r-total" id="gridTotaleYou">0</div>
+          <div class="r-num r-total" id="gridTotaleOpp">0</div>
+        </div>
+
+        <p class="result__rule">Carte e ultima sono terzi: il totale è
+        (Carte&nbsp;+&nbsp;Ultima) ÷ 3, arrotondato in giù, più gli accusi.</p>
+
+        <p class="result__accusi" id="resultAccusi" hidden></p>
+        <p class="result__note" id="resultNote"></p>
+
+        <div class="group result__setup">
+          <div class="group-head"><span class="eyebrow">Avversario</span></div>
+          <div class="chips" id="resultOpponents"></div>
+        </div>
+
+        <div class="group result__setup">
+          <div class="group-head">
+            <span class="eyebrow">Mazzo</span><span class="pick" id="resultDeckName">Trevisane</span>
+          </div>
+          <div class="decks" id="resultDecks"></div>
+        </div>
+      </div>
+
+      <!-- Two actions, and the second names where it goes: the opponent and
+           the deck are on this screen now, so "cambia avversario o mazzo" has
+           nothing left to open, and the settings sheet holds the rest. -->
+      <div class="result__actions">
+        <button class="btn btn--primary" id="playAgain" type="button">Ancora</button>
+        <button class="btn" id="resultSettings" type="button">Impostazioni</button>
       </div>
     </section>
   </main>
@@ -1354,36 +1540,13 @@ button.card:disabled{ cursor: default; }
 </div>
 
 <div class="scrim" id="confirmScrim" hidden>
-  <div class="result" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <h2 id="confirmTitle">Abbandonare la mano?</h2>
-    <p class="result__note">La mano in corso va persa e non viene registrata
+    <p class="modal__note">La mano in corso va persa e non viene registrata
     nello storico.</p>
-    <div class="result__actions">
+    <div class="modal__actions">
       <button class="btn btn--primary" id="confirmNo" type="button">Continua a giocare</button>
       <button class="btn btn--quiet" id="confirmYes" type="button">Abbandona</button>
-    </div>
-  </div>
-</div>
-
-<div class="scrim" id="scrim" hidden>
-  <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
-    <h2 id="resultTitle">Hai vinto</h2>
-    <div class="result__tally">
-      <div>
-        <div class="result__n" id="resultYou">6</div>
-        <div class="eyebrow">tu</div>
-      </div>
-      <div class="result__sep">&mdash;</div>
-      <div>
-        <div class="result__n" id="resultOpp">5</div>
-        <div class="eyebrow" id="resultOppName">valerio</div>
-      </div>
-    </div>
-    <p class="result__accusi" id="resultAccusi" hidden></p>
-    <p class="result__note" id="resultNote"></p>
-    <div class="result__actions">
-      <button class="btn btn--primary" id="playAgain" type="button">Ancora</button>
-      <button class="btn" id="backToStart" type="button">Cambia avversario o mazzo</button>
     </div>
   </div>
 </div>
@@ -1452,8 +1615,13 @@ const state = {
 
 let timer = null;
 let sayTimer = null;
-// The trick the table is still showing while it is swept. The engine clears a
-// trick the moment it resolves; the table is a step behind it on purpose.
+// The trick the table is still showing while it is swept, with its winner. The
+// engine clears a trick the moment it resolves; the table is a step behind it
+// on purpose, and the pair and its count travel together: a play that arrives
+// before the sweep's 420ms animation ends flushes it (see flushSweep), and a
+// count kept anywhere else would be lost by exactly that play. It was, until
+// the result's Prese row read it: a deal played at speed counted 6 tricks of
+// 20, because the winner was only credited inside the animation's callback.
 let sweeping = null;
 let epoch = 0;          // bumped on every new deal, so a stale timer cannot fire into it
 
@@ -1513,8 +1681,11 @@ for (const id of ["table","oppHand","youHand","slotOpp","slotYou","pile","stockC
   "opponents","dossier","decks","deckName","lastResult",
   "deckSel","feltSel","speedSel","pointsSel","soundSel","changeOpponent","weightsTable",
   "historyBody","confirmScrim","confirmNo","confirmYes",
-  "scrim","resultTitle","resultYou","resultOpp","resultOppName","resultAccusi",
-  "resultNote","playAgain","backToStart"])
+  "result","resultTitle","resultGrid","gridOppName",
+  "gridPreseYou","gridPreseOpp","gridCarteYou","gridCarteOpp",
+  "gridUltimaYou","gridUltimaOpp","gridAccusiYou","gridAccusiOpp",
+  "gridTotaleYou","gridTotaleOpp","resultAccusi","resultNote","playAgain",
+  "resultSettings","resultOpponents","resultDecks","resultDeckName"])
   el[id] = document.getElementById(id);
 
 function faceOf(node, card){
@@ -1621,7 +1792,7 @@ function render(){
     if (state.cheat) faceOf(node, state.hands[ALTO][slot]); else backOf(node);
   });
 
-  const onTable = sweeping ?? state.played;
+  const onTable = sweeping ? sweeping.cards : state.played;
   faceOf(el.slotOpp, onTable[ALTO]);
   faceOf(el.slotYou, onTable[BASSO]);
 
@@ -1646,6 +1817,63 @@ function render(){
   el.plateOpp.classList.toggle("plate--turn", state.deveGiocare === ALTO && !state.over);
   el.oppName.textContent = state.opponent;
   el.cheatNote.hidden = !state.cheat;
+
+  renderResult();
+}
+
+// The end screen, drawn from the state like everything else: the table's own
+// render puts it up and takes it down, so there is one answer to "is the panel
+// showing" rather than two. Not while the table is still catching up, though —
+// every other trick is watchable and the last one is too: this panel is opaque
+// and covers all of it, and gioca marks the deal over the moment the twentieth
+// trick resolves.
+function renderResult(){
+  const over = state.over && state.dealt && !sweeping;
+  el.result.hidden = !over;
+  coverTable(over);
+  if (!over) return;
+
+  const [you, them] = scoreDeal(state);
+  el.resultTitle.textContent = you > them ? "Hai vinto" : you < them ? "Hai perso" : "Pareggio";
+  el.gridOppName.textContent = state.opponent;
+
+  // The five rows, from the state: the ultima is three terzi to whoever led
+  // last — which is the winner of the twentieth trick — and scoreDeal floors
+  // the terzi once, over their sum, before adding the accusi. Floors are not
+  // per row, which is why the grid shows raw terzi and states the formula
+  // under it rather than pretending each row carries its own points.
+  const ultima = who => state.perPrimo === who ? 3 : 0;
+  const cells = {
+    gridPreseYou: state.prese[BASSO], gridPreseOpp: state.prese[ALTO],
+    gridCarteYou: state.terzi[BASSO], gridCarteOpp: state.terzi[ALTO],
+    gridUltimaYou: ultima(BASSO), gridUltimaOpp: ultima(ALTO),
+    gridAccusiYou: puntiAccusi(state.accusi[BASSO]), gridAccusiOpp: puntiAccusi(state.accusi[ALTO]),
+    gridTotaleYou: you, gridTotaleOpp: them
+  };
+  for (const [id, value] of Object.entries(cells)) el[id].textContent = value;
+
+  // The higher total in brass, neither of them in a draw.
+  el.gridTotaleYou.dataset.won = String(you > them);
+  el.gridTotaleOpp.dataset.won = String(them > you);
+
+  const righe = [BASSO, ALTO]
+    .filter(who => state.accusi[who].length)
+    .map(who => `${who === BASSO ? "Tu" : state.opponent}: ` +
+                `${accusiInParole(state.accusi[who])} — ${puntiAccusi(state.accusi[who])} punti`);
+  el.resultAccusi.textContent = righe.join(" · ");
+  el.resultAccusi.hidden = !righe.length;
+
+  el.resultNote.textContent = notaFinale(you, them);
+}
+
+// The result is a dialog over the table, and aria-modal is an announcement
+// rather than a trap: while it is up, the toolbar and every child of the table
+// that it covers are inert, so Tab cannot reach what the panel hides. It has
+// to come off again when the panel does — inert survives a hidden ancestor, so
+// leaving it on makes the table untouchable behind the start sheet.
+function coverTable(on){
+  for (const node of document.querySelectorAll("#viewTable .topbar, #table > :not(.result)"))
+    node.inert = on;
 }
 
 // A declaration is announced once, when its owner plays their first card.
@@ -1694,7 +1922,7 @@ function play(who, slot){
   const shown = state.played.slice();
   shown[who] = state.hands[who][slot];
   const { announced, trick } = gioca(state, who, slot);
-  if (trick) sweeping = shown;
+  if (trick) sweeping = { cards: shown, winner: trick.winner };
   state.selected = null;
   blip(who === BASSO ? 760 : 620);
   announce(who, announced);
@@ -1712,8 +1940,12 @@ function computerPlay(){
 // The sweep's two classes animate `both`, so their end state — transparent and
 // 70px away — is held until something takes them off. Anything that ends a
 // sweep early has to come through here, or the next deal draws its trick into
-// two invisible boxes for twenty tricks.
+// two invisible boxes for twenty tricks. And the count is taken here rather
+// than in the animation's callback, because the next play is what ends a sweep
+// early — you are on turn the moment you win a trick — and a presa that is not
+// counted is a result screen that says 6 prese out of twenty.
 function flushSweep(){
+  if (sweeping) state.prese[sweeping.winner]++;
   for (const node of [el.slotOpp, el.slotYou])
     node.classList.remove("card--won-up", "card--won-down");
   sweeping = null;
@@ -1726,7 +1958,6 @@ function resolve(trick){
     node.classList.add(up ? "card--won-up" : "card--won-down");
   later(() => {
     flushSweep();
-    state.prese[trick.winner]++;
     render();
     if (state.over){ finish(); return; }
     if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed * 0.6);
@@ -1745,21 +1976,7 @@ function finish(){
   // whatever sheet happens to be open.
   closeConfirm();
   show("table");
-
-  el.resultTitle.textContent = you > them ? "Hai vinto" : you < them ? "Hai perso" : "Pareggio";
-  el.resultYou.textContent = you;
-  el.resultOpp.textContent = them;
-  el.resultOppName.textContent = state.opponent.toLowerCase();
-
-  const righe = [BASSO, ALTO]
-    .filter(who => state.accusi[who].length)
-    .map(who => `${who === BASSO ? "Tu" : state.opponent}: ` +
-                `${accusiInParole(state.accusi[who])} — ${puntiAccusi(state.accusi[who])} punti`);
-  el.resultAccusi.textContent = righe.join(" · ");
-  el.resultAccusi.hidden = !righe.length;
-
-  el.resultNote.textContent = notaFinale(you, them);
-  el.scrim.hidden = false;
+  render();
   el.playAgain.focus();
 }
 
@@ -1804,10 +2021,13 @@ function newDealHere(){
   epoch++;
   clearTimeout(timer);
   clearTimeout(sayTimer);
+  // The sweep is flushed before the state is replaced, not after: flushSweep
+  // takes the last trick's count now, and taking it after state.prese is zeroed
+  // would credit the new deal with a presa nobody played.
+  flushSweep();
   newDeal(state, Math.random);
   state.selected = null;
   state.prese = [0, 0];
-  flushSweep();
   el.announce.hidden = true;
   render();
   if (state.deveGiocare === ALTO) later(() => computerPlay(), state.speed);
@@ -1826,12 +2046,20 @@ function show(name){
   for (const [key, node] of Object.entries(VIEWS)) node.hidden = key !== name;
   if (name === "history") renderHistory();
   if (name === "start") renderLastResult();
+  // Coming back to a table whose deal is over lands on the panel's primary
+  // action — that is what the result is for — rather than on a toolbar the
+  // panel covers.
+  if (name === "table" && !el.result.hidden) el.playAgain.focus();
   // The clock keeps running behind a sheet, as it does in Discola: the
   // opponent does not wait for you to close the settings.
 }
 
-// Back from a sheet: to the table if a hand is in play, otherwise to the start.
-function back(){ show(state.dealt && !state.over ? "table" : "start"); }
+// Back from a sheet: to the table if a hand is in play — or has just been
+// played out, where the table means the result screen over it — and otherwise
+// to the start. Since issue #45 the result routes to Settings, so this is what
+// brings you back to the result instead of abandoning you at Start with a
+// finished deal still open behind it.
+function back(){ show(state.dealt ? "table" : "start"); }
 
 // Throwing away the deal in progress, wherever the player is going next.
 // Bumping the epoch makes every pending `later` a no-op — without it the
@@ -1847,7 +2075,8 @@ function discard(){
   state.dealt = false;
   state.selected = null;
   el.announce.hidden = true;
-  el.scrim.hidden = true;
+  el.result.hidden = true;
+  coverTable(false);
   closeConfirm();
 }
 
@@ -2024,9 +2253,13 @@ function applyDeck(name){
   root.style.setProperty("--sheet", deckSheet(name));
   root.style.setProperty("--ratio", DECK_RATIO[name]);
   if (el.deckSel) el.deckSel.value = name;
-  if (el.deckName) el.deckName.textContent = name;
-  if (el.decks) for (const b of el.decks.children)
-    b.setAttribute("aria-pressed", String(b.dataset.deck === name));
+  // Three places name the chosen deck: the settings select, Start's label and
+  // the result's. One call keeps them in step.
+  for (const node of [el.deckName, el.resultDeckName])
+    if (node) node.textContent = name;
+  for (const group of [el.decks, el.resultDecks])
+    for (const b of group.children)
+      b.setAttribute("aria-pressed", String(b.dataset.deck === name));
 }
 
 function applyFelt(hex){
@@ -2047,7 +2280,10 @@ function shade(hex, amount){
 }
 
 function buildOpponents(){
-  el.opponents.replaceChildren(...Object.keys(PROFILES).map(name => {
+  // Two sets of the same four chips — Start's and the result's — built by one
+  // function so a fifth profile cannot arrive on one screen only. selectOpponent
+  // presses both.
+  const chips = () => Object.keys(PROFILES).map(name => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip";
@@ -2055,7 +2291,9 @@ function buildOpponents(){
     b.textContent = name;
     b.addEventListener("click", () => selectOpponent(name));
     return b;
-  }));
+  });
+  el.opponents.replaceChildren(...chips());
+  el.resultOpponents.replaceChildren(...chips());
 }
 
 // Each option shows a real card from its deck — the asso, the most
@@ -2064,9 +2302,8 @@ function buildOpponents(){
 function buildDecks(){
   // The column count comes from the deck table, not from the stylesheet: a
   // sixth deck against a hard-coded repeat(5, 1fr) wraps onto a second row and
-  // pushes the settings sheet's own controls down, quietly.
-  el.decks.style.setProperty("--deck-cols", Object.keys(SHEET).length);
-  el.decks.replaceChildren(...Object.keys(SHEET).map(name => {
+  // pushes the controls under it down, quietly. Both pickers get it.
+  const opts = () => Object.keys(SHEET).map(name => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "deck-opt";
@@ -2082,14 +2319,19 @@ function buildDecks(){
     b.append(c);
     b.addEventListener("click", () => { applyDeck(name); save(); });
     return b;
-  }));
+  });
+  for (const node of [el.decks, el.resultDecks]){
+    node.style.setProperty("--deck-cols", Object.keys(SHEET).length);
+    node.replaceChildren(...opts());
+  }
 }
 
 function selectOpponent(name){
   state.opponent = name;
   el.dossier.textContent = DOSSIER[name];
-  for (const b of el.opponents.children)
-    b.setAttribute("aria-pressed", String(b.dataset.name === name));
+  for (const group of [el.opponents, el.resultOpponents])
+    for (const b of group.children)
+      b.setAttribute("aria-pressed", String(b.dataset.name === name));
 
   const P = PROFILES[name];
   el.weightsTable.tBodies[0].replaceChildren(...WEIGHT_KEYS.map(k => {
@@ -2151,7 +2393,7 @@ document.addEventListener("keydown", e => {
   // are not the player's business — and Enter least of all: it is what you
   // press to answer a dialog whose safe button already has focus, and it was
   // playing the raised card on the way through. A misplay costs the deal.
-  const dialog = !el.confirmScrim.hidden || !el.scrim.hidden;
+  const dialog = !el.confirmScrim.hidden || !el.result.hidden;
 
   if (screen === "table" && !state.over && !dialog){
     // 1-9 and 0 raise a card, Enter plays the raised one.
@@ -2207,11 +2449,20 @@ el.confirmYes.addEventListener("click", () => {
 });
 
 el.playAgain.addEventListener("click", () => {
-  el.scrim.hidden = true;
-  show("table");
+  // A new deal takes the panel down through render() — state.over is false
+  // again — and the keyboard goes back to the table the deal is dealt on.
   newDealHere();
+  el.table.focus();
 });
-el.backToStart.addEventListener("click", abandon);
+// The second action names its destination. The opponent and the deck are on
+// the result now; the rest is the settings sheet, and Back from it returns to
+// the result because the deal is still dealt (back()).
+el.resultSettings.addEventListener("click", () => {
+  show("settings");
+  // The panel's buttons are hidden now, and focus left on a hidden button
+  // would take the keyboard nowhere: the sheet's own Back picks it up.
+  document.querySelector("#viewSettings [data-back]").focus();
+});
 // Leaving the table for the start sheet is abandoning, so it asks first; when
 // there is nothing to abandon it just goes. The confirm's own Yes runs
 // abandon(), which is what lands on the start sheet.

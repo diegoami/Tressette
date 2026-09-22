@@ -20,10 +20,13 @@
  *    and nothing at all is fetched from outside. A face that does not arrive
  *    throws nothing and simply sets narrower than every threshold below.
  *
- * 2. SCREENS — every screen and both dialogs, at a handful of real device
- *    shapes. Catches things that are wrong anywhere: more than one screen
- *    visible at once, text set too small to read, clipped labels, tap targets
- *    below the thumb, sideways scroll, script errors.
+ * 2. SCREENS — every screen and both dialogs — the abandon confirm and the
+ *    result panel over the table — at a handful of real device shapes, the
+ *    short landscapes among them. Catches things that are wrong anywhere: more
+ *    than one screen visible at once, text set too small to read, clipped
+ *    labels, tap targets below the thumb, sideways scroll, script errors, and
+ *    the result panel's own contract: covers the table, out of the card
+ *    budget, body scrolls, footer does not.
  *
  * 3. TABLE — the card table only, at every viewport and in all six decks, and
  *    then the tightest five again with the spacing tokens inflated.
@@ -83,6 +86,11 @@ const VIEWPORTS = [
   ['iPad Pro',         1024, 1366],
   ['tablet landscape', 1180,  820],
   ['phone landscape',   980,  385],
+  // The shape that puts the result panel's pinned footer to the test: 55px
+  // shorter than the phone landscape above, where a footer that scrolls with
+  // the content cannot fit two actions above the fold. Scopetta documented
+  // failures at both this and 980x385.
+  ['short landscape',  1100,  330],
   ['phone desktop-mode',1045, 2265],
   ['laptop',           1440,  900],
   ['laptop short',     1366,  700],
@@ -90,9 +98,11 @@ const VIEWPORTS = [
 ];
 
 // Enough shapes to cover the ways a screen can go wrong, without visiting all
-// eight screens at all nineteen sizes.
+// twenty screens at all twenty sizes. Short landscape is here rather than in
+// the table pass alone because the result panel's footer is a screen rule: at
+// 330px tall it is the only shape where the panel's body is certain to scroll.
 const SCREEN_VIEWPORTS = ['Android small', 'iPhone Pro Max', 'tablet portrait',
-                          'phone landscape', 'laptop'];
+                          'phone landscape', 'short landscape', 'laptop'];
 
 // The tightest ones; worth re-running the table budget against inflated spacing.
 const TIGHT = ['phone landscape', 'laptop short', 'iPad', 'tablet portrait', 'Android small'];
@@ -226,7 +236,22 @@ const SCREENS = [
         out.push('the start sheet\'s link to the rules is in the page but not on the screen');
       return out;
     } },
-  { name: 'table',  open: async p => { await p.click('#play'); } },
+  { name: 'table',  open: async p => { await p.click('#play'); },
+    // The other half of "the result is up exactly when the deal is over": it
+    // is a child of the table now, and a panel that failed to hide would cover
+    // the fan of a hand just dealt. The toolbar is checked for the inverse
+    // reason — inert is the panel's way of covering the table, and it has to
+    // come off with the panel.
+    check: () => {
+      const result = document.querySelector('#result');
+      if (!result) return ['the result panel is not on the page'];
+      return [
+        !result.hidden
+          && 'the result panel is up over a table that has just been dealt',
+        document.querySelector('#viewTable .topbar').inert
+          && 'the toolbar is inert under a table with no result on it',
+      ].filter(Boolean);
+    } },
   // The longest thing the game can say: a hand of ten can hold a napoletana and
   // three sets at once. announce() is the page's own, so this is the real text
   // at the real size, in the place the page really puts it.
@@ -438,7 +463,7 @@ const SCREENS = [
     } },
   { name: 'the result, with declarations', open: async p => {
       await p.click('#play');
-      // The dialog at its longest: both players declaring, which is where the
+      // The panel at its longest: both players declaring, which is where the
       // extra line and the widest numbers are.
       await p.evaluate(() => {
         state.over = true;
@@ -452,6 +477,162 @@ const SCREENS = [
         state.prese = [11, 9];
         finish();
       });
+    },
+    // Issue #45's contract for the end screen. Every claim is one the old
+    // global scrim could not make and the new panel can break silently: the
+    // panel covers the table and is not one of its rows, its body scrolls
+    // while the two actions stay put and on screen, the covered table is out
+    // of reach with the primary action focused, and the dialog semantics
+    // Scopetta keeps are still here. All of it at the six screen shapes,
+    // 980x385 and 1100x330 among them.
+    check: () => {
+      const out = [];
+      const q = s => document.querySelector(s);
+      const rect = s => q(s).getBoundingClientRect();
+      const panel = q('#result'), body = q('.result__body'), table = rect('.table');
+
+      if (!panel || !body) return ['the result panel is not on the page'];
+      if (panel.hidden) return ['the result panel is not shown at the end of a deal'];
+      if (panel.getAttribute('role') !== 'dialog' || panel.getAttribute('aria-modal') !== 'true'
+          || panel.getAttribute('aria-labelledby') !== 'resultTitle')
+        out.push('the result panel has lost its dialog semantics');
+
+      // The panel is the table's overlay, edge for edge.
+      for (const [edge, delta] of [['top', rect('#result').top - table.top],
+                                   ['left', rect('#result').left - table.left],
+                                   ['bottom', rect('#result').bottom - table.bottom],
+                                   ['right', rect('#result').right - table.right]])
+        if (Math.abs(delta) > 1)
+          out.push(`the result panel does not cover the table on its ${edge} (${Math.round(delta)}px)`);
+
+      // And the grid adds up, on the values this row forces: each row wired to
+      // the state, Totale = floor((Carte + Ultima) / 3) + Accusi. Here as well
+      // as in the deal pass because it is deterministic here: the ultima row
+      // can only be wrong for the side that took the last trick, and which
+      // side that is on a real deal is a coin toss — a break that shows half
+      // the time is a break CI passes half the time.
+      const num = id => Number(q('#' + id).textContent);
+      for (const who of ['You', 'Opp']) {
+        const expected = Math.floor((num('gridCarte' + who) + num('gridUltima' + who)) / 3)
+          + num('gridAccusi' + who);
+        if (num('gridTotale' + who) !== expected)
+          out.push(`the grid's ${who === 'You' ? 'own' : "opponent's"} total is `
+            + `${num('gridTotale' + who)}, not ${expected} from its own rows`);
+      }
+      if (num('gridPreseYou') + num('gridPreseOpp') !== 20)
+        out.push(`the grid counts ${num('gridPreseYou') + num('gridPreseOpp')} tricks, not 20`);
+
+      // The focus checks come before the measure below, which hides the panel
+      // to see whether the rows move and hiding the focused element drops the
+      // focus. aria-modal alone neither traps Tab nor moves it — the inert
+      // table and this focus are what do.
+      if (document.activeElement !== q('#playAgain'))
+        out.push(`the result did not take the focus (it is on `
+          + `${document.activeElement.id || document.activeElement.tagName})`);
+      const covered = [...document.querySelectorAll('#viewTable .topbar, #table > :not(.result)')];
+      const loose = covered.filter(n => !n.inert);
+      if (loose.length)
+        out.push(`${loose.length} part(s) of the table the result covers are still reachable `
+          + `(${loose.map(n => n.id || n.className).slice(0, 3).join(', ')})`);
+
+      // ...and it is out of the budget: take the panel away and every row is
+      // exactly where it was. A panel laid out as a table row shrinks the fan.
+      const rows = ['#oppHand', '.trick', '.tallone', '.seat--you'];
+      const withPanel = rows.map(s => Math.round(rect(s).top));
+      panel.hidden = true;
+      const without = rows.map(s => Math.round(rect(s).top));
+      panel.hidden = false;
+      q('#playAgain').focus();          // hiding it dropped the focus; put it back
+      const moved = Math.max(...withPanel.map((v, i) => Math.abs(v - without[i])));
+      if (moved > 1)
+        out.push(`the result panel takes ${moved}px out of the card rows: it is in the budget`);
+
+      // The body scrolls; the actions are its sibling and do not. Scrolling
+      // the body has to leave both of them where they were, and both of them
+      // have to be on screen — that is the defect pinned footers answer.
+      const overflowY = getComputedStyle(body).overflowY;
+      if (!/auto|scroll/.test(overflowY))
+        out.push(`the result body does not scroll (overflow-y ${overflowY})`);
+      if (body.contains(q('.result__actions')))
+        out.push('the result actions are inside the scrolling body');
+      const actions = ['#playAgain', '#resultSettings'];
+      const before = actions.map(s => Math.round(rect(s).top));
+      body.scrollTop = body.scrollHeight;
+      const after = actions.map(s => Math.round(rect(s).top));
+      body.scrollTop = 0;
+      if (after.some((v, i) => Math.abs(v - before[i]) > 1))
+        out.push('scrolling the result body moves its actions');
+      for (const s of actions) {
+        const r = rect(s);
+        if (r.top < -1 || r.bottom > window.innerHeight + 1)
+          out.push(`${s} is off screen at the end of a deal `
+            + `(${Math.round(r.top)}…${Math.round(r.bottom)} of ${window.innerHeight})`);
+      }
+      // And the scrolling is not being taken on faith: on the two short
+      // landscape shapes the body has to overflow, or the assertion above
+      // measured a page that never reached the state it exists for.
+      if (window.innerHeight <= 400 && body.scrollHeight <= body.clientHeight)
+        out.push('the result body fits this short screen, so its pinned footer was never tested');
+
+      // No Escape: the result is a choice that is owed. Dispatched on the body
+      // rather than pressed, because this runs inside the page; the handler is
+      // the page's own. Last, because it is the one probe here that can change
+      // the state the assertions above measure — a page that dismisses on
+      // Escape would otherwise hide the panel before the budget and footer
+      // checks ever ran, and they would report nothing on the page that broke
+      // them.
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (panel.hidden) out.push('Escape dismissed the result, which owes a choice');
+
+      return out;
+    } },
+  { name: 'the result, its setup route', open: async p => {
+      await p.click('#play');
+      await p.evaluate(() => { state.over = true; state.terzi = [12, 20]; state.prese = [8, 12]; finish(); });
+    },
+    // Issue #45's navigation invariant, on the page rather than in prose: the
+    // result carries the opponent chips and the deck picker inline, a change
+    // there is saved and Ancora deals with it, the second action opens
+    // Settings, and Back from Settings returns to the result — not to Start,
+    // which would abandon a finished deal that is still open behind it.
+    check: () => {
+      const out = [];
+      const q = s => document.querySelector(s);
+      if (!q('#resultOpponents') || !q('#resultDecks') || !q('#resultSettings'))
+        return ['the result panel has no setup controls'];
+      const was = state.opponent;
+      const chips = [...q('#resultOpponents').querySelectorAll('.chip')];
+      if (chips.length !== Object.keys(PROFILES).length)
+        out.push(`the result offers ${chips.length} opponents, not the roster`);
+      const other = chips.find(c => c.dataset.name !== was);
+      other.click();
+      if (state.opponent !== other.dataset.name)
+        out.push('a chip on the result did not change the opponent');
+      const otherDeck = [...q('#resultDecks').querySelectorAll('.deck-opt')]
+        .find(b => b.dataset.deck !== state.deck);
+      otherDeck.click();
+      if (state.deck !== otherDeck.dataset.deck)
+        out.push('a deck on the result did not change the deck');
+      const stored = JSON.parse(localStorage.getItem('tressette.settings') || '{}');
+      if (stored.opponent !== state.opponent || stored.deck !== state.deck)
+        out.push('a change made on the result was not saved');
+
+      q('#resultSettings').click();
+      if (screen !== 'settings')
+        out.push(`the result's second action opened ${screen}, not the settings sheet`);
+      const back = q('#viewSettings [data-back]');
+      if (!back) out.push('the settings sheet has no Back button');
+      else {
+        back.click();
+        if (screen !== 'table' || q('#result').hidden)
+          out.push('Back from Settings abandoned the finished deal instead of returning to the result');
+      }
+
+      q('#playAgain').click();
+      if (state.over || !state.dealt || state.opponent !== other.dataset.name
+          || state.deck !== otherDeck.dataset.deck)
+        out.push('Ancora did not deal a new hand with the choices made on the result');
+      return out;
     } },
   { name: 'the result, reached from a sheet', open: async p => {
       await p.click('#play');
@@ -552,11 +733,16 @@ const audit = () => {
   // Not the CSS fallback beside it: buildDecks sets --deck-cols before the
   // element has any children, so a fallback that disagreed would never be
   // painted, never mind measured.
-  const opts = [...document.querySelectorAll('.deck-opt')];
-  if (opts.length) {
+  //
+  // Per picker, not over every .deck-opt on the page: issue #45 gave the
+  // result its own copy of the picker, and the hidden one's zero-size boxes
+  // would read as a second row the moment a result was up.
+  for (const picker of document.querySelectorAll('.decks')) {
+    const opts = [...picker.querySelectorAll('.deck-opt')].filter(o => o.getClientRects().length);
+    if (!opts.length) continue;
     const tops = new Set(opts.map(b => Math.round(b.getBoundingClientRect().top)));
     if (tops.size !== 1)
-      out.push(`the deck picker is on ${tops.size} rows, not one `
+      out.push(`the deck picker in ${name(picker)} is on ${tops.size} rows, not one `
         + `(${opts.length} decks at tops ${[...tops].join(', ')})`);
   }
 
@@ -1292,32 +1478,60 @@ async function checkDeal(browser) {
   {
     try {
       await page.waitForFunction(
-        () => state.over && !document.querySelector('#scrim').hidden &&
+        () => state.over && !document.querySelector('#result').hidden &&
               /Hai vinto|Hai perso|Pareggio/.test(document.querySelector('#resultTitle').textContent),
         null, { timeout: 15000 });
-    } catch { issues.push('the deal never reached its result dialog'); }
+    } catch { issues.push('the deal never reached its result screen'); }
   }
 
-  const end = await page.evaluate(() => ({
-    tricks: state.tricks, over: state.over,
-    line: [document.querySelector('#resultTitle').textContent,
-           document.querySelector('#resultYou').textContent + '\u2013' +
-           document.querySelector('#resultOpp').textContent].join(' '),
-    you: Number(document.querySelector('#resultYou').textContent),
-    them: Number(document.querySelector('#resultOpp').textContent),
-    score: scoreDeal(state),
-    // §4's "Done when": the deal shows up in history with the right score.
-    history: JSON.parse(localStorage.getItem('tressette.history') || '[]'),
-    opponent: state.opponent,
-  }));
+  const end = await page.evaluate(() => {
+    const num = id => Number(document.querySelector('#' + id).textContent);
+    const grid = {
+      prese: [num('gridPreseYou'), num('gridPreseOpp')],
+      carte: [num('gridCarteYou'), num('gridCarteOpp')],
+      ultima: [num('gridUltimaYou'), num('gridUltimaOpp')],
+      accusi: [num('gridAccusiYou'), num('gridAccusiOpp')],
+      totale: [num('gridTotaleYou'), num('gridTotaleOpp')],
+    };
+    return {
+      tricks: state.tricks, over: state.over,
+      line: [document.querySelector('#resultTitle').textContent,
+             grid.totale.join('\u2013')].join(' '),
+      you: grid.totale[0], them: grid.totale[1], grid,
+      score: scoreDeal(state),
+      // §4's "Done when": the deal shows up in history with the right score.
+      history: JSON.parse(localStorage.getItem('tressette.history') || '[]'),
+      opponent: state.opponent,
+    };
+  });
   if (end.tricks !== 20) issues.push(`${end.tricks} tricks played, not 20`);
   if (end.you !== end.score[0] || end.them !== end.score[1])
-    issues.push(`the dialog says ${end.you}\u2013${end.them}, the deal scored ${end.score.join('\u2013')}`);
+    issues.push(`the result says ${end.you}\u2013${end.them}, the deal scored ${end.score.join('\u2013')}`);
+
+  // The counting grid has to add up the way the rules do, not merely be
+  // present: Prese are twenty tricks between the two, Carte and Ultima are
+  // terzi floored once together, Accusi are whole points on top of that, and
+  // Totale is scoreDeal. A grid with a row wired to the wrong state passes
+  // every presence check and fails here.
+  {
+    const [pY, pO] = end.grid.prese;
+    if (pY + pO !== 20) issues.push(`the grid counts ${pY + pO} tricks, not 20`);
+    for (const who of [0, 1]) {
+      const expected = Math.floor((end.grid.carte[who] + end.grid.ultima[who]) / 3)
+        + end.grid.accusi[who];
+      if (end.grid.totale[who] !== expected)
+        issues.push(`the grid's ${who ? "opponent's" : 'own'} total is ${end.grid.totale[who]}: `
+          + `Carte ${end.grid.carte[who]} + Ultima ${end.grid.ultima[who]} over 3 `
+          + `plus Accusi ${end.grid.accusi[who]} is ${expected}`);
+    }
+    if (end.grid.ultima[0] + end.grid.ultima[1] !== 3)
+      issues.push(`the grid gives the ultima ${end.grid.ultima[0] + end.grid.ultima[1]} terzi, not 3`);
+  }
   const [logged] = end.history;
   if (!logged) issues.push('the deal was not written to the history');
   else if (logged.y !== end.you || logged.a !== end.them || logged.o !== end.opponent)
     issues.push(`the history says ${logged.o} ${logged.y}\u2013${logged.a}, ` +
-                `the dialog says ${end.opponent} ${end.you}\u2013${end.them}`);
+                `the result says ${end.opponent} ${end.you}\u2013${end.them}`);
 
   // And the other half of §4's "Done when": a deal abandoned through the
   // confirm is not recorded, and the two buttons that abandon one leave you
@@ -1331,6 +1545,8 @@ async function checkDeal(browser) {
   // assertion that asked for the start sheet here passed on that bug.
   await page.click('#playAgain', { timeout: 4000 });
   await page.waitForTimeout(200);
+  if (!await page.evaluate(() => document.querySelector('#result').hidden))
+    issues.push('the result panel is still up over the new deal');
 
   // A trick first, and then the discard has to happen while the sweep is
   // actually on the cards: its two classes animate `both`, so one left behind

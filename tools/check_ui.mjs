@@ -92,13 +92,14 @@ const VIEWPORTS = [
   // failures at both this and 980x385.
   ['short landscape',  1100,  330],
   ['phone desktop-mode',1045, 2265],
+  ['desktop window',   1280,  800],   // the Tauri wrapper's default window
   ['laptop',           1440,  900],
   ['laptop short',     1366,  700],
   ['desktop',          1920, 1080],
 ];
 
 // Enough shapes to cover the ways a screen can go wrong, without visiting all
-// twenty screens at all twenty sizes. Short landscape is here rather than in
+// twenty screens at all twenty-one sizes. Short landscape is here rather than in
 // the table pass alone because the result panel's footer is a screen rule: at
 // 330px tall it is the only shape where the panel's body is certain to scroll.
 const SCREEN_VIEWPORTS = ['Android small', 'iPhone Pro Max', 'tablet portrait',

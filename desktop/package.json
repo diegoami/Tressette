@@ -1,0 +1,13 @@
+{
+  "name": "tressette-desktop",
+  "version": "1.0.3",
+  "private": true,
+  "description": "Tauri wrapper around public/ for the Tressette desktop build",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build --no-bundle"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.5"
+  }
+}

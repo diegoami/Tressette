@@ -32,13 +32,24 @@
  *   public/icons/apple-touch-icon.png  180
  *   public/icons/favicon-32.png    32  <link rel=icon>, and what stops the
  *                                      browser asking for /favicon.ico
+ *   desktop/src-tauri/icons/32x32.png         32  Tauri bundle.icon
+ *   desktop/src-tauri/icons/128x128.png      128  Tauri bundle.icon
+ *   desktop/src-tauri/icons/128x128@2x.png   256  Tauri bundle.icon
+ *   desktop/src-tauri/icons/icon.png         512  Tauri bundle.icon
+ *   desktop/src-tauri/icons/icon.ico  16/32/48/256  the Windows resource: the
+ *                                      window, the taskbar and the .exe itself
+ *
+ * The .ico is a real multi-size icon, PNG frames in an ICO container (Windows
+ * reads those since Vista), so Windows picks the frame it needs instead of
+ * scaling one. Its 16 and 32 frames are the cup, like the favicon, for the
+ * same reason: below 48px the half card is two smudges.
  *
  * playwright-core does the drawing, as it does in tools/import_bresciane.mjs:
  * it is already the one dev dependency, and a browser screenshot is an exact
  * PNG of an exact box. No image library enters the project for this.
  */
 import { chromium } from 'playwright-core';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -71,7 +82,37 @@ const OUT = [
   ['public/icons/icon-192.png',         192, HALF, 0.12],
   ['public/icons/apple-touch-icon.png', 180, HALF, 0.12],
   ['public/icons/favicon-32.png',        32, CUP, 0.05],
+  ['desktop/src-tauri/icons/32x32.png',        32, CUP, 0.05],
+  ['desktop/src-tauri/icons/128x128.png',     128, HALF, 0.12],
+  ['desktop/src-tauri/icons/128x128@2x.png',  256, HALF, 0.12],
+  ['desktop/src-tauri/icons/icon.png',        512, HALF, 0.12],
 ];
+
+// The .ico's frames: the crop each size gets follows the same 48px line.
+const ICO = 'desktop/src-tauri/icons/icon.ico';
+const ICO_FRAMES = [[16, CUP, 0.05], [32, CUP, 0.05], [48, HALF, 0.12], [256, HALF, 0.12]];
+
+// An ICO of PNG frames: a 6-byte header, a 16-byte entry per frame, then the
+// PNGs back to back. A size of 256 is written as 0, which is how the format
+// spells it in a byte.
+const ico = frames => {
+  const header = Buffer.alloc(6 + 16 * frames.length);
+  header.writeUInt16LE(0, 0);
+  header.writeUInt16LE(1, 2);
+  header.writeUInt16LE(frames.length, 4);
+  let offset = header.length;
+  frames.forEach(([size, png], i) => {
+    const e = 6 + 16 * i, dim = size >= 256 ? 0 : size;
+    header.writeUInt8(dim, e);
+    header.writeUInt8(dim, e + 1);
+    header.writeUInt16LE(1, e + 4);            // colour planes
+    header.writeUInt16LE(32, e + 6);           // bits per pixel
+    header.writeUInt32LE(png.length, e + 8);
+    header.writeUInt32LE(offset, e + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([header, ...frames.map(([, png]) => png)]);
+};
 
 const square = (size, crop, pad) => {
   // Scale the crop so its longest side fills what the padding leaves.
@@ -89,15 +130,24 @@ const square = (size, crop, pad) => {
 
 mkdirSync(ROOT + 'assets', { recursive: true });
 mkdirSync(ROOT + 'public/icons', { recursive: true });
+mkdirSync(ROOT + 'desktop/src-tauri/icons', { recursive: true });
 
 const browser = await chromium.launch();
-for (const [file, size, crop, pad] of OUT) {
+const shoot = async (size, crop, pad, path) => {
   const page = await browser.newPage({ viewport: { width: size, height: size }, deviceScaleFactor: 1 });
   await page.setContent(square(size, crop, pad));
-  await page.screenshot({ path: ROOT + file });
+  const png = await page.screenshot(path ? { path } : {});
   await page.close();
+  return png;
+};
+for (const [file, size, crop, pad] of OUT) {
+  await shoot(size, crop, pad, ROOT + file);
   console.log(`wrote ${file}  ${size}x${size}`);
 }
+const frames = [];
+for (const [size, crop, pad] of ICO_FRAMES) frames.push([size, await shoot(size, crop, pad)]);
+writeFileSync(ROOT + ICO, ico(frames));
+console.log(`wrote ${ICO}  ${ICO_FRAMES.map(([s]) => s).join('/')}`);
 
 // The adaptive icon's background layer is the felt alone — no card, because
 // Android slides the two layers against each other and anything drawn here

@@ -1779,9 +1779,10 @@ issue, not into a silent merge.
 - **Commit messages** as in Discola's history: one line saying what changed
   and why, in English, imperative mood, no ticket numbers. The pull request's
   title becomes that line when it is squash-merged, so the title follows the
-  same rule. The `(#N)` GitHub appends to a squash merge is the only number a
-  commit on `main` carries; the issues a pull request completes go in its
-  `Closes #N` footer, not its title.
+  same rule. The `(#N)` GitHub appends to a squash merge is the only issue or
+  pull request number a commit on `main` carries; a version or any other
+  number that is part of what changed stays. The issues a pull request
+  completes go in its `Closes #N` footer, not its title.
 
 ### 7.5 What outlives a session
 

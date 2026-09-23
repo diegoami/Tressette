@@ -195,6 +195,37 @@ export function versionDisagreements(version, declarations){
     .map(([where, value]) => `${where}: ${value ?? '(missing)'}`);
 }
 
+// versionCode is the number Android compares to decide whether an APK is an
+// update to the installed copy, so it is not a declaration of the version
+// line: it only has to move with it. `versionDeclarations` holds versionName
+// to the desktop's five, and this holds versionCode to the previous milestone
+// tag's (#58, from v1.0.4's review: a bump that forgot it passed every gate).
+// Given the gradle texts now and at `prevTag` (null when there is no earlier
+// tag), returns why versionCode is wrong, or null.
+const gradleName = (g) => /versionName\s+["']([^"']+)["']/.exec(g ?? '')?.[1] ?? null;
+const gradleCode = (g) => { const m = /versionCode\s+(\d+)\b/.exec(g ?? ''); return m ? Number(m[1]) : null; };
+export function versionCodeProblem({ gradle, prevGradle, prevTag }){
+  const name = gradleName(gradle), code = gradleCode(gradle);
+  if (!Number.isInteger(code) || code < 1)
+    return `versionCode is ${code ?? '(missing)'}, not a positive integer`;
+  if (!prevTag) return null;
+  const prevName = gradleName(prevGradle), prevCode = gradleCode(prevGradle);
+  if (prevCode === null) return `versionCode could not be read at ${prevTag}`;
+  if (name === prevName && code !== prevCode)
+    return `versionCode is ${code} but versionName is still ${name}, as at ${prevTag}, ` +
+           `where versionCode was ${prevCode}: move both or neither`;
+  if (name !== prevName && code <= prevCode)
+    return `versionName moved from ${prevName} (${prevTag}) to ${name}, but versionCode ${code} ` +
+           `is not above ${prevCode}: Android would refuse it as an update`;
+  return null;
+}
+
+// The milestone before `tag`: the newest vX.Y.Z tag among `tags` (those
+// reachable from HEAD) other than `tag` itself, or null.
+export function previousTag(tags, tag){
+  return newestTag(tags.filter((t) => t !== tag));
+}
+
 // Why these bytes are not a Windows executable, or null if they could be. The
 // desktop counterpart of refusing an unsigned APK: a missing, truncated or
 // non-PE file must never be staged. 1 MB is far under the ~11 MB a build is

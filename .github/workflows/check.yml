@@ -17,7 +17,11 @@ jobs:
   engine:
     runs-on: ubuntu-latest
     steps:
+      # The whole history, tags included: release.test.mjs measures versionCode
+      # against the previous milestone tag, and a shallow clone has none.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       # Node 24, the line the releases are built with here. `lts/*` moved to
       # whatever the newest LTS was on the day, so a new major could change the
       # test runner or the UI check under a green history without a commit to

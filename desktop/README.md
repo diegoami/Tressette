@@ -28,8 +28,10 @@ npm run build        # tauri build --no-bundle
 The executable lands at `src-tauri/target/release/tressette.exe`. It is
 portable: one file, no installer.
 
-Installers and code signing are deferred, and releasing is not wired up yet
-(`../DESKTOP.md`).
+Installers and code signing are deferred. A release builds this executable
+beside the APK, from the milestone tag: `tools/package_release.mjs` and
+`tools/publish_release.mjs`, in the order `../DESKTOP.md`'s Releasing section
+and `../ANDROID.md` §4 give.
 
 ## Icons
 

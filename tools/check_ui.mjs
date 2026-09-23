@@ -414,28 +414,30 @@ const SCREENS = [
       // that it can be followed, and it has to be absolute: /android is a
       // Netlify redirect, and this page also runs from a folder and inside the
       // APK, where a root-relative href goes nowhere.
-      for (const lang of ['it', 'en']) {
-        const sec = section(lang);
-        if (!sec) continue;
-        const to = [...sec.querySelectorAll('a[href]')].map(a => a.getAttribute('href'));
-        if (!to.some(h => h.startsWith('http') && h.includes('tressette-releases')))
-          out.push(`the rules in ${lang} do not link to the Android app`);
-      }
-      // The Windows build, beside it, in each half. Both links go to the same
-      // releases page, so the one that names Windows is told apart by its text.
-      // `Windows` is the same word in both languages, so each half is also
-      // asked for a phrase only its own language has; a sentence pasted
-      // untranslated into the other half answers the first question and not
-      // the second.
-      const computer = { it: /sul computer/, en: /\ba computer\b/ };
-      for (const lang of ['it', 'en']) {
-        const sec = section(lang);
-        if (!sec) continue;
-        const named = [...sec.querySelectorAll('a[href]')].some(a =>
-          /Windows/.test(a.textContent) && a.getAttribute('href').startsWith('http')
-          && a.getAttribute('href').includes('tressette-releases'));
-        if (!named || !computer[lang].test(sec.textContent))
-          out.push(`the rules in ${lang} do not link to the Windows app`);
+      //
+      // Two builds, one link each, both to the same releases page, so a link
+      // is told apart by its text and not its href. The Android rule once asked
+      // only whether some link pointed at tressette-releases; when the Windows
+      // link joined it with the same href, that question was answered by the
+      // Windows link, and the Android one could vanish from either half with
+      // the row still green (#59, from v1.0.4's review). The app's name is the
+      // same word in both languages, so each half is also asked for a phrase
+      // only its own language has: a sentence pasted untranslated into the
+      // other half answers the first question and not the second.
+      const apps = [
+        ['Android', { it: /sul telefono/, en: /\ba phone\b/ }],
+        ['Windows', { it: /sul computer/, en: /\ba computer\b/ }],
+      ];
+      for (const [app, phrase] of apps) {
+        for (const lang of ['it', 'en']) {
+          const sec = section(lang);
+          if (!sec) continue;
+          const named = [...sec.querySelectorAll('a[href]')].some(a =>
+            a.textContent.includes(app) && a.getAttribute('href').startsWith('http')
+            && a.getAttribute('href').includes('tressette-releases'));
+          if (!named || !phrase[lang].test(sec.textContent))
+            out.push(`the rules in ${lang} do not link to the ${app} app`);
+        }
       }
       // And back goes to the deal it was opened from: a Back that always lands
       // on the start sheet abandons the hand of anyone who opened the rules to

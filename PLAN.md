@@ -161,7 +161,7 @@ tools/engine.test.mjs  unit tests on node --test, no dependencies
 tools/selfplay.mjs  headless matches: profile vs profile, vs baselines; the tuning loop
 tools/serve.mjs     public/ over http, for what file:// cannot do
 tools/make_icons.mjs, tools/import_bresciane.mjs  the two asset makers
-tools/package_release.mjs, tools/publish_release.mjs  the APK, built and released
+tools/package_release.mjs, tools/publish_release.mjs  the APK and the exe, built and released
 tools/pack_cards.py the packer, carried over unchanged in case a deck is ever repacked
 mobile/             the Capacitor wrapper: webDir ../public, no build step (ANDROID.md)
 desktop/            the Tauri wrapper: frontendDist ../../public, no build step (DESKTOP.md)

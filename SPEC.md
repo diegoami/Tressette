@@ -46,8 +46,8 @@ tools/serve.mjs          public/ over http, standard library only
 tools/make_icons.mjs     cuts the icon out of the Napoletane sheet
 tools/smoke_desktop.mjs  the built desktop app, launched twice and played
 tools/import_bresciane.mjs  builds the sixth deck from its source repo
-tools/package_release.mjs   signed APK into dist-release/
-tools/publish_release.mjs   that APK to the releases repo, on --confirm
+tools/package_release.mjs   signed APK and Windows exe into dist-release/
+tools/publish_release.mjs   both to the releases repo, on --confirm
 tools/pack_cards.py      carried from Discola, for repacking a deck
 mobile/              the Capacitor wrapper and the Android project
 desktop/             the Tauri wrapper, the Windows build

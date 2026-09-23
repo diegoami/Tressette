@@ -148,17 +148,24 @@ secret in this project worth backing up somewhere that outlives the machine.
 
 ## 4. Publishing
 
-**`node tools/package_release.mjs`** — `cap sync`, `gradlew assembleRelease`,
-refuse an unsigned APK, `apksigner verify`, then write
-`dist-release/vX.Y.Z/Tressette-X.Y.Z-android.apk` and `SHA256SUMS.txt`. The
+A release carries the APK and the Windows build together, since 1.0.4
+([`DESKTOP.md`](DESKTOP.md)), and both scripts handle the pair.
+
+**`node tools/package_release.mjs`** — check that every version declaration
+agrees with `versionName`, then `cap sync`, `gradlew assembleRelease`, refuse
+an unsigned APK, `apksigner verify`; then build the desktop app, refuse an
+implausible `.exe`, and run `tools/smoke_desktop.mjs` against it; then write
+`dist-release/vX.Y.Z/` with `Tressette-X.Y.Z-android.apk`,
+`Tressette-X.Y.Z-windows-x64.exe` and `SHA256SUMS.txt`, and read it back. The
 version comes from `versionName` in `app/build.gradle`, so the filename cannot
 drift from what is inside the APK. A silently unsigned artifact is worse than a
-failed build, which is why step three is a refusal rather than a warning.
+failed build, which is why the unsigned check is a refusal rather than a
+warning. It runs on Windows only, because the desktop build does.
 
 **`node tools/publish_release.mjs`** — re-hash the staged files against
-`SHA256SUMS.txt`, then `gh release create` on `diegoami/tressette-releases`.
-Dry run by default; `--confirm` to actually publish, because this is
-outward-facing and a public tag is hard to take back.
+`SHA256SUMS.txt` and require exactly the two assets, then `gh release create` on
+`diegoami/tressette-releases`. Dry run by default; `--confirm` to actually
+publish, because this is outward-facing and a public tag is hard to take back.
 
 **The releases repo does not exist yet.** `diegoami/Tressette` is private, and
 release assets on a private repo are not publicly downloadable, so the split is
@@ -199,24 +206,24 @@ deploy, to produce an artifact that changes only at release time.
 **This section is the release-status source of truth.** `SPEC.md` §10 links
 here rather than restating it.
 
-Releases **v1.0.0, v1.0.1 and v1.0.2** are already published at
+Releases **v1.0.0 to v1.0.3** are published at
 <https://github.com/diegoami/tressette-releases>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
 answer. 1.0.1 was the icon; 1.0.2 was the about screen saying that a void can be
-drawn back into.
+drawn back into. 1.0.3 put Settings, history and the bilingual rules on the
+start screen, let a reported void decay as cards are drawn, kept settings and
+match history out of Android backup, and dropped history rows whose timestamp
+is not a real date (issue #30).
 
-`versionName` is **1.0.3** / `versionCode 4` in `app/build.gradle`. This release
-puts Settings, history and the bilingual rules on the start screen; lets a
-reported void decay as cards are drawn; keeps settings and match history out of
-Android backup and device transfer to the extent the platform permits; and
-drops corrupt history rows whose finite timestamp is not a real date. It also
-carries the fail-closed release checks and the lifecycle and regression-test
-documentation merged since 1.0.2. Issue #30 tracks the release.
+`versionName` is **1.0.4** / `versionCode 5` in `app/build.gradle`, and it is
+the first release with a Windows build beside the APK ([`DESKTOP.md`](DESKTOP.md)).
+For Android it carries the end of a hand as a screen over the table, with its
+counting grid and setup (#46), and the about screen naming the Windows build.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`
-only ever increases. Until 1.0.3 is published, 1.0.2 remains the newest tag.
+only ever increases. Until 1.0.4 is published, 1.0.3 remains the newest tag.
 
 | # | Step | Whose | |
 |---|---|---|---|
@@ -226,11 +233,13 @@ only ever increases. Until 1.0.3 is published, 1.0.2 remains the newest tag.
 | 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here | **done** — it runs |
 | 5 | Add the about-screen link, run the check | either, after 3 | **done** |
 
-Two things worth knowing for the next release, both learned the hard way:
+Three things worth knowing for the next release, all learned the hard way:
 `storeFile` in `keystore.properties` is read as a Java properties value, so a
-Windows path needs forward slashes or doubled backslashes; and GitHub will not
+Windows path needs forward slashes or doubled backslashes; GitHub will not
 create a release on a repository with no commits — the releases repo needed its
-README pushed before the first `--confirm` could work.
+README pushed before the first `--confirm` could work; and Gradle 8.14 needs
+JDK 21, not the JDK 25 Android Studio now bundles. `package_release.mjs` finds
+a 21 by itself when `JAVA_HOME` is not set, and says which one it took.
 
 The one device-only question still open is in §7: whether
 `android.permission.INTERNET` can be dropped. The blank-screen question it is

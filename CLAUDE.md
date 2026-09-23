@@ -11,7 +11,8 @@ apply `AGENTS.md`'s process: that file is the other harness.
 
 **Harness.** This harness has no cross-harness implementer/reviewer roles and no
 design-issue stage. Claude implements; the review comes at milestones, from an
-independent model the owner runs.
+independent model the owner runs, or from a fresh-context Claude subagent when
+the owner has none to run.
 
 ## Process
 
@@ -34,9 +35,21 @@ Claude ends its report with a review prompt, filled in from the template below.
 The owner runs it in a model other than Claude, in a fresh context, at high
 effort.
 
+**No review holds up the work.** A milestone review is never a gate: Claude
+keeps implementing and the owner keeps merging while one is out. If the owner has
+no independent model to run the prompt, Claude runs the same prompt itself, in a
+subagent that has not seen the work, at high effort. It does so when the owner
+says they have none, or when the next milestone arrives and the last prompt's
+report has not come back; then the subagent reviews the whole range since the
+last review issue. That review is fresh but not independent, and its issue says
+so in its title (`Fresh-context review of <BASE>..<HEAD>`) and names the
+reviewer. The owner can still run an independent model over the same range
+later. Either way, the next review starts where this one ended.
+
 **The report comes back to Claude.** Claude reproduces each finding before
 acting on it (`PLAN.md` §7.7), then opens one issue labelled `review`, titled
-`Independent review of <BASE>..<HEAD>`. It holds the report verbatim and a
+`Independent review of <BASE>..<HEAD>` (or `Fresh-context review of …` for
+Claude's own). It holds the report verbatim and a
 verdict on each finding: confirmed, not reproduced, or disputed, with the reason.
 Confirmed findings are fixed in PRs that close the issue or reference it. A
 disputed finding goes to the owner. A review that finds nothing still gets its

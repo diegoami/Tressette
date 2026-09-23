@@ -1650,7 +1650,8 @@ decides when each iteration starts.
 
 Two harnesses work in this repository, each with its own process: **OpenCode** —
 DeepSeek implements, Luna reviews — and **Claude Code** — Claude implements, and
-at milestones an independent model the owner runs reviews the repository.
+at milestones an independent model the owner runs reviews the repository,
+or a fresh-context Claude subagent when there is none to run.
 `AGENTS.md` and `CLAUDE.md` record those
 processes, and §7.7 holds the rules both share. Neither harness applies the
 other's process.
@@ -1716,7 +1717,9 @@ has not seen the work — at high effort, same tier as the builder. The harness
 decides who reviews and when. OpenCode reviews every pull request, with Luna as
 a cross-harness subagent (`AGENTS.md`). Claude Code reviews at milestones: Claude
 writes a prompt, the owner runs it in a model other than Claude, and the report
-comes back to Claude as findings to reproduce (`CLAUDE.md`). Fresh matters more
+comes back to Claude as findings to reproduce. When the owner has no such model
+to run, a fresh-context Claude subagent runs the prompt instead, and no
+milestone review holds up the work (`CLAUDE.md`). Fresh matters more
 than different: the builder cannot see its own diff, and a reviewer that shares
 its context cannot either.
 

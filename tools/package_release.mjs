@@ -16,7 +16,8 @@
  * Steps, in order, stopping at the first failure:
  *   0. HEAD is the tag (or, with --candidate, an untagged commit on main), and
  *      no tracked file differs from it
- *   1. every version declaration agrees with Android's versionName
+ *   1. every version declaration agrees with Android's versionName, and
+ *      versionCode has moved with it since the previous milestone tag
  *   2. cap sync android   — copy public/ into the Android project
  *   3. gradlew assembleRelease
  *   4. refuse an unsigned APK (a silently unsigned build is worse than none)
@@ -46,6 +47,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   EXPECTED_CERT, JDK_MAJOR, newestBuildTools, signatureVerdict, pickJdk, buildSource,
+  previousTag, versionCodeProblem,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, checksumProblems,
 } from './release_lib.mjs';
 
@@ -132,6 +134,15 @@ const source = buildSource({
   candidate: process.argv.includes('--candidate'),
 });
 if (!source.ok) fail(source.reason);
+
+// versionCode moves with versionName, measured against the previous milestone.
+const prevTag = previousTag((out('tag', '--list', 'v*', '--merged', 'HEAD') ?? '').split('\n'), tag);
+const codeProblem = versionCodeProblem({
+  gradle: read('mobile/android/app/build.gradle'),
+  prevGradle: prevTag ? out('show', `${prevTag}:mobile/android/app/build.gradle`) : null,
+  prevTag,
+});
+if (codeProblem) fail(codeProblem + ' (ANDROID.md §6).');
 console.log(source.kind === 'release'
   ? `packaging Tressette ${tag}, from the tag, commit ${head}`
   : `packaging a candidate for Tressette ${tag}, commit ${head}: for the device ` +

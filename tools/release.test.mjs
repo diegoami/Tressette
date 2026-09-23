@@ -13,7 +13,7 @@ import {
   parseCertDigest, certificateMatches, signatureVerdict,
   parseChecksums, checksumProblems, releaseCreateArgs,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, releaseNotes,
-  pickJdk, buildSource, publishTagProblems,
+  pickJdk, buildSource, publishTagProblems, versionCodeProblem, previousTag,
 } from './release_lib.mjs';
 
 // --- #23: the newest staged version is the highest number, not the last string
@@ -230,6 +230,46 @@ test("the release notes name the tagged commit", () => {
   const notes = releaseNotes('1.0.5', { commit: sha });
   assert.ok(notes.includes(`Costruita dal tag \`v1.0.5\` di diegoami/Tressette, commit \`${sha}\`.`));
   assert.ok(!releaseNotes('1.0.5').includes('Costruita'), 'no commit, no line');
+});
+
+// --- #58: versionCode moves with versionName, measured from the previous tag
+
+const gradleAt = (name, code) =>
+  `android {\n    defaultConfig {\n        versionCode ${code}\n        versionName "${name}"\n    }\n}\n`;
+
+test("versionCode has to move when versionName does, and only then (#58)", () => {
+  const prev = { prevGradle: gradleAt('1.0.4', 5), prevTag: 'v1.0.4' };
+  assert.equal(versionCodeProblem({ gradle: gradleAt('1.0.5', 6), ...prev }), null);
+  assert.equal(versionCodeProblem({ gradle: gradleAt('1.0.4', 5), ...prev }), null, 'no bump yet');
+  // The review's case: every declaration at 1.0.5, versionCode left at 5.
+  assert.match(versionCodeProblem({ gradle: gradleAt('1.0.5', 5), ...prev }),
+    /moved from 1\.0\.4 \(v1\.0\.4\) to 1\.0\.5, but versionCode 5 is not above 5/);
+  assert.match(versionCodeProblem({ gradle: gradleAt('1.0.5', 4), ...prev }), /not above 5/);
+  assert.match(versionCodeProblem({ gradle: gradleAt('1.0.4', 6), ...prev }), /move both or neither/);
+  assert.match(versionCodeProblem({ gradle: 'versionName "1.0.5"', ...prev }), /\(missing\)/);
+  // Before the first milestone there is nothing to measure against.
+  assert.equal(versionCodeProblem({ gradle: gradleAt('1.0.4', 5), prevGradle: null, prevTag: null }), null);
+
+  assert.equal(previousTag(['v1.0.4', 'v1.0.5', ''], 'v1.0.5'), 'v1.0.4');
+  assert.equal(previousTag(['v1.0.4'], 'v1.0.4'), null);
+  assert.equal(previousTag(['v1.0.9', 'v1.0.10', 'v1.1.0'], 'v1.1.0'), 'v1.0.10');
+});
+
+// The same check on the repository, against its own previous milestone tag. A
+// shallow clone has no tags to measure from, which is why CI's engine job
+// fetches the whole history; anywhere else a missing tag fails here.
+test("the repository's versionCode has moved with its versionName since the last tag", (t) => {
+  const git = (...args) => spawnSync('git', args, {
+    cwd: new URL('..', import.meta.url), encoding: 'utf8' });
+  if (git('rev-parse', '--is-shallow-repository').stdout.trim() === 'true')
+    return t.skip('a shallow clone has no tags to measure from');
+  const gradle = readFileSync(new URL('../mobile/android/app/build.gradle', import.meta.url), 'utf8');
+  const tag = `v${/versionName\s+"([^"]+)"/.exec(gradle)[1]}`;
+  const tags = git('tag', '--list', 'v*', '--merged', 'HEAD').stdout.split('\n');
+  const prevTag = previousTag(tags, tag);
+  assert.ok(prevTag || tags.includes(tag), 'at least the baseline milestone tag is reachable from HEAD');
+  const prevGradle = prevTag ? git('show', `${prevTag}:mobile/android/app/build.gradle`).stdout : null;
+  assert.equal(versionCodeProblem({ gradle, prevGradle, prevTag }), null);
 });
 
 test("an executable that is missing, truncated or not PE is refused", () => {

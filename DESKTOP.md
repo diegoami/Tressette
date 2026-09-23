@@ -111,7 +111,10 @@ A version bump touches six declarations: Android's `versionName` (and
 `versionCode`), `tauri.conf.json`, `Cargo.toml`, `desktop/package.json`, and
 the two lockfiles. `package_release.mjs` refuses to build unless they all
 agree, and so does `tools/release.test.mjs` on every pull request, so a missed
-one turns CI red before release day. The packager refuses an `.exe` that is
+one turns CI red before release day. `versionCode` is held separately, since it
+only has to move with the rest: both check that it is above the previous
+milestone tag's when `versionName` has moved, and unchanged when it has not
+(#58). The packager refuses an `.exe` that is
 missing, under 1 MB or not a PE binary, runs the smoke against it, and stages
 `Tressette-X.Y.Z-android.apk`, `Tressette-X.Y.Z-windows-x64.exe` and
 `SHA256SUMS.txt`, replacing any earlier directory. The publisher requires

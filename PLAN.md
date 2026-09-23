@@ -2057,8 +2057,8 @@ both — is never the only thing asked.
 
 | gate | local | CI |
 |---|---|---|
-| unit tests | `npm test` | `node --test 'tools/**/*.test.mjs'` (`.github/workflows/check.yml:32`) |
-| UI check | `node tools/check_ui.mjs` | `npm run check` (`.github/workflows/check.yml:48`) |
+| unit tests | `npm test` | `node --test 'tools/**/*.test.mjs'` (`.github/workflows/check.yml:36`) |
+| UI check | `node tools/check_ui.mjs` | `npm run check` (`.github/workflows/check.yml:52`) |
 
 The full suite is both gates. Run it three times before pushing anything that
 touches the primary logic — the engine and the opponent — and read the pass

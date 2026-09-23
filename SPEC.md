@@ -314,7 +314,8 @@ because the deal is still dealt.
 ## 7. The checks
 
 ```sh
-npm test                            47 tests, no dependencies
+npm test                            the unit tests, no dependencies; read the
+                                    pass count it prints, not a number here
 npm run check                       the UI check: 6 screen shapes, 21 viewports
                                     × 6 decks; needs playwright-core + Chromium
 ```
@@ -416,9 +417,11 @@ part worth carrying to another project:
 - **The Bresciane deck is not cleanly licensed.** It is a scan of a commercial
   Dal Negro deck — the same copyright grey area as the original art, a
   deliberate choice, documented in the README and in the import script.
-- **The APK is live, and has been installed once, at v1.0.0.** v1.0.0, v1.0.1
-  and v1.0.2 are published at `diegoami/tressette-releases`, signed and
-  checksummed; the owner sideloaded v1.0.0 and played a hand. The one
+- **The APK is live, and has been installed once, at v1.0.0.** Its releases are
+  published at `diegoami/tressette-releases`, signed and checksummed, with a
+  Windows build beside the APK since v1.0.4. Which ones exist is in
+  `ANDROID.md` §6, the one place that keeps count. The owner sideloaded v1.0.0
+  and played a hand. The one
   device-only question that remains — whether
   `android.permission.INTERNET` can be dropped — is in `ANDROID.md` §6 and §7,
   which is the release-status source of truth. The blank-screen question it is

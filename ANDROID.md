@@ -247,9 +247,11 @@ as a screen over the table, with its counting grid and setup (#46), and the
 about screen naming the Windows build. `versionName` is still **1.0.4** /
 `versionCode 5` in `app/build.gradle`; the next release bumps it.
 
-None of v1.0.0 to v1.0.4 is tagged in this repository: they predate the rule
-that a release is a milestone tag (§4). The first tag records the latest of
-them as the baseline the next milestone's review is measured from.
+v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
+(#55): the first tag under the rule that a release is a milestone (§4), placed
+after publishing and without a review before it, by the owner's decision; #53
+is its review after the fact. v1.0.0 to v1.0.3 predate the rule and stay
+untagged. The next milestone is v1.0.5, reviewed as `v1.0.4..<candidate>`.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`

@@ -18,11 +18,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Node 24, the line the releases are built with here. `lts/*` moved to
+      # whatever the newest LTS was on the day, so a new major could change the
+      # test runner or the UI check under a green history without a commit to
+      # show for it. The major is pinned and patches still arrive; moving to the
+      # next line is a commit here, in both jobs.
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '24'
       # Not `--test tools/`: Node 22 reads a bare directory as a module path and
-      # fails with MODULE_NOT_FOUND. A glob is what the current LTS discovers.
+      # fails with MODULE_NOT_FOUND. A glob is what Node 24 discovers.
       # No install first: the engine and its tests still have no dependencies.
       - run: node --test 'tools/**/*.test.mjs'
 
@@ -32,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: '24'   # as in the engine job
       # playwright-core is the one dependency this repo has, and it is a dev
       # one: it belongs to the check, not to the game. `npm ci` restores the
       # exact version the lockfile names, so CI and a local run measure the

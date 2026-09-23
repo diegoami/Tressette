@@ -13,7 +13,7 @@ import {
   parseCertDigest, certificateMatches, signatureVerdict,
   parseChecksums, checksumProblems, releaseCreateArgs,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, releaseNotes,
-  pickJdk,
+  pickJdk, buildSource, publishTagProblems,
 } from './release_lib.mjs';
 
 // --- #23: the newest staged version is the highest number, not the last string
@@ -178,6 +178,60 @@ test("the Android build is given a JDK 21, not whichever JDK is found first", ()
   assert.equal(pickJdk([]), null);
 });
 
+// --- a milestone is an annotated tag on main, and the release is built from it
+
+const HEAD = 'a'.repeat(40), OTHER = 'b'.repeat(40);
+const tagged = { version: '1.0.5', head: HEAD, tagCommit: HEAD, tagType: 'tag', onMain: true, clean: true };
+
+test("a publishable build comes only from the annotated tag, on main, unchanged", () => {
+  assert.deepEqual(buildSource(tagged), { ok: true, kind: 'release', dir: 'v1.0.5' });
+
+  // Every way a build can claim a tag it is not.
+  const refused = (facts, why) => {
+    const r = buildSource({ ...tagged, ...facts });
+    assert.equal(r.ok, false, why);
+    return r.reason;
+  };
+  assert.match(refused({ clean: false }, 'edited files'), /differ from HEAD/);
+  assert.match(refused({ onMain: false }, 'a branch'), /not on origin\/main/);
+  assert.match(refused({ tagCommit: OTHER }, 'a later commit'), /points at bbbbbbb.*HEAD is aaaaaaa/);
+  assert.match(refused({ tagType: 'commit' }, 'lightweight'), /lightweight/);
+  assert.match(refused({ tagCommit: null }, 'no tag yet'), /not tagged v1\.0\.5.*--candidate/s);
+  // --candidate never turns a tag mismatch into a build.
+  assert.equal(buildSource({ ...tagged, tagCommit: OTHER, candidate: true }).ok, false);
+});
+
+test("a candidate build is for the device checks, and is staged where publish never looks", () => {
+  const r = buildSource({ ...tagged, tagCommit: null, candidate: true });
+  assert.deepEqual(r, { ok: true, kind: 'candidate', dir: 'candidate-aaaaaaa' });
+  assert.equal(parseVersion(r.dir), null, 'publish_release only reads vX.Y.Z directories');
+  assert.equal(newestTag(['v1.0.4', r.dir]), 'v1.0.4');
+  // A candidate is still a commit on main, unchanged.
+  assert.equal(buildSource({ ...tagged, tagCommit: null, candidate: true, onMain: false }).ok, false);
+  assert.equal(buildSource({ ...tagged, tagCommit: null, candidate: true, clean: false }).ok, false);
+});
+
+test("publishing needs the annotated tag here and on the origin, the same one", () => {
+  const T = 'c'.repeat(40);
+  const good = { tag: 'v1.0.5', localObject: T, remoteObject: T, type: 'tag', onMain: true };
+  assert.deepEqual(publishTagProblems(good), []);
+  assert.deepEqual(publishTagProblems({ ...good, localObject: null }),
+    ['there is no tag v1.0.5 here: a release is built from its tag']);
+  assert.deepEqual(publishTagProblems({ ...good, remoteObject: null }),
+    ['v1.0.5 is not on the origin: git push origin v1.0.5']);
+  assert.deepEqual(publishTagProblems({ ...good, remoteObject: 'd'.repeat(40) }),
+    ['v1.0.5 on the origin is not the v1.0.5 here']);
+  assert.deepEqual(publishTagProblems({ ...good, type: 'commit', onMain: false }),
+    ['v1.0.5 is a lightweight tag, and a milestone is an annotated one', 'v1.0.5 is not on origin/main']);
+});
+
+test("the release notes name the tagged commit", () => {
+  const sha = 'e'.repeat(40);
+  const notes = releaseNotes('1.0.5', { commit: sha });
+  assert.ok(notes.includes(`Costruita dal tag \`v1.0.5\` di diegoami/Tressette, commit \`${sha}\`.`));
+  assert.ok(!releaseNotes('1.0.5').includes('Costruita'), 'no commit, no line');
+});
+
 test("an executable that is missing, truncated or not PE is refused", () => {
   const exe = Buffer.alloc(2 * 1024 * 1024);
   exe[0] = 0x4d; exe[1] = 0x5a;
@@ -231,6 +285,23 @@ test("the script's dry run exits clean and never calls gh release create",
     for (const f of ['publish_release.mjs', 'release_lib.mjs'])
       copyFileSync(new URL(`./${f}`, import.meta.url), path.join(tmp, 'tools', f));
 
+    // A milestone to publish: the copy is a repository with the annotated tag
+    // on main, pushed to an origin that is a bare repository beside it.
+    const git = (cwd, ...args) => {
+      const r = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.com', ...args],
+        { cwd, encoding: 'utf8' });
+      assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.stderr}`);
+    };
+    const origin = mkdtempSync(path.join(tmpdir(), 'tressette-origin-'));
+    git(origin, 'init', '-q', '--bare');
+    git(tmp, 'init', '-q', '-b', 'main');
+    git(tmp, 'add', 'tools');
+    git(tmp, 'commit', '-q', '-m', 'the release');
+    git(tmp, 'tag', '-a', 'v1.0.0', '-m', 'Tressette 1.0.0');
+    git(tmp, 'remote', 'add', 'origin', origin);
+    git(tmp, 'push', '-q', 'origin', 'main', 'v1.0.0');
+    git(tmp, 'fetch', '-q', 'origin');
+
     const dir = path.join(tmp, 'dist-release', 'v1.0.0');
     mkdirSync(dir, { recursive: true });
     const rows = releaseAssets('1.0.0').map((name) => {
@@ -261,6 +332,7 @@ test("the script's dry run exits clean and never calls gh release create",
 
     assert.equal(res.status, 0, res.stderr);
     assert.match(res.stdout, /dry run/);
+    assert.match(res.stdout, /Costruita dal tag `v1\.0\.0`/, 'the notes name the tagged commit');
     assert.equal(existsSync(marker), false,
       'a dry run must not reach gh release create');
   });

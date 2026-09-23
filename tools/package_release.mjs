@@ -3,9 +3,19 @@
  * Build a release, the signed Android APK and the Windows desktop executable,
  * and stage both for publishing.
  *
- *   node tools/package_release.mjs
+ *   node tools/package_release.mjs              # from the tag vX.Y.Z: the release
+ *   node tools/package_release.mjs --candidate  # from the untagged candidate
+ *
+ * A release is a milestone: an annotated tag vX.Y.Z on main, on the exact
+ * commit that was reviewed (CLAUDE.md, Milestones). The build comes from that
+ * tag, checked out, and nothing else stages into dist-release/vX.Y.Z/, the
+ * directory publish_release reads. --candidate builds the untagged candidate
+ * for the device checks that come before the tag, into
+ * dist-release/candidate-<sha>/, which publish_release never reads.
  *
  * Steps, in order, stopping at the first failure:
+ *   0. HEAD is the tag (or, with --candidate, an untagged commit on main), and
+ *      no tracked file differs from it
  *   1. every version declaration agrees with Android's versionName
  *   2. cap sync android   — copy public/ into the Android project
  *   3. gradlew assembleRelease
@@ -14,8 +24,8 @@
  *   6. desktop: npm ci, then tauri build --no-bundle
  *   7. refuse an implausible executable (missing, truncated, not PE)
  *   8. tools/smoke_desktop.mjs against that executable
- *   9. stage dist-release/vX.Y.Z/ with both assets and SHA256SUMS.txt, then
- *      read back and verify what was staged
+ *   9. stage both assets and SHA256SUMS.txt, then read back and verify what
+ *      was staged
  *
  * The version comes from mobile/android/app/build.gradle's versionName, and
  * step 1 holds the desktop wrapper's declarations to it. Both targets stage
@@ -35,7 +45,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  EXPECTED_CERT, JDK_MAJOR, newestBuildTools, signatureVerdict, pickJdk,
+  EXPECTED_CERT, JDK_MAJOR, newestBuildTools, signatureVerdict, pickJdk, buildSource,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, checksumProblems,
 } from './release_lib.mjs';
 
@@ -106,7 +116,26 @@ if (disagree.length)
   fail(`the version declarations disagree with Android's ${version}:\n  ` +
        disagree.join('\n  ') + '\n\nBump every one and refresh both lockfiles (DESKTOP.md).');
 const tag = `v${version}`;
-console.log(`packaging Tressette ${tag}`);
+
+// --- 0: build from the tag, or from a candidate that says it is one ---
+// Checked after the version, because the tag's name comes from it.
+const git = (...args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+const out = (...args) => { const r = git(...args); return r.status === 0 ? r.stdout.trim() : null; };
+const head = out('rev-parse', 'HEAD');
+if (!head) fail('this is not a git checkout.');
+const source = buildSource({
+  version, head,
+  tagCommit: out('rev-parse', '-q', '--verify', `refs/tags/${tag}^{commit}`),
+  tagType: out('cat-file', '-t', `refs/tags/${tag}`),
+  onMain: git('merge-base', '--is-ancestor', head, 'origin/main').status === 0,
+  clean: git('diff', '--quiet', 'HEAD', '--').status === 0,
+  candidate: process.argv.includes('--candidate'),
+});
+if (!source.ok) fail(source.reason);
+console.log(source.kind === 'release'
+  ? `packaging Tressette ${tag}, from the tag, commit ${head}`
+  : `packaging a candidate for Tressette ${tag}, commit ${head}: for the device ` +
+    'checks, not for publishing');
 
 // --- a signing key must be configured, or the whole exercise is pointless ---
 if (!existsSync(path.join(ANDROID, 'keystore.properties')))
@@ -167,7 +196,7 @@ if (problem) fail(`${problem} (${path.relative(ROOT, exe)}).`);
 step('smoke the desktop app', process.execPath, [path.join(ROOT, 'tools', 'smoke_desktop.mjs'), exe]);
 
 // --- 9: stage both, replacing any earlier directory, then read it back ---
-const outDir = path.join(ROOT, 'dist-release', tag);
+const outDir = path.join(ROOT, 'dist-release', source.dir);
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 const assets = releaseAssets(version);
@@ -185,8 +214,11 @@ const problems = checksumProblems(readFileSync(path.join(outDir, 'SHA256SUMS.txt
 if (problems.length) fail(`what was staged does not verify: ${problems.join('; ')}`);
 
 console.log(`\ndone.`);
-console.log(`  dist-release/${tag}/`);
+console.log(`  dist-release/${source.dir}/`);
 for (const line of sums) console.log(`  ${line}`);
 console.log(`  cert   ${signer}`);
 console.log(`         (expected ${EXPECTED_CERT}, ANDROID.md \u00a73)`);
-console.log(`\nnext: node tools/publish_release.mjs   (dry run; --confirm to publish)`);
+console.log(source.kind === 'release'
+  ? `\nnext: node tools/publish_release.mjs   (dry run; --confirm to publish)`
+  : `\nnext: install the APK and run the exe (ANDROID.md \u00a76). This build is not ` +
+    `published: tag the reviewed commit ${tag}, check the tag out, and package again.`);

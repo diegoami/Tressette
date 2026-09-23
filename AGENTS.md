@@ -37,8 +37,9 @@ This applies to every OpenCode implementation, with no size floor.
 
 ## Bootstrap
 
-A change that introduces or edits `AGENTS.md` or `CLAUDE.md` follows this same
-process: a PR that Luna reviews to AGREE. The process reviews its own amendment.
+A change that introduces or edits `AGENTS.md` follows this same process: a PR
+that Luna reviews to AGREE. The process reviews its own amendment. `CLAUDE.md`
+is amended through its own harness's process (`PLAN.md` §7.1).
 
 ## Verification
 

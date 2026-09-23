@@ -1654,6 +1654,11 @@ fresh-context Claude session reviews. `AGENTS.md` and `CLAUDE.md` record those
 processes, and §7.7 holds the rules both share. Neither harness applies the
 other's process.
 
+Each harness file is amended by its own harness: `AGENTS.md` through OpenCode's
+process, `CLAUDE.md` through Claude Code's. A change to this document — §7.7 and
+the shared facts in §7 included — goes through the process of whichever harness
+makes it, like any other change.
+
 Each iteration is one session, opened with:
 
 > Do iteration N of PLAN.md in `diegoami/Tressette`. Read PLAN.md in full
@@ -1663,6 +1668,11 @@ Each iteration is one session, opened with:
 > `iteration-N-<slug>` off the default branch. Stop at the iteration's "Done
 > when": do not start the next one. Finish with every check green, commit,
 > push, and open a pull request with the description in §7.4.
+
+That opener was for iterations 0 to 6, which are done. A session since then
+works on one issue or one change, and does not read this whole document first:
+it reads §7 and §7.7, then the issue, then the sections of this document the
+change touches. §7.7 says which files to read.
 
 Why one iteration and not several: the defects this kind of page ships are
 invisible in a diff and show up only in the check or at the table, and a
@@ -1757,7 +1767,11 @@ with goes to the owner, in the pull request, not into a silent merge.
   review is out, say so and what the last reviews found, and let them decide
   with that in hand. The review is part of the work, not a formality after it.
 - **Commit messages** as in Discola's history: one line saying what changed
-  and why, in English, imperative mood, no ticket numbers.
+  and why, in English, imperative mood, no ticket numbers. The pull request's
+  title becomes that line when it is squash-merged, so the title follows the
+  same rule. The `(#N)` GitHub appends to a squash merge is the only number a
+  commit on `main` carries; the issues a pull request completes go in its
+  `Closes #N` footer, not its title.
 
 ### 7.5 What outlives a session
 
@@ -1820,6 +1834,15 @@ npm run check 2>&1 | Select-Object -Last 40
 node tools/selfplay.mjs 2>&1 | Select-Object -Last 20
 gh pr view <n> --json title,state --jq .
 ```
+
+On Windows PowerShell, run
+`[Console]::OutputEncoding = [Text.Encoding]::UTF8` once per session before
+any of them. The console defaults to an OEM code page, which turns the test
+runner's `✔` into `Ô£ö`, and output pasted into a pull request is then not
+the output the command printed. Saving output with `>` or `Out-File -Encoding
+utf8` on Windows PowerShell 5.1 writes a byte-order mark, which lands in the
+pull request as an invisible first character; paste from the console, or drop
+the mark before pasting.
 
 On bash, `| tail -40` instead of `Select-Object -Last 40`. Use `node --check
 <file>` for a syntax check instead of running a script, and scope file searches

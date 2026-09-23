@@ -113,9 +113,15 @@ Android 12+ caveat came from.
 An unsigned APK does not install. Generate a release key once:
 
 ```sh
-keytool -genkeypair -v -keystore tressette-release.jks \
-        -keyalg RSA -keysize 2048 -validity 10000 -alias tressette
+keytool -genkeypair -v -keystore tressettette-release.jks \
+        -keyalg RSA -keysize 2048 -validity 10000 -alias tressettette
 ```
+
+The key that exists was made this way: its alias is `tressettette`, and
+`keytool -list -v -alias tressettette` on the `.jks` prints the fingerprint
+below. That command is also the quickest test of a password: if keytool accepts
+it and the build does not, the password in `keystore.properties` is not the one
+typed.
 
 `keytool` ships with the JDK. It asks for a keystore password, then certificate
 details nobody checks for a sideloaded game, then a key password. Give both the

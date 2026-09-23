@@ -5,9 +5,9 @@ the build is checked. Companion to [`ANDROID.md`](ANDROID.md), which does the
 same for the APK.
 
 **Status.** The [`desktop/`](desktop/README.md) wrapper is built and passes
-`tools/smoke_desktop.mjs` (below). Releasing it is not wired up yet: packaging
-both targets into one release, the `/windows` link and the about screen's
-mention are the next change. Installers and code signing are deferred.
+`tools/smoke_desktop.mjs` (below). A release carries it beside the APK from
+1.0.4 on, and the about screen and `/windows` link to it. Installers and code
+signing are deferred.
 
 ## Recorded decision
 
@@ -90,12 +90,38 @@ Two things learned writing it, both about the harness rather than the app:
 
 ## Releasing
 
-Not yet. The next change makes `tools/package_release.mjs` build and stage
-`Tressette-X.Y.Z-windows-x64.exe` beside the APK, on one version line, and
-refuse to package unless every version declaration agrees: Android's
-`versionName`, `tauri.conf.json`, `Cargo.toml`, `desktop/package.json` and both
-lockfiles. That follows Discola's 1.0.4, ported into this repository's own
-fail-closed release scripts rather than copied over them.
+Both targets ship as one GitHub Release on
+[`diegoami/tressette-releases`](https://github.com/diegoami/tressette-releases),
+on one version line, from this machine: it holds the Android signing key and
+the Rust toolchain.
+
+```sh
+node tools/package_release.mjs            # builds both, smokes the exe, stages dist-release/vX.Y.Z/
+node tools/publish_release.mjs            # dry run: verifies, prints the notes
+node tools/publish_release.mjs --confirm
+```
+
+A version bump touches six declarations: Android's `versionName` (and
+`versionCode`), `tauri.conf.json`, `Cargo.toml`, `desktop/package.json`, and
+the two lockfiles. `package_release.mjs` refuses to build unless they all
+agree, and so does `tools/release.test.mjs` on every pull request, so a missed
+one turns CI red before release day. The packager refuses an `.exe` that is
+missing, under 1 MB or not a PE binary, runs the smoke against it, and stages
+`Tressette-X.Y.Z-android.apk`, `Tressette-X.Y.Z-windows-x64.exe` and
+`SHA256SUMS.txt`, replacing any earlier directory. The publisher requires
+exactly those two assets: an APK-only directory is half a release, not a
+smaller one.
+
+This follows Discola's 1.0.4, ported into this repository's own fail-closed
+release scripts (`tools/release_lib.mjs`, issues #22, #23 and #26) rather than
+copied over them, so every decision is a pure function the tests hold.
+
+The executable is **unsigned**, so SmartScreen warns on first run. The release
+notes say so where a player meets it:
+
+> L'eseguibile non è firmato digitalmente, quindi Windows mostrerà l'avviso
+> «Windows ha protetto il PC»: clicca «Ulteriori informazioni», poi «Esegui
+> comunque». È portabile, senza installer: mettilo dove preferisci.
 
 ## Out of scope
 

@@ -29,6 +29,15 @@
   status = 302
   force = true
 
+# The Windows build, the same way: one release carries both files, so the same
+# latest-release page serves either. Built and published outside Netlify too;
+# see DESKTOP.md.
+[[redirects]]
+  from = "/windows"
+  to = "https://github.com/diegoami/tressette-releases/releases/latest"
+  status = 302
+  force = true
+
 # The deck sprite sheets are the original 1997 bitmaps and never change once a
 # deck is packed, so they can be cached hard. The page itself must not be, or
 # players keep an old build after a deploy.

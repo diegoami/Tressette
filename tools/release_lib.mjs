@@ -92,6 +92,71 @@ export function signatureVerdict({ verify }){
   return { ok: true, signer: digest };
 }
 
+// The JDK the Android build is made with: 21 (ANDROID.md §2). Gradle 8.14
+// refuses a newer class file outright ("Unsupported class file major version
+// 69" is Java 25, which is what Android Studio now bundles), and nothing older
+// runs Capacitor 8. `candidates` are [dir, text of dir/release] pairs, in order
+// of preference; the first whose JAVA_VERSION is 21.x wins, or null.
+export const JDK_MAJOR = 21;
+export function pickJdk(candidates){
+  for (const [dir, release] of candidates){
+    const v = /^JAVA_VERSION="(\d+)[."]/m.exec(release ?? '')?.[1];
+    if (Number(v) === JDK_MAJOR) return dir;
+  }
+  return null;
+}
+
+// The assets a release stages, both of them, always. The desktop build ships
+// beside the APK on one version line (DESKTOP.md), so a staged directory
+// holding one of the two is a half-built release, not a smaller one.
+export function releaseAssets(version){
+  return [`Tressette-${version}-android.apk`, `Tressette-${version}-windows-x64.exe`];
+}
+
+// Every place the version is declared, read from their texts. Android's
+// versionName is the source; the desktop wrapper declares it five more times,
+// and a bump that misses one ships an .exe whose metadata disagrees with its
+// tag, or leaves cargo to rewrite the committed lockfile during the release
+// build. Nothing here reads a file: the caller passes the texts.
+export function versionDeclarations(t){
+  const json = (s) => { try { return JSON.parse(s); } catch { return null; } };
+  const lock = json(t.packageLock);
+  return {
+    'mobile/android/app/build.gradle versionName':
+      /versionName\s+["']([^"']+)["']/.exec(t.gradle ?? '')?.[1],
+    'desktop/src-tauri/tauri.conf.json version': json(t.tauriConf)?.version,
+    'desktop/src-tauri/Cargo.toml version':
+      /^version\s*=\s*"([^"]+)"/m.exec(t.cargoToml ?? '')?.[1],
+    'desktop/package.json version': json(t.packageJson)?.version,
+    'desktop/package-lock.json version': lock?.version,
+    'desktop/package-lock.json packages[""].version': lock?.packages?.['']?.version,
+    'desktop/src-tauri/Cargo.lock tressette version':
+      /\[\[package\]\]\r?\nname = "tressette"\r?\nversion = "([^"]+)"/.exec(t.cargoLock ?? '')?.[1],
+  };
+}
+
+// The declarations that do not say `version`, as `where: value` lines. A
+// declaration that cannot be read at all disagrees too: `(missing)` is not a
+// version.
+export function versionDisagreements(version, declarations){
+  return Object.entries(declarations)
+    .filter(([, value]) => value !== version)
+    .map(([where, value]) => `${where}: ${value ?? '(missing)'}`);
+}
+
+// Why these bytes are not a Windows executable, or null if they could be. The
+// desktop counterpart of refusing an unsigned APK: a missing, truncated or
+// non-PE file must never be staged. 1 MB is far under the ~11 MB a build is
+// and far over anything an interrupted copy or an error page would be.
+export function exeProblem(bytes){
+  if (!bytes) return 'the desktop executable is not there';
+  if (bytes.length < 1024 * 1024)
+    return `the desktop executable is only ${bytes.length} bytes, which is not a build`;
+  if (bytes[0] !== 0x4d || bytes[1] !== 0x5a)
+    return 'the desktop executable does not start with "MZ", so it is not a Windows binary';
+  return null;
+}
+
 // `SHA256SUMS.txt` rows — `<64 hex><space><name>` — the shape `sha256sum`
 // writes. Malformed input throws rather than parsing to an empty list, because
 // an empty manifest that "verifies" is the failure mode this guards.
@@ -105,7 +170,13 @@ export function parseChecksums(text){
 
 // Everything wrong with a staged directory, given a `hashOf(name)` that returns
 // the actual digest or null when the file is absent. Empty means staged intact.
-export function checksumProblems(manifestText, hashOf){
+//
+// `expected`, when given, is the exact set of assets the manifest must list:
+// the manifest verifying against itself says nothing about a release it forgot
+// a file from. `present`, when given, is every file in the directory, and one
+// the manifest does not list is a problem too, because publish uploads what
+// the manifest names and a stray file means the staging was not what it said.
+export function checksumProblems(manifestText, hashOf, { expected, present } = {}){
   let rows;
   try { rows = parseChecksums(manifestText); }
   catch (e){ return [e.message]; }
@@ -116,16 +187,44 @@ export function checksumProblems(manifestText, hashOf){
     if (actual === null) problems.push(`missing ${name}`);
     else if (actual !== hash) problems.push(`${name} does not match SHA256SUMS.txt`);
   }
+  const listed = new Set(rows.map((r) => r.name));
+  for (const name of expected ?? [])
+    if (!listed.has(name)) problems.push(`SHA256SUMS.txt does not list ${name}`);
+  for (const name of rows.map((r) => r.name))
+    if (expected && !expected.includes(name)) problems.push(`${name} is not a release asset`);
+  for (const name of present ?? [])
+    if (name !== 'SHA256SUMS.txt' && !listed.has(name))
+      problems.push(`${name} is staged but not in SHA256SUMS.txt`);
   return problems;
+}
+
+// The release notes, in Italian to match the game. The Windows paragraph is
+// the one place a player meets the unsigned-first decision (DESKTOP.md): it
+// says what SmartScreen will show and how to get past it. `subtitle` is the
+// one line that changes from release to release.
+export function releaseNotes(version, { subtitle } = {}){
+  const [apk, exe] = releaseAssets(version);
+  const title = subtitle ? `Tressette ${version}: ${subtitle}.` : `Tressette ${version}.`;
+  return `${title}\n\n` +
+    `**Windows:** scarica \`${exe}\` e avvialo. L'eseguibile non è firmato ` +
+    `digitalmente, quindi Windows mostrerà l'avviso «Windows ha protetto il PC»: ` +
+    `clicca «Ulteriori informazioni», poi «Esegui comunque». È portabile, senza ` +
+    `installer: mettilo dove preferisci.\n\n` +
+    `**Android:** \`${apk}\`: apri il file sul telefono e consenti ` +
+    `l'installazione da questa fonte.\n\n` +
+    `Lo storico delle mani resta sul dispositivo: niente lascia il telefono o ` +
+    `il computer.\n\n` +
+    `**Gioca nel browser:** https://tresettette.netlify.app/\n\n` +
+    `Checksum SHA-256 in \`SHA256SUMS.txt\`.\n`;
 }
 
 // The `gh release create` arguments, or null on a dry run. This is the one
 // irreversible step, and returning null for the default keeps the no-write
 // guarantee in a function that a test can call, not only in a process a human
 // watches.
-export function releaseCreateArgs({ confirm, tag, version, dir, apkName, releasesRepo, notesFile }){
+export function releaseCreateArgs({ confirm, tag, version, dir, assets, releasesRepo, notesFile }){
   if (!confirm) return null;
   return ['release', 'create', tag,
-    path.join(dir, apkName), path.join(dir, 'SHA256SUMS.txt'),
+    ...assets.map((name) => path.join(dir, name)), path.join(dir, 'SHA256SUMS.txt'),
     '-R', releasesRepo, '--title', `Tressette ${version}`, '--notes-file', notesFile];
 }

@@ -1649,10 +1649,17 @@ There is no orchestrator agent. This document is the plan and the owner
 decides when each iteration starts.
 
 Two harnesses work in this repository, each with its own process: **OpenCode** —
-DeepSeek implements, Luna reviews — and **Claude Code** — Claude implements, a
-fresh-context Claude session reviews. `AGENTS.md` and `CLAUDE.md` record those
+DeepSeek implements, Luna reviews — and **Claude Code** — Claude implements, and
+at milestones an independent model the owner runs reviews the repository,
+or a fresh-context Claude subagent when there is none to run.
+`AGENTS.md` and `CLAUDE.md` record those
 processes, and §7.7 holds the rules both share. Neither harness applies the
 other's process.
+
+Each harness file is amended by its own harness: `AGENTS.md` through OpenCode's
+process, `CLAUDE.md` through Claude Code's. A change to this document — §7.7 and
+the shared facts in §7 included — goes through the process of whichever harness
+makes it, like any other change.
 
 Each iteration is one session, opened with:
 
@@ -1663,6 +1670,11 @@ Each iteration is one session, opened with:
 > `iteration-N-<slug>` off the default branch. Stop at the iteration's "Done
 > when": do not start the next one. Finish with every check green, commit,
 > push, and open a pull request with the description in §7.4.
+
+That opener was for iterations 0 to 6, which are done. A session since then
+works on one issue or one change, and does not read this whole document first:
+it reads §7 and §7.7, then the issue, then the sections of this document the
+change touches. §7.7 says which files to read.
 
 Why one iteration and not several: the defects this kind of page ships are
 invisible in a diff and show up only in the check or at the table, and a
@@ -1700,15 +1712,21 @@ Iterations 2 and 3 run alone. Nothing else is in flight while either is open.
 
 ### 7.3 The reviewer
 
-Every pull request gets one review from a **fresh context** — a new session or
-a subagent that has not seen the work — at high effort, same tier as the
-builder. The harness decides who that reviewer is: OpenCode's is a cross-harness
-subagent, and Claude Code's is a fresh Claude session (`AGENTS.md`, `CLAUDE.md`).
-Fresh matters more than different: the builder cannot see its own diff, and a
-reviewer that shares its context cannot either.
+Every change is reviewed from a **fresh context** — a session or subagent that
+has not seen the work — at high effort, same tier as the builder. The harness
+decides who reviews and when. OpenCode reviews every pull request, with Luna as
+a cross-harness subagent (`AGENTS.md`). Claude Code reviews at milestones: Claude
+writes a prompt, the owner runs it in a model other than Claude, and the report
+comes back to Claude as findings to reproduce. When the owner has no such model
+to run, a fresh-context Claude subagent runs the prompt instead, and no
+milestone review holds up the work (`CLAUDE.md`). Fresh matters more
+than different: the builder cannot see its own diff, and a reviewer that shares
+its context cannot either.
 
 The reviewer is given three things: this document, the diff, and the check
-output pasted into the pull request. It checks, in order:
+output. The diff is a pull request's, or, at a milestone, every commit since the
+last review. The check output is pasted into a pull request, and a milestone
+reviewer produces it by running the gates itself. It checks, in order:
 
 1. the rules against §2, line by line — ranking, terzi, following suit, the
    ultima, the declarations, the draw order;
@@ -1720,9 +1738,11 @@ output pasted into the pull request. It checks, in order:
 4. the iteration's "Done when", item by item;
 5. Italian on the page, English in comments and commits.
 
-The reviewer reports; it does not fix. The builder fixes in the same pull
-request, and the reviewer looks once more. A finding the builder disagrees
-with goes to the owner, in the pull request, not into a silent merge.
+The reviewer reports; it does not fix. On a pull request, the builder fixes in
+the same pull request, and the reviewer looks once more. A milestone's findings
+are fixed in new pull requests, from the review issue `CLAUDE.md` describes. A
+finding the builder disagrees with goes to the owner, in the pull request or the
+issue, not into a silent merge.
 
 ### 7.4 GitHub, at the lowest useful ceremony
 
@@ -1747,17 +1767,25 @@ with goes to the owner, in the pull request, not into a silent merge.
   it stays outside the verbatim check-output block. A reference is a link;
   only the keyword closes. A PR that does not complete an issue (a first
   pass, a partial fix) adds no line for it.
-- **No project board, no milestones.** The plan lives in this document, and a
-  second copy goes stale. The DESIGN issue is the one issue a change opens, and
-  it holds the design, not the plan.
+- **No project board, no GitHub milestones.** The plan lives in this document,
+  and a second copy goes stale. The DESIGN issue is the one issue a change
+  opens, and it holds the design, not the plan. A Claude Code milestone review
+  opens a `review` issue too (`CLAUDE.md`); it holds a report, not the plan.
 - **A pull request does not merge while its review is still running.** Added
   after iteration 5 merged with its review in flight and the review then found
   the iteration's central conclusion wrong — a table with a hole in it, which
   the next pull request had to undo and redo. If the owner asks to merge and a
   review is out, say so and what the last reviews found, and let them decide
   with that in hand. The review is part of the work, not a formality after it.
+  A Claude Code pull request has no review of its own, so this rule does not
+  hold it up. Its review comes at the milestone.
 - **Commit messages** as in Discola's history: one line saying what changed
-  and why, in English, imperative mood, no ticket numbers.
+  and why, in English, imperative mood, no ticket numbers. The pull request's
+  title becomes that line when it is squash-merged, so the title follows the
+  same rule. The `(#N)` GitHub appends to a squash merge is the only issue or
+  pull request number a commit on `main` carries; a version or any other
+  number that is part of what changed stays. The issues a pull request
+  completes go in its `Closes #N` footer, not its title.
 
 ### 7.5 What outlives a session
 
@@ -1820,6 +1848,15 @@ npm run check 2>&1 | Select-Object -Last 40
 node tools/selfplay.mjs 2>&1 | Select-Object -Last 20
 gh pr view <n> --json title,state --jq .
 ```
+
+On Windows PowerShell, run
+`[Console]::OutputEncoding = [Text.Encoding]::UTF8` once per session before
+any of them. The console defaults to an OEM code page, which turns the test
+runner's `✔` into `Ô£ö`, and output pasted into a pull request is then not
+the output the command printed. Saving output with `>` or `Out-File -Encoding
+utf8` on Windows PowerShell 5.1 writes a byte-order mark, which lands in the
+pull request as an invisible first character; paste from the console, or drop
+the mark before pasting.
 
 On bash, `| tail -40` instead of `Select-Object -Last 40`. Use `node --check
 <file>` for a syntax check instead of running a script, and scope file searches

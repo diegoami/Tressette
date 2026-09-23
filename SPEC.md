@@ -41,20 +41,23 @@ tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
 tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
 tools/check_ui.mjs       the UI check: five passes, six screen shapes,
-                         20 viewports × 6 decks
+                         21 viewports × 6 decks
 tools/serve.mjs          public/ over http, standard library only
 tools/make_icons.mjs     cuts the icon out of the Napoletane sheet
+tools/smoke_desktop.mjs  the built desktop app, launched twice and played
 tools/import_bresciane.mjs  builds the sixth deck from its source repo
 tools/package_release.mjs   signed APK into dist-release/
 tools/publish_release.mjs   that APK to the releases repo, on --confirm
 tools/pack_cards.py      carried from Discola, for repacking a deck
 mobile/              the Capacitor wrapper and the Android project
+desktop/             the Tauri wrapper, the Windows build
 .github/workflows/check.yml  the two CI jobs: the tests, and the UI check
 netlify.toml         publish public/, cache the decks hard, never the page
 package.json         scripts, and playwright-core as the one dev dependency
 RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
 ANDROID.md           the APK: what is done, what is left, and whose
+DESKTOP.md           the Windows build: the decision, and how it is checked
 PLAN.md §7.7         the working rules a builder has to follow
 ```
 
@@ -312,7 +315,7 @@ because the deal is still dealt.
 
 ```sh
 npm test                            47 tests, no dependencies
-npm run check                       the UI check: 6 screen shapes, 20 viewports
+npm run check                       the UI check: 6 screen shapes, 21 viewports
                                     × 6 decks; needs playwright-core + Chromium
 ```
 
@@ -326,7 +329,7 @@ subresource comes from outside), the **screens** (every screen and every state
 worth looking at, at six device shapes, every opponent included, and the result
 panel's own contract — covers the table, out of the card budget, body scrolls
 while its two actions stay on screen, the covered table inert), the
-**table** (20 viewports × 6 decks, then the tightest five again with the
+**table** (21 viewports × 6 decks, then the tightest five again with the
 spacing tokens inflated), and a **deal** — twenty cards tapped through the fan,
 a result whose counting grid is recomputed from the rules, a history entry, and
 a second deal abandoned through the confirm.
@@ -441,7 +444,8 @@ latin and served from `public/fonts/`.
 The page and its stylesheet are forked from Discola at `22c4b9c` and changed
 where a ten-card fan and a trumpless game needed something different. The
 fonts, the dev server, the release scripts, the Capacitor wrapper and the sixth
-deck were adopted from Discola at `5307c14`, after it diverged — issue #15. The
+deck were adopted from Discola at `5307c14`, after it diverged — issue #15, and
+the Tauri wrapper at `8574702`. The
 opponent is this game's own: there was no 1997 Tressette to transcribe, which
 is §0's first decision and the reason the formula had to be designed and tuned
 here.

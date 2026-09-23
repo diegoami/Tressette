@@ -1,0 +1,105 @@
+# Tressette — the desktop build
+
+The recorded decision for packaging `public/` as a desktop application, and how
+the build is checked. Companion to [`ANDROID.md`](ANDROID.md), which does the
+same for the APK.
+
+**Status.** The [`desktop/`](desktop/README.md) wrapper is built and passes
+`tools/smoke_desktop.mjs` (below). Releasing it is not wired up yet: packaging
+both targets into one release, the `/windows` link and the about screen's
+mention are the next change. Installers and code signing are deferred.
+
+## Recorded decision
+
+Chosen by the owner on 2026-09-23: Discola's decision, taken as it stands.
+
+| Decision | Value | Note |
+|---|---|---|
+| Shell | **Tauri 2** | wraps `public/` unchanged |
+| Platforms | **Windows only** | Linux and macOS are later options |
+| Goal | **Personal use + GitHub Releases** | as for Android, not app stores |
+| Binary hosting | **`diegoami/tressette-releases`** | the repository the APK ships from |
+| Code signing | **Unsigned first** | SmartScreen warns on first run; the release notes will say so |
+| Identifier | **`com.tressette.desktop`** | permanent: it keys the app's storage |
+
+The comparison it was made from, Tauri against Electron and against rewriting
+the page in the Geoclick stack, is in
+[Discola's `DESKTOP.md`](https://github.com/diegoami/discola-web/blob/main/DESKTOP.md),
+and nothing in it differs for this game. Tauri wraps `public/` unchanged, so
+the web build stays a directory that opens with no toolchain (`SPEC.md` §2).
+The Rust toolchain it needs was already installed. Electron would bundle a
+whole Chromium to show one page, and a rewrite would change nothing a player
+sees while risking everything the UI check guards.
+
+The wrapper was forked from Discola at `8574702`: the same three source files
+and configuration, renamed, with Discola's `Cargo.lock` as the starting point
+so the build uses the Tauri it was proven on (runtime 2.11.6, CLI 2.11.5).
+
+## How the build is checked
+
+`tools/check_ui.mjs` measures `public/` over `file://`. The app embeds those
+same bytes, so the layout is checked there, and the check gained the app's
+window, 1280 × 800, as a viewport. What the check cannot see is what only the
+wrapper can break, and `tools/smoke_desktop.mjs` checks that against the built
+`tressette.exe` itself:
+
+```sh
+cd desktop && npm ci && npm run build && cd ..
+node tools/smoke_desktop.mjs
+```
+
+It launches the app with WebView2's DevTools port open and attaches
+`playwright-core`, the repository's one dev dependency, over CDP. Nothing is
+injected into the build: Discola checked its wrapper with a probe compiled into
+a throwaway build, and here the build that is checked is the build that ships.
+The app runs against a temporary WebView2 profile, so a smoke run never writes
+into a player's history.
+
+Run on 2026-09-23 (Windows 11, Tauri 2.11.6, WebView2 153):
+
+```
+first launch
+  pass  served from the app origin  (http://tauri.localhost)
+  pass  the window opens at 1280x800  (1280x800)
+  pass  all 6 decks load over the asset protocol
+  pass  a deal puts ten cards in your hand  (10)
+  pass  a whole deal plays through the fan  (20 cards played)
+  pass  the end of the hand shows its result  (Hai perso)
+  pass  the hand is recorded in the history  (1 hands)
+  pass  all 6 @font-face rules load
+  pass  nothing is fetched from outside the app
+  pass  no script errors
+second launch
+  pass  the hand is in the history after a restart  (1 hands)
+  pass  the deck chosen before the restart is still chosen  (Napoletane)
+  pass  the app wrote to the temporary profile, not the player's
+```
+
+Two things learned writing it, both about the harness rather than the app:
+
+- Attached to WebView2 over CDP, Playwright's visibility check never passes
+  for the fan's cards, although they are on screen at full size. The smoke
+  taps them at measured points with `page.mouse`, which is what a pointer does
+  anyway.
+- The deck has to be chosen by the name the page uses. The first version
+  chose `'trevisane'`, which is not a deck: that deal was never recorded, and
+  the restart came back with the default deck. The two persistence checks
+  failed exactly as they should, and a player cannot reach that state, since
+  the picker offers only real names and the page replaces an unknown saved one
+  on load.
+
+## Releasing
+
+Not yet. The next change makes `tools/package_release.mjs` build and stage
+`Tressette-X.Y.Z-windows-x64.exe` beside the APK, on one version line, and
+refuse to package unless every version declaration agrees: Android's
+`versionName`, `tauri.conf.json`, `Cargo.toml`, `desktop/package.json` and both
+lockfiles. That follows Discola's 1.0.4, ported into this repository's own
+fail-closed release scripts rather than copied over them.
+
+## Out of scope
+
+A CI job for the desktop build. Releases are built locally
+([`ANDROID.md`](ANDROID.md) §4, "Build locally, not in CI"), and a Windows
+runner with a Rust toolchain costs more than the command it would save.
+Installers and code signing wait until a broader distribution is wanted.

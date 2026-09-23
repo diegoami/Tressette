@@ -127,7 +127,9 @@ The typefaces are Bodoni Moda and Barlow, the latin subset, served from
 `public/fonts/`.
 
 There is an Android wrapper in `mobile/` — the same `public/` directory in an
-APK, no build step — described in [`ANDROID.md`](ANDROID.md).
+APK, no build step — described in [`ANDROID.md`](ANDROID.md). A Windows
+wrapper in `desktop/` does the same with Tauri, described in
+[`DESKTOP.md`](DESKTOP.md).
 
 The opponent is this game's own. There was no 1997 Tressette to transcribe, so
 the formula was designed here and tuned by self-play.

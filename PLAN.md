@@ -164,6 +164,7 @@ tools/make_icons.mjs, tools/import_bresciane.mjs  the two asset makers
 tools/package_release.mjs, tools/publish_release.mjs  the APK, built and released
 tools/pack_cards.py the packer, carried over unchanged in case a deck is ever repacked
 mobile/             the Capacitor wrapper: webDir ../public, no build step (ANDROID.md)
+desktop/            the Tauri wrapper: frontendDist ../../public, no build step (DESKTOP.md)
 netlify.toml        publish "public", cache decks/* for a year, revalidate index.html
 package.json        the scripts, and playwright-core as the one dev dependency
 CLAUDE.md, README.md, SPEC.md (when built), ANDROID.md, .claude/skills/ui-check/
@@ -1807,6 +1808,7 @@ iteration that forks checks for movement first.
 | decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
 | CSS and table markup | `22c4b9c`, still Discola's head when iteration 3 forked | iteration 3 |
 | self-hosted fonts, the fonts pass, `serve.mjs`, the Bresciane deck, the Capacitor wrapper and the two release scripts | `5307c14` | issue #15, after it shipped |
+| the Tauri wrapper, its `Cargo.lock`, and the `desktop window` viewport | `8574702` | the desktop wrapper, after it shipped |
 
 ### 7.6 The owner's part
 
@@ -1829,9 +1831,10 @@ not already there.
 `public/engine.js`, `tools/*`, the root `*.md`, `.github/workflows/*`,
 `.claude/skills/*`. Normally ignore `node_modules/`, `.git/`, `public/decks/`,
 `public/fonts/`, `public/icons/`, `assets/`, `dist-release/`, Gradle wrapper
-files, and any binary. Read `package-lock.json` only when dependencies are the
-task, and open files under `mobile/android/` individually instead of walking the
-tree. Never read or paste `mobile/android/keystore.properties` or `*.jks`.
+files, `desktop/src-tauri/target/`, `desktop/src-tauri/icons/`, and any
+binary. Read `package-lock.json` and `desktop/src-tauri/Cargo.lock` only when
+dependencies are the task, and open files under `mobile/android/` individually
+instead of walking the tree. Never read or paste `mobile/android/keystore.properties` or `*.jks`.
 Ignoring a path here does not mean it should be deleted or gitignored.
 
 **Change the smallest thing.** Prefer targeted reads and diffs to repeating
@@ -2015,7 +2018,7 @@ both — is never the only thing asked.
   anything, and the page opens from a folder. `playwright-core` is a dev
   dependency of the UI check, pinned in `package.json` so CI and a local run
   measure the page with the same browser; `node_modules` stays gitignored.
-  `mobile/` is packaging tooling and is not part of the game.
+  `mobile/` and `desktop/` are packaging tooling and not part of the game.
 - Nothing the page loads comes from the network. The fonts are the subset in
   `public/fonts/`, and the check's `fonts` pass asserts that no subresource is
   fetched from outside — the Google Fonts link it replaced set the wordmark 12%

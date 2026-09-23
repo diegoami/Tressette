@@ -131,7 +131,7 @@ ground, so a transparent select was ivory text on a white Windows menu — and
 nothing that measures a box can see a popup that is not in the document. The
 computed background is the only thing that decides it.
 
-**Table pass** — the card table at all nineteen viewports in all six decks.
+**Table pass** — the card table at all twenty-one viewports in all six decks.
 Asserts the trick never overlaps either hand, your hand is never below the
 fold, nothing overflows the table, no element runs past the screen edge, and
 the rows never drift apart. Then it

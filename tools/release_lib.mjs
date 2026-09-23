@@ -106,6 +106,57 @@ export function pickJdk(candidates){
   return null;
 }
 
+// Where a build comes from, and so where it may be staged. A release is a
+// milestone: an annotated tag vX.Y.Z on main, on the exact commit that was
+// reviewed (CLAUDE.md, Milestones), and a publishable build is made from that
+// tag and nothing else. `candidate` is the one other build there is: the
+// untagged candidate commit, built for the device checks that must happen
+// before the tag, and staged where publish_release never looks.
+//
+// Facts in: `head` and `tagCommit` are full SHAs (tagCommit null when there is
+// no tag vX.Y.Z), `tagType` is what `git cat-file -t` says of the tag, `onMain`
+// is whether HEAD is on origin/main, `clean` is whether tracked files match
+// HEAD. Returns { ok, dir, kind } or { ok: false, reason }.
+export function buildSource({ version, head, tagCommit, tagType, onMain, clean, candidate }){
+  const tag = `v${version}`;
+  const no = (reason) => ({ ok: false, reason });
+  if (!clean)
+    return no('tracked files differ from HEAD, so the build would not be the commit it names. ' +
+              'Commit or stash them first.');
+  if (!onMain)
+    return no(`HEAD ${head.slice(0, 7)} is not on origin/main. A milestone is a commit on main; ` +
+              'fetch, and check out the candidate or the tag.');
+  if (tagCommit && tagCommit !== head)
+    return no(`${tag} exists and points at ${tagCommit.slice(0, 7)}, but HEAD is ${head.slice(0, 7)}. ` +
+              `Check out ${tag} to build the release.`);
+  if (tagCommit && tagType !== 'tag')
+    return no(`${tag} is a lightweight tag. A milestone is an annotated tag: ` +
+              `git tag -a ${tag} -m "Tressette ${version}" <sha>.`);
+  if (tagCommit) return { ok: true, kind: 'release', dir: tag };
+  if (candidate) return { ok: true, kind: 'candidate', dir: `candidate-${head.slice(0, 7)}` };
+  return no(`HEAD is not tagged ${tag}. The tag comes first, on the reviewed commit ` +
+            '(CLAUDE.md, Milestones); build from it. For the device checks before the tag, ' +
+            'pass --candidate: that build is staged where publish_release never looks.');
+}
+
+// Why publishing `tag` must not go ahead, from the tag's facts here and on the
+// origin: `localObject` and `remoteObject` are the tag objects' SHAs (null when
+// absent), `type` what `git cat-file -t` says, `onMain` whether its commit is
+// on origin/main. The release notes name the tagged commit, and a tag that
+// exists only on this machine names a commit nobody else can find.
+export function publishTagProblems({ tag, localObject, remoteObject, type, onMain }){
+  const problems = [];
+  if (!localObject) problems.push(`there is no tag ${tag} here: a release is built from its tag`);
+  else {
+    if (type !== 'tag') problems.push(`${tag} is a lightweight tag, and a milestone is an annotated one`);
+    if (!onMain) problems.push(`${tag} is not on origin/main`);
+    if (!remoteObject) problems.push(`${tag} is not on the origin: git push origin ${tag}`);
+    else if (remoteObject !== localObject)
+      problems.push(`${tag} on the origin is not the ${tag} here`);
+  }
+  return problems;
+}
+
 // The assets a release stages, both of them, always. The desktop build ships
 // beside the APK on one version line (DESKTOP.md), so a staged directory
 // holding one of the two is a half-built release, not a smaller one.
@@ -201,11 +252,15 @@ export function checksumProblems(manifestText, hashOf, { expected, present } = {
 // The release notes, in Italian to match the game. The Windows paragraph is
 // the one place a player meets the unsigned-first decision (DESKTOP.md): it
 // says what SmartScreen will show and how to get past it. `subtitle` is the
-// one line that changes from release to release.
-export function releaseNotes(version, { subtitle } = {}){
+// one line that changes from release to release. `commit`, the full SHA the
+// tag names, goes in too: the binaries live in another repository, and that
+// line is how a release there leads back to the source it was built from.
+export function releaseNotes(version, { subtitle, commit } = {}){
   const [apk, exe] = releaseAssets(version);
   const title = subtitle ? `Tressette ${version}: ${subtitle}.` : `Tressette ${version}.`;
-  return `${title}\n\n` +
+  const source = commit
+    ? `Costruita dal tag \`v${version}\` di diegoami/Tressette, commit \`${commit}\`.\n\n` : '';
+  return `${title}\n\n${source}` +
     `**Windows:** scarica \`${exe}\` e avvialo. L'eseguibile non è firmato ` +
     `digitalmente, quindi Windows mostrerà l'avviso «Windows ha protetto il PC»: ` +
     `clicca «Ulteriori informazioni», poi «Esegui comunque». È portabile, senza ` +

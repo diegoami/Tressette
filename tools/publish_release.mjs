@@ -2,14 +2,17 @@
 /**
  * Publish a packaged release to the public releases repo as a GitHub Release.
  *
- *   node tools/publish_release.mjs            # dry run: check everything, do nothing
- *   node tools/publish_release.mjs --confirm  # actually create the release
+ *   node tools/publish_release.mjs                       # dry run: check everything, do nothing
+ *   node tools/publish_release.mjs --confirm             # actually create the release
+ *   node tools/publish_release.mjs --subtitle "…" [...]  # the notes' one release-specific line
  *
- * Reads dist-release/vX.Y.Z/ (from tools/package_release.mjs): the APK and the
- * Windows executable, each verified against SHA256SUMS.txt, and the set itself,
- * so a missing, unlisted or stray file fails the run. Needs `gh` logged in with
- * access to the releases repo. Outward-facing and hard to take back once the
- * tag is public, so it does nothing without --confirm.
+ * Reads dist-release/vX.Y.Z/ (from tools/package_release.mjs, built from the
+ * tag): the APK and the Windows executable, each verified against
+ * SHA256SUMS.txt, and the set itself, so a missing, unlisted or stray file
+ * fails the run. The tag vX.Y.Z must be annotated, on main, and pushed to the
+ * origin, and the notes name its commit. Needs `gh` logged in with access to
+ * the releases repo. Outward-facing and hard to take back once the tag is
+ * public, so it does nothing without --confirm.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -19,10 +22,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   newestTag, checksumProblems, releaseCreateArgs, releaseAssets, releaseNotes,
+  publishTagProblems,
 } from './release_lib.mjs';
 
-// The one line of the notes that changes from release to release.
-const SUBTITLE = 'la prima versione per Windows, e Android aggiornato';
+// The one line of the notes that changes from release to release, from
+// `--subtitle "…"`, in Italian. 1.0.4's was a constant here, and would have
+// called every later release the first one for Windows.
+const at = process.argv.indexOf('--subtitle');
+const SUBTITLE = at > 0 ? process.argv[at + 1] : undefined;
 
 const RELEASES_REPO = 'diegoami/tressette-releases';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -53,6 +60,22 @@ const problems = checksumProblems(
   { expected: assets, present: readdirSync(dir) });
 if (problems.length) fail(`${problems.join('; ')} — repackage.`);
 
+// --- the milestone: the annotated tag, on main, here and on the origin ---
+// package_release staged this directory only from a checkout of the tag; the
+// notes name the tag's commit, so it has to be one anybody can find.
+const git = (...args) => spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+const out = (...args) => { const r = git(...args); return r.status === 0 ? r.stdout.trim() : null; };
+const commit = out('rev-parse', '-q', '--verify', `refs/tags/${tag}^{commit}`);
+const remote = out('ls-remote', 'origin', `refs/tags/${tag}`);
+const tagProblems = publishTagProblems({
+  tag,
+  localObject: out('rev-parse', '-q', '--verify', `refs/tags/${tag}`),
+  remoteObject: remote ? remote.split(/\s+/)[0] : null,
+  type: out('cat-file', '-t', `refs/tags/${tag}`),
+  onMain: !!commit && git('merge-base', '--is-ancestor', commit, 'origin/main').status === 0,
+});
+if (tagProblems.length) fail(tagProblems.join('; ') + '.');
+
 // --- gh must be usable and the tag must be new ---
 const gh = (args, opts = {}) => spawnSync('gh', args, { encoding: 'utf8', ...opts });
 if (gh(['--version']).status !== 0) fail('the GitHub CLI (gh) is not installed or not on PATH.');
@@ -60,9 +83,9 @@ const seen = gh(['release', 'view', tag, '-R', RELEASES_REPO]);
 if (seen.status === 0) fail(`${tag} already exists on ${RELEASES_REPO}. Bump the version first.`);
 
 // --- release notes, in Italian to match the game ---
-const notes = releaseNotes(version, { subtitle: SUBTITLE });
+const notes = releaseNotes(version, { subtitle: SUBTITLE, commit });
 
-console.log(`publish ${tag} to ${RELEASES_REPO}`);
+console.log(`publish ${tag} (commit ${commit}) to ${RELEASES_REPO}`);
 for (const name of assets) console.log(`  ${name}`);
 console.log(`  SHA256SUMS.txt`);
 

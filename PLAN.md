@@ -1651,9 +1651,8 @@ decides when each iteration starts.
 
 Two harnesses work in this repository, each with its own process: **OpenCode** —
 DeepSeek implements, Luna reviews — and **Claude Code** — Claude implements, and
-at milestones opens a review issue that the owner runs in another model when
-they have the chance.
-`AGENTS.md` and `CLAUDE.md` record those
+each release is reviewed before its tag by a model that is not Claude (§7.4,
+"A milestone is a release"). `AGENTS.md` and `CLAUDE.md` record those
 processes, and §7.7 holds the rules both share. Neither harness applies the
 other's process.
 
@@ -1716,18 +1715,18 @@ Iterations 2 and 3 run alone. Nothing else is in flight while either is open.
 Every change is reviewed from a **fresh context** — a session or subagent that
 has not seen the work — at high effort, same tier as the builder. The harness
 decides who reviews and when. OpenCode reviews every pull request, with Luna as
-a cross-harness subagent (`AGENTS.md`). Claude Code reviews at milestones: Claude
-opens a `review` issue holding the prompt, the owner runs it in a model other
-than Claude when they have the chance, and the report comes back on the issue as
-findings for Claude to reproduce. The issue blocks nothing: work and merges go
-on while it is open (`CLAUDE.md`). Fresh matters more
-than different: the builder cannot see its own diff, and a reviewer that shares
-its context cannot either.
+a cross-harness subagent (`AGENTS.md`). Claude Code reviews each milestone, a
+release, before its tag: Claude opens a milestone issue holding the prompt, the
+owner runs it in a model that is not Claude, and the reviewer answers there
+with AGREE or BLOCK. Merges go on while it is open; only the tag waits
+(`CLAUDE.md`). Fresh matters more than different: the builder cannot see its
+own diff, and a reviewer that shares its context cannot either.
 
 The reviewer is given three things: this document, the diff, and the check
-output. The diff is a pull request's, or, at a milestone, every commit since the
-last review issue. The check output is pasted into a pull request, and a milestone
-reviewer produces it by running the gates itself. It checks, in order:
+output. The diff is a pull request's, or, at a milestone,
+`<previous tag>..<candidate SHA>`. The check output is pasted into a pull
+request, and a milestone reviewer produces it by running the gates itself. It
+checks, in order:
 
 1. the rules against §2, line by line — ranking, terzi, following suit, the
    ultima, the declarations, the draw order;
@@ -1741,9 +1740,9 @@ reviewer produces it by running the gates itself. It checks, in order:
 
 The reviewer reports; it does not fix. On a pull request, the builder fixes in
 the same pull request, and the reviewer looks once more. A milestone's findings
-are fixed in new pull requests, from the review issue `CLAUDE.md` describes. A
-finding the builder disagrees with goes to the owner, in the pull request or the
-issue, not into a silent merge.
+are issues of their own, fixed in new pull requests, and the candidate moves to
+the commit that fixes them. A finding the builder disagrees with goes to the
+owner, in the pull request or the issue, not into a silent merge.
 
 ### 7.4 GitHub, at the lowest useful ceremony
 
@@ -1770,9 +1769,19 @@ issue, not into a silent merge.
   pass, a partial fix) adds no line for it.
 - **No project board, no GitHub milestones.** The plan lives in this document,
   and a second copy goes stale. The DESIGN issue is the one issue a change
-  opens, and it holds the design, not the plan. A Claude Code milestone review
-  is a `review` issue too (`CLAUDE.md`); it holds the prompt and the report,
-  not the plan.
+  opens, and it holds the design, not the plan. A milestone issue and the
+  finding issues its review opens (`CLAUDE.md`) hold a release's review, not
+  the plan.
+- **A milestone is a release.** It is an annotated tag `vX.Y.Z` on `main`, on
+  the exact commit the published release is built from, and nothing else: not
+  a branch, a pull request, a proposal, a count of merged pull requests, or a
+  change to a particular file. The binaries go to `diegoami/tressette-releases`;
+  the tag goes on this repository's `main`, and the release notes name its
+  commit. The independent review is per milestone and before the tag, never per
+  pull request; the tag is placed on exactly the reviewed commit, and the
+  release is built from the tag (`ANDROID.md` §4). Work merged after the
+  candidate belongs to the next milestone. The owner may tag without a review,
+  and the milestone issue then says so.
 - **A pull request does not merge while its review is still running.** Added
   after iteration 5 merged with its review in flight and the review then found
   the iteration's central conclusion wrong — a table with a hole in it, which
@@ -1780,7 +1789,8 @@ issue, not into a silent merge.
   review is out, say so and what the last reviews found, and let them decide
   with that in hand. The review is part of the work, not a formality after it.
   A Claude Code pull request has no review of its own, so this rule does not
-  hold it up. Its review comes at the milestone.
+  hold it up. Its review comes with the next milestone's, and that review holds
+  up the tag, not the merge.
 - **Commit messages** as in Discola's history: one line saying what changed
   and why, in English, imperative mood, no ticket numbers. The pull request's
   title becomes that line when it is squash-merged, so the title follows the

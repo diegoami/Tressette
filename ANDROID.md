@@ -157,7 +157,26 @@ secret in this project worth backing up somewhere that outlives the machine.
 A release carries the APK and the Windows build together, since 1.0.4
 ([`DESKTOP.md`](DESKTOP.md)), and both scripts handle the pair.
 
-**`node tools/package_release.mjs`** — check that every version declaration
+**Tag first, then build from the tag.** A release is a milestone: an annotated
+tag `vX.Y.Z` on `main`, on the exact commit that was reviewed (`PLAN.md` §7.4,
+`CLAUDE.md`). In order:
+
+1. `node tools/package_release.mjs --candidate` on the candidate commit, a
+   clean checkout of `main`. It stages `dist-release/candidate-<sha>/`, which is
+   for the device checks in §6 and is never published.
+2. The milestone review, and the device checks on that build.
+3. On AGREE (or the owner's decision to skip the review), the tag, on exactly
+   that commit: `git tag -a vX.Y.Z -m "Tressette X.Y.Z" <sha>`, then
+   `git push origin vX.Y.Z`.
+4. `git checkout vX.Y.Z`, then `node tools/package_release.mjs`. It refuses to
+   stage `dist-release/vX.Y.Z/` unless HEAD is that annotated tag, on
+   `origin/main`, with no tracked file changed.
+5. `node tools/publish_release.mjs --subtitle "…"`, the dry run, then with
+   `--confirm` on the owner's go-ahead. It refuses a tag that is lightweight,
+   off `main`, or not pushed, and the release notes name the tagged commit.
+
+**`node tools/package_release.mjs`** — check where the build comes from (step
+4 above), check that every version declaration
 agrees with `versionName`, then `cap sync`, `gradlew assembleRelease`, refuse
 an unsigned APK, `apksigner verify`; then build the desktop app, refuse an
 implausible `.exe`, and run `tools/smoke_desktop.mjs` against it; then write
@@ -212,7 +231,7 @@ deploy, to produce an artifact that changes only at release time.
 **This section is the release-status source of truth.** `SPEC.md` §10 links
 here rather than restating it.
 
-Releases **v1.0.0 to v1.0.3** are published at
+Releases **v1.0.0 to v1.0.4** are published at
 <https://github.com/diegoami/tressette-releases>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
@@ -222,21 +241,26 @@ start screen, let a reported void decay as cards are drawn, kept settings and
 match history out of Android backup, and dropped history rows whose timestamp
 is not a real date (issue #30).
 
-`versionName` is **1.0.4** / `versionCode 5` in `app/build.gradle`, and it is
-the first release with a Windows build beside the APK ([`DESKTOP.md`](DESKTOP.md)).
-For Android it carries the end of a hand as a screen over the table, with its
-counting grid and setup (#46), and the about screen naming the Windows build.
+1.0.4, published 2026-09-23, is the first release with a Windows build beside
+the APK ([`DESKTOP.md`](DESKTOP.md)). For Android it carries the end of a hand
+as a screen over the table, with its counting grid and setup (#46), and the
+about screen naming the Windows build. `versionName` is still **1.0.4** /
+`versionCode 5` in `app/build.gradle`; the next release bumps it.
+
+None of v1.0.0 to v1.0.4 is tagged in this repository: they predate the rule
+that a release is a milestone tag (§4). The first tag records the latest of
+them as the baseline the next milestone's review is measured from.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`
-only ever increases. Until 1.0.4 is published, 1.0.3 remains the newest tag.
+only ever increases.
 
 | # | Step | Whose | |
 |---|---|---|---|
 | 1 | Generate the release key and write `keystore.properties` | owner — it is a secret | **done** |
 | 2 | Create the public `diegoami/tressette-releases` | owner — outward-facing | **done** |
-| 3 | `node tools/package_release.mjs`, then `publish_release.mjs --confirm` | either, after 1 and 2 | **done** |
-| 4 | Install the APK on a phone and play a hand with the radio off | owner — no device here | **done** — it runs |
+| 3 | Package and publish, in §4's order: candidate, review, tag, build from the tag, publish | either, after 1 and 2; publishing on the owner's go-ahead | **done** |
+| 4 | Install the APK on a phone and play a hand with the radio off — on each release's candidate build, before its tag | owner — no device here | **done** — it runs |
 | 5 | Add the about-screen link, run the check | either, after 3 | **done** |
 
 Three things worth knowing for the next release, all learned the hard way:

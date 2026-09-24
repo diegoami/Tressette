@@ -165,8 +165,9 @@ export function releaseAssets(version){
 }
 
 // Every place the version is declared, read from their texts. Android's
-// versionName is the source; the desktop wrapper declares it five more times,
-// and a bump that misses one ships an .exe whose metadata disagrees with its
+// versionName is the source; the desktop wrapper declares it six more times,
+// in five files (package-lock.json holds it twice, #67), and a bump that
+// misses one ships an .exe whose metadata disagrees with its
 // tag, or leaves cargo to rewrite the committed lockfile during the release
 // build. Nothing here reads a file: the caller passes the texts.
 export function versionDeclarations(t){

@@ -3588,7 +3588,7 @@ dependencies = [
 
 [[package]]
 name = "tressette"
-version = "1.0.4"
+version = "1.0.5"
 dependencies = [
  "tauri",
  "tauri-build",

@@ -107,9 +107,11 @@ node tools/publish_release.mjs --subtitle "…"            # dry run: verifies, 
 node tools/publish_release.mjs --subtitle "…" --confirm
 ```
 
-A version bump touches six declarations: Android's `versionName` (and
-`versionCode`), `tauri.conf.json`, `Cargo.toml`, `desktop/package.json`, and
-the two lockfiles. `package_release.mjs` refuses to build unless they all
+A version bump touches seven declarations in six files: Android's
+`versionName` (and `versionCode`), `tauri.conf.json`, `Cargo.toml`,
+`desktop/package.json`, `desktop/package-lock.json` twice (its top-level
+`version` and `packages[""].version`), and `Cargo.lock`'s `tressette` entry.
+`package_release.mjs` refuses to build unless they all
 agree, and so does `tools/release.test.mjs` on every pull request, so a missed
 one turns CI red before release day. `versionCode` is held separately, since it
 only has to move with the rest: both check that it is above the previous

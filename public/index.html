@@ -730,9 +730,17 @@ button.card:disabled{ cursor: default; }
    instead of under every swatch, which is what let the row fit at all. */
 .decks{ display: grid; grid-template-columns: repeat(var(--deck-cols, 6), 1fr); gap: .4rem; }
 
+/* The row stretches every tile to its tallest deck. Left to size itself, the
+   tile's one column took the card's width, and the card, stretched to the
+   row's height, took that width from aspect-ratio: four of the six decks came
+   out wider than their tiles and lay over their neighbours (#63). A column
+   that is the tile's width, and a card centred in it at its own deck's height,
+   keep every deck inside. */
 .deck-opt{
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
+  align-items: center;
   min-width: 0;               /* let the grid item shrink so the row never overflows */
   padding: .3rem;
   border: 1px solid var(--rail-line);

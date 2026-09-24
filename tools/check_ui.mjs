@@ -763,6 +763,21 @@ const audit = () => {
     if (tops.size !== 1)
       out.push(`the deck picker in ${name(picker)} is on ${tops.size} rows, not one `
         + `(${opts.length} decks at tops ${[...tops].join(', ')})`);
+    // And each swatch inside its own tile (#63). The row stretches every tile
+    // to the tallest deck, the card stretched with it, and aspect-ratio then
+    // took its width from that height: four of the six decks came out wider
+    // than their tiles and lay over their neighbours, at every size, in both
+    // pickers. The one-row rule above and the off-screen rule both passed it,
+    // because the picker as a whole stayed in its row and on the screen.
+    for (const opt of opts) {
+      const card = opt.querySelector('.card');
+      if (!card) continue;
+      const t = opt.getBoundingClientRect(), c = card.getBoundingClientRect();
+      if (c.left < t.left - 1 || c.right > t.right + 1 || c.top < t.top - 1 || c.bottom > t.bottom + 1)
+        out.push(`the ${opt.dataset.deck} swatch in ${name(picker)} spills out of its tile `
+          + `(card ${c.width.toFixed(1)}x${c.height.toFixed(1)}, `
+          + `tile ${t.width.toFixed(1)}x${t.height.toFixed(1)})`);
+    }
   }
 
   // The dropdown a <select> opens is drawn by the operating system, not by

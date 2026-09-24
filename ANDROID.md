@@ -244,8 +244,14 @@ is not a real date (issue #30).
 1.0.4, published 2026-09-23, is the first release with a Windows build beside
 the APK ([`DESKTOP.md`](DESKTOP.md)). For Android it carries the end of a hand
 as a screen over the table, with its counting grid and setup (#46), and the
-about screen naming the Windows build. `versionName` is still **1.0.4** /
-`versionCode 5` in `app/build.gradle`; the next release bumps it.
+about screen naming the Windows build.
+
+`versionName` is **1.0.5** / `versionCode 6` in `app/build.gradle`, the next
+milestone, not yet tagged or published. For a player, on both platforms, it
+carries one change: the deck picker's swatches stay inside their tiles, on the
+start screen and on the end of a hand (#64). Everything else since v1.0.4 is
+the release process, CI and the checks (#54, #57, #62), which the apps do not
+contain. Until v1.0.5 is published, v1.0.4 remains the newest release.
 
 v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
 (#55): the first tag under the rule that a release is a milestone (§4), placed

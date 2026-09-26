@@ -123,6 +123,19 @@ const STILL = '*, *::before, *::after{ transition: none !important; animation: n
 
 /* ---- getting to each screen ----------------------------------------------- */
 
+// The Android build's App plugin, as Capacitor exports it to the page
+// (window.Capacitor.Plugins.App), installed before the page loads for a row
+// marked `native`. It keeps the page's backButton handler so a row can press
+// Back, and counts exitApp calls instead of closing anything. Forked from
+// Discola's check (its #50), with exitApp where Discola had minimizeApp.
+const fakeCapacitor = () => {
+  window.__exited = 0;
+  window.Capacitor = { Plugins: { App: {
+    addListener: (event, fn) => { if (event === 'backButton') window.__back = fn; },
+    exitApp: () => { window.__exited++; },
+  } } };
+};
+
 // Every screen and dialog the page has, and the states worth looking at inside
 // them. A row that cannot reach its screen is a check that silently passes, so
 // rows arrive with their screens — these five came with iteration 4.
@@ -203,6 +216,75 @@ const SCREENS = [
           out.push(`Back from ${nav}, opened before a deal, landed on ${shown() || 'nothing'}`);
       }
       return out;
+    } },
+  // Android's Back button (#69). Capacitor leaves it to the activity, which
+  // closed the app from every screen: Back in the settings, the history or the
+  // rules quit the game. With the handler, Back goes one level up, as Escape
+  // does and further: out of a sheet, out of the confirm, from a hand in play
+  // to the confirm that would abandon it, from a finished hand to the start
+  // screen, and from the start screen out of the app. Each press is recorded
+  // as the screen it leaves showing, which is what a player would see.
+  { name: 'android back', native: true, open: async p => {
+      const press = () => p.evaluate(() => {
+        if (typeof window.__back !== 'function') return false;   // check says so
+        window.__back();
+        const view = [...document.querySelectorAll('.view')].find(v => !v.hidden);
+        (window.__trail ??= []).push(`${view?.id ?? 'none'}`
+          + `${document.querySelector('#confirmScrim').hidden ? '' : '+confirm'}`
+          + `${document.querySelector('#result').hidden ? '' : '+result'}`
+          + `/exit${window.__exited}`);
+        return true;
+      });
+      // Later clicks depend on Back having gone where it should, so a wrong
+      // turn ends the route and is reported, rather than timing out the run.
+      try {
+        await p.click('#play');
+        await p.click('#btnSettings');
+        if (!await press()) return;                          // settings -> table
+        await press();                                       // hand in play -> confirm
+        await press();                                       // confirm -> dismissed
+        await press();                                       // hand in play -> confirm
+        await p.click('#confirmYes', { timeout: 2000 });     // abandoned -> start
+        await p.click('#play', { timeout: 2000 });
+        await p.evaluate(() => { state.over = true; state.terzi = [12, 20]; state.prese = [8, 12]; finish(); });
+        await p.click('#resultSettings', { timeout: 2000 });
+        await press();                                       // settings -> result
+        await press();                                       // finished hand -> start
+        await press();                                       // start -> out of the app
+      } catch (e) {
+        await p.evaluate(m => (window.__trail ??= []).push(`stuck: ${m}`), e.message.split('\n')[0]);
+      }
+    },
+    check: () => {
+      if (typeof window.__back !== 'function') return ['the page registered no backButton handler'];
+      const want = ['viewTable/exit0', 'viewTable+confirm/exit0', 'viewTable/exit0',
+                    'viewTable+confirm/exit0', 'viewTable+result/exit0', 'viewStart/exit0',
+                    'viewStart/exit1'];
+      const got = window.__trail ?? [];
+      return got.join() === want.join() ? []
+        : [`Back went ${got.join(' → ') || 'nowhere'}, want ${want.join(' → ')}`];
+    } },
+  // The way out that is not Back (#69): an Exit button on the start screen's
+  // bar, in the Android app only, where there is an app to leave.
+  { name: 'start, the Android exit button', native: true, open: async p => {
+      const b = await p.$('#btnExit');
+      if (b && await b.isVisible()) await b.click();
+    },
+    check: () => {
+      const b = document.querySelector('#btnExit');
+      if (!b) return ['the start screen has no exit button'];
+      if (b.hidden || !b.getClientRects().length) return ['the exit button is hidden in the Android app'];
+      return window.__exited === 1 ? [] : [`the exit button left the app ${window.__exited} times, not once`];
+    } },
+  // And none in a browser, or in the desktop window: a page cannot close its
+  // own tab, and the window has its own close button. A button that does
+  // nothing when pressed is worse than no button.
+  { name: 'start, in a browser', open: async () => {},
+    check: () => {
+      const b = document.querySelector('#btnExit');
+      if (!b) return ['the start screen has no exit button at all'];
+      return b.hidden && !b.getClientRects().length ? []
+        : ['the exit button shows in a browser, where there is no app to leave'];
     } },
   { name: 'start', open: async () => {},
     // The primary action has to be reachable without hunting for it. Readable
@@ -1001,6 +1083,7 @@ async function checkScreens(browser) {
       page.on('pageerror', e => errs.push('script error: ' + e.message));
       page.on('console', m => { if (m.type() === 'error' && !noise(m.text())) errs.push('console: ' + m.text()); });
 
+      if (screen.native) await page.addInitScript(fakeCapacitor);
       // Load once to clear what an earlier run stored, then again so the page
       // starts from the state it reads at load.
       await page.goto(URL_);

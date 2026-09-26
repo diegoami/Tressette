@@ -1,6 +1,6 @@
 {
   "name": "tressette-desktop",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "description": "Tauri wrapper around public/ for the Tressette desktop build",
   "scripts": {

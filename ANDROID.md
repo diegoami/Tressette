@@ -264,8 +264,14 @@ about screen naming the Windows build.
 platforms: the deck picker's swatches stay inside their tiles, on the start
 screen and on the end of a hand (#64). Everything else since v1.0.4 is the
 release process, CI and the checks (#54, #57, #62), which the apps do not
-contain. `versionName` is still **1.0.5** / `versionCode 6` in
-`app/build.gradle`; the next release bumps it.
+contain.
+
+`versionName` is **1.0.6** / `versionCode 7` in `app/build.gradle`, the next
+milestone, not yet tagged or published. For a player it carries Android's Back
+going one level up instead of closing the app, and an Exit button on the start
+screen, in the Android app only (#70). The Windows build and the web page
+change nowhere a player can see; the rest since v1.0.5 is documentation (#68,
+#71). Until v1.0.6 is published, v1.0.5 remains the newest release.
 
 v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
 (#55): the first tag under the rule that a release is a milestone (§4), placed

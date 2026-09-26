@@ -1309,6 +1309,12 @@ button.card:disabled{ cursor: default; }
       <button class="tool" data-nav="about" type="button" title="Informazioni" aria-label="Informazioni">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.3"/><path d="M12 7.6v1"/></svg>
       </button>
+      <!-- Leave the app (#69). Android only: hidden until the page finds the
+           App plugin, because a web page cannot close its own tab and the
+           desktop window has its own close button. -->
+      <button class="tool" id="btnExit" type="button" title="Esci" aria-label="Esci" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>
+      </button>
     </nav>
   </header>
   <div class="sheet-body">
@@ -1695,7 +1701,7 @@ for (const id of ["table","oppHand","youHand","slotOpp","slotYou","pile","stockC
   "gridPreseYou","gridPreseOpp","gridCarteYou","gridCarteOpp",
   "gridUltimaYou","gridUltimaOpp","gridAccusiYou","gridAccusiOpp",
   "gridTotaleYou","gridTotaleOpp","resultAccusi","resultNote","playAgain",
-  "resultSettings","resultOpponents","resultDecks","resultDeckName"])
+  "resultSettings","resultOpponents","resultDecks","resultDeckName","btnExit"])
   el[id] = document.getElementById(id);
 
 function faceOf(node, card){
@@ -2423,6 +2429,36 @@ document.addEventListener("keydown", e => {
   buffer = (buffer + e.key).slice(-CHEAT.length);
   if (buffer === CHEAT){ state.cheat = !state.cheat; render(); }
 });
+
+/* --- Android: Back, and leaving the app (#69) ------------------------------- */
+
+// The Android build's App plugin, or undefined everywhere else: the web page and
+// the desktop window have no Back button and no app for the page to leave.
+// Capacitor exports native plugins to the page as window.Capacitor.Plugins, so
+// this needs no import and no bundler.
+const nativeApp = () => window.Capacitor?.Plugins?.App;
+
+// Leave the app, from the Exit button or from Back on the start screen. A hand
+// in play asks first, through the same confirm as abandoning it, whose copy is
+// true of both: the hand is lost and not recorded.
+function leave(){ askAbandon(() => nativeApp().exitApp()); }
+
+// Android's Back button. Capacitor leaves it to the activity, which closed the
+// app from any screen, settings and rules included, and dropped a hand in play
+// without asking. The plugin reports it here instead, and it goes one level up:
+// it dismisses the confirm, backs out of a sheet, turns a hand in play into the
+// confirm that would abandon it, takes a finished hand to the start screen, and
+// from the start screen leaves. As in Discola (its #50 and #55).
+function androidBack(){
+  if (!el.confirmScrim.hidden){ closeConfirm(); return; }
+  if (screen !== "table" && screen !== "start"){ back(); return; }
+  if (screen === "start"){ leave(); return; }
+  if (state.over) abandon();
+  else askAbandon(() => show("start"));
+}
+nativeApp()?.addListener("backButton", androidBack);
+el.btnExit.hidden = !nativeApp();
+el.btnExit.addEventListener("click", leave);
 
 /* --- wiring ----------------------------------------------------------------- */
 

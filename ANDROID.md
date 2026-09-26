@@ -231,7 +231,7 @@ deploy, to produce an artifact that changes only at release time.
 **This section is the release-status source of truth.** `SPEC.md` §10 links
 here rather than restating it.
 
-Releases **v1.0.0 to v1.0.4** are published at
+Releases **v1.0.0 to v1.0.5** are published at
 <https://github.com/diegoami/tressette-releases>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
@@ -246,18 +246,22 @@ the APK ([`DESKTOP.md`](DESKTOP.md)). For Android it carries the end of a hand
 as a screen over the table, with its counting grid and setup (#46), and the
 about screen naming the Windows build.
 
-`versionName` is **1.0.5** / `versionCode 6` in `app/build.gradle`, the next
-milestone, not yet tagged or published. For a player, on both platforms, it
-carries one change: the deck picker's swatches stay inside their tiles, on the
-start screen and on the end of a hand (#64). Everything else since v1.0.4 is
-the release process, CI and the checks (#54, #57, #62), which the apps do not
-contain. Until v1.0.5 is published, v1.0.4 remains the newest release.
+1.0.5, published 2026-09-26, carries one change for a player, on both
+platforms: the deck picker's swatches stay inside their tiles, on the start
+screen and on the end of a hand (#64). Everything else since v1.0.4 is the
+release process, CI and the checks (#54, #57, #62), which the apps do not
+contain. `versionName` is still **1.0.5** / `versionCode 6` in
+`app/build.gradle`; the next release bumps it.
 
 v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
 (#55): the first tag under the rule that a release is a milestone (§4), placed
 after publishing and without a review before it, by the owner's decision; #53
 is its review after the fact. v1.0.0 to v1.0.3 predate the rule and stay
-untagged. The next milestone is v1.0.5, reviewed as `v1.0.4..<candidate>`.
+untagged. v1.0.5 is the first milestone made the whole way under it (#66):
+reviewed on its candidate `2bdfd19` (AGREE), device-checked on a
+`v1.0.5-rc.1` pre-release of that build, tagged on exactly that commit, and
+built from the tag. The next milestone is v1.0.6, reviewed as
+`v1.0.5..<candidate>`.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`

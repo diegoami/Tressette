@@ -69,6 +69,15 @@ and `capacitor.settings.gradle`; both are committed. Discola did this first
 (its #50), and this follows it so the games behave alike. Pressing a real Back
 on a device is the owner's check on the candidate build.
 
+**The page has to say `</head>` out loud (#74).** Capacitor injects its whole
+bridge, `window.Capacitor` and the plugins with it, before the literal
+`</head>` (or after `<head>`) of the page it serves. With neither, it logs
+"Unable to inject Capacitor, Plugins won't work" and serves the page bare.
+`public/index.html` had left both out, as HTML allows, so every APK up to
+1.0.5 ran with no bridge. Nothing noticed until Back and Exit needed it, and
+the UI check's stand-in plugin could not notice, because it builds the object
+itself. The check's document pass now reads the source for the tag.
+
 ### Status: it builds
 
 On this machine, past tense:

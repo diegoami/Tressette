@@ -27,7 +27,7 @@ repository if it is not already there.
 - **After the owner merges**: in the main checkout,
   `git switch main && git pull --ff-only`, then `git branch -d <branch>`.
   Delete the remote branch too, unless GitHub already did.
-- **Worktrees are ad hoc**, only to work in parallel with another session. Make
+- **Development worktrees are ad hoc**, only to work in parallel with another session. Make
   one with
   `git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/main`,
   install the dependencies in it as the project's setup says (`npm ci`, then
@@ -35,8 +35,14 @@ repository if it is not already there.
   `node_modules`. On Windows, nested paths need
   `git config --global core.longpaths true`, which the owner sets. Remove the
   worktree after the merge.
+- **Discola is a moving reference, not a fixed one.** Record the commit a fork
+  came from, and check whether Discola has moved since the last one recorded
+  before forking again; `SPEC.md` §11 holds the record.
 - **No per-PR and no per-design review.** The independent review runs once per
   release, below.
+- **A PR that completes an issue says so**: one `Closes #N` line per issue at
+  the end of its body, outside any pasted check output. A reference is a link;
+  only the keyword closes.
 - **Commit messages**: one line saying what changed and why, English, imperative
   mood, no ticket numbers. The PR title becomes that line when it is
   squash-merged.
@@ -72,6 +78,10 @@ milestone: not a PR, a run of PRs, a change to a file, or a process change.
    it, build from the tag (`ANDROID.md` §4), and publish on the owner's
    go-ahead. Work merged after the candidate waits for the next release.
 
+Every build — the `--candidate` one included — runs in a worktree detached at
+the commit it builds, never in the main checkout (`ANDROID.md` §4);
+`package_release.mjs` refuses to run in the main checkout.
+
 When a review is in, reproduce each finding before acting on it, and say on its
 issue whether it is confirmed, not reproduced, or disputed. A confirmed finding
 is fixed in a PR that closes its issue; a disputed one goes to the owner, in its
@@ -101,7 +111,8 @@ The two gates, and what CI runs:
 The full suite is both gates. Run it three times before pushing anything that
 touches the primary logic — the engine and the opponent — and read the pass
 count, not the absence of a FAIL. Both jobs run on every pull request and every
-push to `main`, and a red one does not merge.
+push to `main`, and a red one does not merge. Nothing is skipped or quarantined
+to get to green.
 
 **After any UI change, run `node tools/check_ui.mjs`.** It is not optional, and
 not only when something looks wrong. Every UI defect Discola shipped was
@@ -133,6 +144,11 @@ fixture freezes the plays: a formula change moves them by accident and the test
 says so, and a weight change moves them deliberately and the fixture is
 re-recorded in the same commit — `node tools/selfplay.mjs --golden >
 tools/golden.json` (§3 of `SPEC.md`).
+
+**A defect fix adds the assertion that would have caught it**, written against
+the broken commit first (the `ui-check` skill), and the defect issue is labelled
+`defect` and closed by that PR. This is how every threshold in the check got its
+story.
 
 ## What to read
 

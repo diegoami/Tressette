@@ -274,7 +274,7 @@ deploy, to produce an artifact that changes only at release time.
 **This section is the release-status source of truth.** `SPEC.md` §10 links
 here rather than restating it.
 
-Releases **v1.0.0 to v1.0.5** are published at
+Releases **v1.0.0 to v1.0.6** are published at
 <https://github.com/diegoami/tressette-releases>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
@@ -295,12 +295,19 @@ screen and on the end of a hand (#64). Everything else since v1.0.4 is the
 release process, CI and the checks (#54, #57, #62), which the apps do not
 contain.
 
-`versionName` is **1.0.6** / `versionCode 7` in `app/build.gradle`, the next
-milestone, not yet tagged or published. For a player it carries Android's Back
-going one level up instead of closing the app, and an Exit button on the start
-screen, in the Android app only (#70). The Windows build and the web page
-change nowhere a player can see; the rest since v1.0.5 is documentation (#68,
-#71). Until v1.0.6 is published, v1.0.5 remains the newest release.
+1.0.6, published 2026-09-27, carries one change for a player, on Android only:
+Back goes one level up instead of closing the app, and an Exit button shows on
+the start screen (#70), which wired `@capacitor/app` into the Android project.
+Everything else since v1.0.5 is release process, documentation and release
+tooling, and Capacitor App-plugin wiring (#68, #71, #72, #75–#78, #81). The
+page also gained the explicit head marker that lets Capacitor inject its bridge;
+only #70 changes what a player sees.
+
+`versionName` is **1.0.7** / `versionCode 8` in `app/build.gradle`, the next
+milestone, not yet tagged or published. It adds an Italiano / English selector
+and translates the game UI; Italian remains the default and the choice is
+remembered on this device. The About screen shows the rules in the selected
+language (#84). Until v1.0.7 is published, v1.0.6 remains the newest release.
 
 v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
 (#55): the first tag under the rule that a release is a milestone (§4), placed
@@ -309,8 +316,10 @@ is its review after the fact. v1.0.0 to v1.0.3 predate the rule and stay
 untagged. v1.0.5 is the first milestone made the whole way under it (#66):
 reviewed on its candidate `2bdfd19` (AGREE), device-checked on a
 `v1.0.5-rc.1` pre-release of that build, tagged on exactly that commit, and
-built from the tag. The next milestone is v1.0.6, reviewed as
-`v1.0.5..<candidate>`.
+built from the tag. v1.0.6 followed under the leaner process (#81): reviewed on
+its candidate `11e4572` (AGREE, one nit, #82), device-checked on the
+`v1.0.6-rc.3` candidate build, tagged on exactly that commit, and built from
+the tag. The next milestone is v1.0.7, reviewed as `v1.0.6..<candidate>`.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`

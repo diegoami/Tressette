@@ -8,7 +8,7 @@ first.
 The game is live at **<https://tresettette.netlify.app>** — the Netlify site
 linked to `main`, which publishes `public/` and nothing else. That URL is not
 reachable from the container the work is done in (the network policy denies
-it), so nothing in the repository asserts that it serves; see §7 of `PLAN.md`.
+it), so nothing in the repository asserts that it serves.
 
 ---
 
@@ -58,7 +58,7 @@ RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
 ANDROID.md           the APK: what is done, what is left, and whose
 DESKTOP.md           the Windows build: the decision, and how it is checked
-PLAN.md §7.7         the working rules a builder has to follow
+AGENTS.md            the working rules a builder has to follow
 ```
 
 Nothing is generated at build time and nothing under `public/` imports
@@ -444,7 +444,9 @@ crop of the Napoletane sheet, nearest-neighbour scaled by
 The typefaces are Bodoni Moda and Barlow (SIL Open Font License), subset to
 latin and served from `public/fonts/`.
 
-The page and its stylesheet are forked from Discola at `22c4b9c` and changed
+The decks, `tools/pack_cards.py`, `tools/check_ui.mjs`, the `ui-check` skill,
+`netlify.toml` and `.gitignore` came from Discola at `44363d8`, re-synced to
+`22c4b9c` (iteration 0, `3e8198d` and `106584f`). The page and its stylesheet are forked from Discola at `22c4b9c` and changed
 where a ten-card fan and a trumpless game needed something different. The
 fonts, the dev server, the release scripts, the Capacitor wrapper and the sixth
 deck were adopted from Discola at `5307c14`, after it diverged — issue #15, and

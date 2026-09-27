@@ -28,7 +28,7 @@ cut off, and no subresource comes from outside.
 of the Napoletane sheet — the tre is the highest card in the game, and a cup
 reads as an object at any size — and writes `assets/` for `@capacitor/assets`
 and `public/icons/` for the tab. Nearest-neighbour scaled: every output pixel is one source pixel repeated,
-because `PLAN.md` §7.7 is explicit that the card art is not redrawn, and
+because `AGENTS.md` is explicit that the card art is not redrawn, and
 interpolation is redrawing by another name.
 
 ## 2. The build: Capacitor 8
@@ -181,10 +181,10 @@ A release carries the APK and the Windows build together, since 1.0.4
 ([`DESKTOP.md`](DESKTOP.md)), and both scripts handle the pair.
 
 **Tag first, then build from the tag.** A release is a milestone: an annotated
-tag `vX.Y.Z` on `main`, on the exact commit that was reviewed (`PLAN.md` §7.4,
-`CLAUDE.md`). Every build is made in a worktree of its own, detached at the
-commit it builds, beside the main checkout, never in the main checkout itself
-(`PLAN.md` §7.7, "Who works where"). `package_release.mjs` refuses to run in the
+tag `vX.Y.Z` on `main`, on the exact commit that was reviewed
+(`AGENTS.md`, *Releases*). Every build is made in a worktree of its own, detached at the
+commit it builds, beside the main checkout, never in the main checkout itself.
+`package_release.mjs` refuses to run in the
 main checkout. In order:
 
 1. `git fetch origin --tags`, then
@@ -254,7 +254,7 @@ checksum are, which is what somebody about to sideload an APK should read.
 
 The about screen carries the link now — a **pair** of lines, one per
 `section[lang]`, because that screen carries its body twice and a sentence
-added to one half only is exactly the drift `PLAN.md` §7.7 warns about.
+added to one half only is exactly the drift `AGENTS.md` warns about.
 
 **It is the release page's own URL there, not `/android`.** The redirect only
 exists on Netlify, and this page has two other homes: a folder on disk, where

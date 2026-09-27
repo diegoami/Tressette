@@ -821,7 +821,7 @@ a second day and play it yourself before moving on.
 
 Fork Discola's CSS and table markup **from a named commit, `22c4b9c` or
 later**, and write the commit into the pull request. Before forking, check
-whether Discola has moved again since §7.5's last recorded commit. That
+whether Discola has moved again since the last commit recorded in `SPEC.md` §11. That
 commit changed the seat layout: the name plate stacks above or below the hand
 on phone-shaped screens and is paid for out of the card budget through
 `--plates`, and the tallone may shrink and wrap. A ten-card fan meets those
@@ -1055,7 +1055,7 @@ in with the review's fixes, each against its own break.
 
 ### Defects found by playing iteration 4 — issues #6 and #7
 
-§7.6's half of the work, and it found in one sitting what nineteen viewports
+The owner's half of the work, and it found in one sitting what nineteen viewports
 and five decks could not.
 
 **#7 — a card could not be tapped where it looked free.** The hand keeps its
@@ -1397,7 +1397,7 @@ player's own hand **74px up at 393x852, 101px at 1440x900, while they were
 choosing the card that decides the deal**. `min-height: var(--ch)` on `.hand`
 fixes it, and the numbers go back to the ones `main` measures exactly.
 
-It is §7.7's oldest rule arriving from the other side. §7.7 says
+It is `AGENTS.md`'s oldest rule arriving from the other side. `AGENTS.md` says
 a row that costs nothing while empty moves every card below it the moment it
 fills; this was a row that had cost something all deal and then stopped. And it
 went unseen for the usual reason: `measure()` runs on a table that has just
@@ -1489,7 +1489,7 @@ to have a box as well as words.
 
 Issue #15, from the owner: a list of six things `diegoami/discola-web` had changed
 since this project forked its page, its tooling and its decks. Discola is a
-moving reference — §7.5 said so — and this is the first time that cost
+moving reference — `SPEC.md` §11 records the forks — and this is the first time that cost
 something to reconcile. Each item was verified against this copy before it was
 adopted, and one of the six turned out not to apply.
 
@@ -1609,7 +1609,7 @@ skipped leave exactly the same diff.
 **The golden fixture was re-baselined**, the first time since it was frozen:
 6 of its 60 deals and 332 of its 9,540 plays changed. That is the fixture
 doing its job rather than failing — it exists to make a change to the
-opponent visible, and the rule in §7.7 is that the formula does not
+opponent visible, and the rule in `AGENTS.md` is that the formula does not
 move without the owner deciding it should. This one was measured three ways
 first and decided by the owner on the numbers.
 
@@ -1641,476 +1641,17 @@ first and decided by the owner on the numbers.
 
 ## 7. How this gets built
 
-Written for a builder starting with no context. Read this section, then the
-rest of this document, then Discola.
-
-### 7.1 One iteration per session, one implementer per harness
-
-There is no orchestrator agent. This document is the plan and the owner
-decides when each iteration starts.
-
-Two harnesses work in this repository, each with its own process: **OpenCode** —
-DeepSeek implements, Luna reviews — and **Claude Code** — Claude implements, and
-each release is reviewed before its tag by a model that is not Claude (§7.4,
-"A milestone is a release"). `AGENTS.md` and `CLAUDE.md` record those
-processes, and §7.7 holds the rules both share. Neither harness applies the
-other's process.
-
-Each harness file is amended by its own harness: `AGENTS.md` through OpenCode's
-process, `CLAUDE.md` through Claude Code's. A change to this document — §7.7 and
-the shared facts in §7 included — goes through the process of whichever harness
-makes it, like any other change.
-
-Each iteration is one session, opened with:
-
-> Do iteration N of PLAN.md in `diegoami/Tressette`. Read PLAN.md in full
-> first, then `diegoami/discola-web` (`CLAUDE.md`, `SPEC.md`,
-> `public/index.html`, `tools/check_ui.mjs`, `.claude/skills/ui-check`), then
-> the previous iteration's pull request. Work on a branch named
-> `iteration-N-<slug>` off the default branch. Stop at the iteration's "Done
-> when": do not start the next one. Finish with every check green, commit,
-> push, and open a pull request with the description in §7.4.
-
-That opener was for iterations 0 to 6, which are done. A session since then
-works on one issue or one change, and does not read this whole document first:
-it reads §7 and §7.7, then the issue, then the sections of this document the
-change touches. §7.7 says which files to read, and where the session works: in
-a worktree of its own, never in the main checkout ("Who works where").
-
-Why one iteration and not several: the defects this kind of page ships are
-invisible in a diff and show up only in the check or at the table, and a
-session that holds the whole of one iteration in context catches them. A
-handoff in the middle of the fan or the opponent loses exactly that.
-
-Why no orchestrator: the iterations are sequential and coupled — the table
-needs the engine's API, the check needs the table's markup, the profiles need
-the harness. At most a day could run in parallel, and an orchestrator would
-never see the code. Subagents earn their keep in two places: read-only
-exploration of Discola while the builder works, and the OpenCode reviewer
-(§7.3).
-
-Discola is the reference for everything not stated here. If it is not already
-beside this repo, clone it: `https://github.com/diegoami/discola-web`.
-
-### 7.2 Model and effort
-
-| Iteration | Effort | Why |
-|---|---|---|
-| 0 Scaffold | medium | copying and rewording |
-| 1 Engine and tests | medium | well specified in §2 and §3.2 |
-| 2 Opponent and harness | **high** | the project's first way to fail quietly; §4 gives it slack |
-| 3 The table | **high** | the second; may take two sessions, fan first, then the check |
-| 4 Result and sheets | medium | Discola's screens, forked |
-| 5 The opponents | medium | the harness does the work; the builder reads numbers |
-| 6 Ship | medium | docs in Discola's voice |
-
-The builder is the Opus tier throughout. Do not drop to a smaller model on the
-cheap iterations: the saving over eight days is small, and a missed layout
-defect costs more than it saves. Exploration subagents the builder spawns to
-read Discola can be the small tier.
-
-Iterations 2 and 3 run alone. Nothing else is in flight while either is open.
-
-### 7.3 The reviewer
-
-Every change is reviewed from a **fresh context** — a session or subagent that
-has not seen the work — at high effort, same tier as the builder. The harness
-decides who reviews and when. OpenCode reviews every pull request, with Luna as
-a cross-harness subagent (`AGENTS.md`). Claude Code reviews each milestone, a
-release, before its tag: Claude opens a milestone issue holding the prompt, the
-owner runs it in a model that is not Claude, and the reviewer answers there
-with AGREE or BLOCK. Merges go on while it is open; only the tag waits
-(`CLAUDE.md`). Fresh matters more than different: the builder cannot see its
-own diff, and a reviewer that shares its context cannot either.
-
-The reviewer is given three things: this document, the diff, and the check
-output. The diff is a pull request's, or, at a milestone,
-`<previous tag>..<candidate SHA>`. The check output is pasted into a pull
-request, and a milestone reviewer produces it by running the gates itself. It
-checks, in order:
-
-1. the rules against §2, line by line — ranking, terzi, following suit, the
-   ultima, the declarations, the draw order;
-2. the opponent against §3.4 — the formula as written, the weights named as
-   listed, no DOM or `Math.random` in `engine.js`;
-3. that the UI check actually ran, on this commit, and that every assertion
-   still names a defect (a new threshold with no story behind it is a
-   finding);
-4. the iteration's "Done when", item by item;
-5. Italian on the page, English in comments and commits.
-
-The reviewer reports; it does not fix. On a pull request, the builder fixes in
-the same pull request, and the reviewer looks once more. A milestone's findings
-are issues of their own, fixed in new pull requests, and the candidate moves to
-the commit that fixes them. A finding the builder disagrees with goes to the
-owner, in the pull request or the issue, not into a silent merge.
-
-### 7.4 GitHub, at the lowest useful ceremony
-
-- **One pull request per iteration.** It is the unit of work, review and CI.
-  Its description has four parts: what was built; the iteration's "Done when"
-  as a ticked list; the check output, verbatim; what was left out and why.
-- **CI on every pull request**: the engine tests from iteration 1, the UI
-  check from iteration 3. A red check does not merge. Nothing is skipped or
-  quarantined to get to green.
-- **A DESIGN issue per OpenCode change, and defect issues otherwise.** The
-  OpenCode harness opens a DESIGN issue before implementing, and Luna reviews it
-  there (`AGENTS.md`) — an explicit exception to "no issue per iteration". Claude
-  Code has no design-issue stage. Otherwise, issues are for defects found by
-  playing after an iteration has merged: label them `defect`. Each is closed by a
-  pull request that fixes the page *and* adds the assertion that would have
-  caught it, per the `ui-check` skill: the assertion is written against the
-  broken commit first. This is how every threshold in Discola's check got its
-  story.
-- **A PR that completes an issue says so.** After the four parts, the body
-  ends with a footer of one `Closes #N` line per issue the PR completes —
-  design issue or defect issue. The footer is metadata, not a fifth part, and
-  it stays outside the verbatim check-output block. A reference is a link;
-  only the keyword closes. A PR that does not complete an issue (a first
-  pass, a partial fix) adds no line for it.
-- **No project board, no GitHub milestones.** The plan lives in this document,
-  and a second copy goes stale. The DESIGN issue is the one issue a change
-  opens, and it holds the design, not the plan. A milestone issue and the
-  finding issues its review opens (`CLAUDE.md`) hold a release's review, not
-  the plan.
-- **A milestone is a release.** It is an annotated tag `vX.Y.Z` on `main`, on
-  the exact commit the published release is built from, and nothing else: not
-  a branch, a pull request, a proposal, a count of merged pull requests, or a
-  change to a particular file. The binaries go to `diegoami/tressette-releases`;
-  the tag goes on this repository's `main`, and the release notes name its
-  commit. The independent review is per milestone and before the tag, never per
-  pull request; the tag is placed on exactly the reviewed commit, and the
-  release is built from the tag (`ANDROID.md` §4). Work merged after the
-  candidate belongs to the next milestone. The owner may tag without a review,
-  and the milestone issue then says so.
-- **A pull request does not merge while its review is still running.** Added
-  after iteration 5 merged with its review in flight and the review then found
-  the iteration's central conclusion wrong — a table with a hole in it, which
-  the next pull request had to undo and redo. If the owner asks to merge and a
-  review is out, say so and what the last reviews found, and let them decide
-  with that in hand. The review is part of the work, not a formality after it.
-  A Claude Code pull request has no review of its own, so this rule does not
-  hold it up. Its review comes with the next milestone's, and that review holds
-  up the tag, not the merge.
-- **Commit messages** as in Discola's history: one line saying what changed
-  and why, in English, imperative mood, no ticket numbers. The pull request's
-  title becomes that line when it is squash-merged, so the title follows the
-  same rule. The `(#N)` GitHub appends to a squash merge is the only issue or
-  pull request number a commit on `main` carries; a version or any other
-  number that is part of what changed stays. The issues a pull request
-  completes go in its `Closes #N` footer, not its title.
-
-### 7.5 What outlives a session
-
-Nothing lives in a session's memory. Anything learned goes into one of three
-files: a decision into §0 of this document, a rule either harness must follow
-into §7.7 of this document, and everything a stranger needs into `SPEC.md`, which
-iteration 6 wrote. If a session ends with something only it knows, that is a defect
-in the handoff.
-
-**Discola is a moving reference, not a fixed one.** It is a live repository
-with its own sessions, and it moved twice during iteration 0 alone. Anything
-forked from it is a snapshot with a date. When an iteration forks from
-Discola, it records the commit here and in its pull request, and the next
-iteration that forks checks for movement first.
-
-| Forked | From Discola at | By |
-|---|---|---|
-| decks, tools, skill, `netlify.toml` | `44363d8`, re-synced to `22c4b9c` | iteration 0, `3e8198d` and `106584f` |
-| CSS and table markup | `22c4b9c`, still Discola's head when iteration 3 forked | iteration 3 |
-| self-hosted fonts, the fonts pass, `serve.mjs`, the Bresciane deck, the Capacitor wrapper and the two release scripts | `5307c14` | issue #15, after it shipped |
-| the Tauri wrapper, its `Cargo.lock`, and the `desktop window` viewport | `8574702` | the desktop wrapper, after it shipped |
-
-### 7.6 The owner's part
-
-Start each iteration. Answer the two open defaults in §0 (declarations,
-opponent names) before iteration 4 and iteration 5 respectively. Play the game
-after iterations 3 and 5 — the harness measures strength, and only a player
-can measure whether it is fun — and file what you find as `defect` issues.
-
-### 7.7 Working rules
-
-The rules every harness follows; read them before changing anything. Each
-harness's file (`AGENTS.md`, `CLAUDE.md`) points here and adds only its own
-process. This document is the architecture and the plan, and the reference for
-anything these rules do not state;
+The working rules every session follows, and the gates, are in
+[`AGENTS.md`](AGENTS.md) — they were this section's §7.7 before the process
+moved. Read it before changing anything. This document is the architecture and
+the plan, and the reference for anything `AGENTS.md` does not state;
 [Discola](https://github.com/diegoami/discola-web) is the reference for
-everything the plan does not state either; clone it beside this repo if it is
-not already there.
+everything the plan does not state either, and it moves under its own sessions.
 
-**Read this much, and no more.** Normally inspect `public/index.html`,
-`public/engine.js`, `tools/*`, the root `*.md`, `.github/workflows/*`,
-`.claude/skills/*`. Normally ignore `node_modules/`, `.git/`, `public/decks/`,
-`public/fonts/`, `public/icons/`, `assets/`, `dist-release/`, Gradle wrapper
-files, `desktop/src-tauri/target/`, `desktop/src-tauri/icons/`, and any
-binary. Read `package-lock.json` and `desktop/src-tauri/Cargo.lock` only when
-dependencies are the task, and open files under `mobile/android/` individually
-instead of walking the tree. Never read or paste `mobile/android/keystore.properties` or `*.jks`.
-Ignoring a path here does not mean it should be deleted or gitignored.
-
-**Change the smallest thing.** Prefer targeted reads and diffs to repeating
-whole files: search first, then read the range you need, and show changes as a
-diff (`git diff -- <path>`, `git show HEAD:<path>`) rather than reprinting a
-file. Make edits with focused replacements instead of rewriting a file to change
-a few lines.
-
-**Keep command output short.** Prefer the repository's own commands over ad-hoc
-exploration, and cap their output. On PowerShell:
-
-```powershell
-npm test 2>&1 | Select-Object -Last 20
-npm run check 2>&1 | Select-Object -Last 40
-node tools/selfplay.mjs 2>&1 | Select-Object -Last 20
-gh pr view <n> --json title,state --jq .
-```
-
-On Windows PowerShell, run
-`[Console]::OutputEncoding = [Text.Encoding]::UTF8` once per session before
-any of them. The console defaults to an OEM code page, which turns the test
-runner's `✔` into `Ô£ö`, and output pasted into a pull request is then not
-the output the command printed. Saving output with `>` or `Out-File -Encoding
-utf8` on Windows PowerShell 5.1 writes a byte-order mark, which lands in the
-pull request as an invisible first character; paste from the console, or drop
-the mark before pasting.
-
-On bash, `| tail -40` instead of `Select-Object -Last 40`. Use `node --check
-<file>` for a syntax check instead of running a script, and scope file searches
-to source directories rather than searching from the repository root.
-
-**Who works where.** One layout, for every session of either harness. `<main>`
-is the main checkout, the parent directory of
-`git rev-parse --path-format=absolute --git-common-dir`; here it is
-`Tressette/`, and `<default>` is what
-`git symbolic-ref --short refs/remotes/origin/HEAD` names (`origin/main`).
-
-- **`Tressette/`, the main checkout, is the planner's or orchestrator's
-  only.** No implementer or reviewer works there, and none checks out a branch
-  or a commit there: no `git checkout`, `git switch` or `gh pr checkout`. Its
-  branch and uncommitted files may be someone's work in progress.
-- **Every session that implements works in a worktree of its own**, one per
-  change, never in `Tressette/`. A Claude Code forked subagent uses the tool's
-  own worktree isolation (`.claude/worktrees/`). Every other session, whether a
-  new session the owner opened in `Tressette/` and asked to implement a
-  feature, OpenCode, Codex, a headless session, or a worktree the main session
-  makes, first runs `git fetch origin`, then makes its worktree beside the main
-  checkout, from `origin/<default>`:
-  `git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/<default>`.
-  If that branch or path exists, it adds a UTC stamp to both. It works only
-  there, naming the worktree in every command, since a tool's shell may return
-  to `Tressette/` after each command, and its first push is
-  `git push -u origin <branch>`. Without `--no-track`, a branch made from
-  `origin/<default>` tracks it (git's default), and a bare push would head for
-  the default branch instead of its own. A Claude Code fork in the tool's own
-  worktree is the one exception to making a worktree this way; it is never an
-  exception to working outside `Tressette/`.
-- **Every worktree installs its own dependencies** before any check runs in it,
-  as the project's setup says (`npm ci`, then `npm run setup` if Chromium is
-  missing), and never copies or links them from `Tressette/`. This holds for
-  implementers and reviewers alike.
-- **On Windows, `git config --global core.longpaths true` is a prerequisite**,
-  since nested worktree paths can pass the path limit. The owner sets it on the
-  machine; a session does not.
-- **If it finds itself about to edit, commit or switch branches in
-  `Tressette/`, it stops and makes the worktree first.**
-- **After the merge, it removes the worktree it made** (`git worktree remove`)
-  and deletes its merged branch.
-- **Reviewers work in worktrees of their own**, one per review round, detached
-  at the exact commit under review, under
-  `Tressette-review/review-<first 12 of the SHA>-<UTC stamp YYYYMMDDTHHMMSSZ>`
-  beside the main checkout. They fetch first, a commit they cannot see is not
-  missing until they have, and they install the dependencies in their worktree
-  before any check (`CLAUDE.md`'s milestone prompt spells the steps out).
-- **In a cloud session**, the session's own clone takes the place of these
-  folders; the fetch and commit checks still apply.
-- **A session removes only worktrees it made.**
-
-**Sessions and handoff.** Start a fresh session after a completed logical unit —
-a merged PR, a finished fix, a documentation pass — or when a thread has grown
-long. Carry forward a short handoff:
-
-- **Completed:** what is now true (and any verification that ran).
-- **Files / decisions:** the paths touched and the decisions made, with reasons.
-- **Next:** the next task, or "nothing open".
-
-Durable facts belong in the repository (this document, the docs, the PR body),
-not in the conversation.
-
-**After any UI change, run the UI check.**
-
-```sh
-node tools/check_ui.mjs
-```
-
-Not optional, and not only when something looks wrong. It runs in CI on every
-pull request as well, and a red check does not merge.
-
-Every UI defect Discola shipped was invisible in the diff and threw no error:
-cards overlapping the hand, the player's own hand pushed below the fold, the
-table drifting apart until it stopped reading as one surface, body copy at
-12.5px, and every screen rendering at once behind a click-eating overlay. This
-game forks that table, so it inherits every one of those ways to fail, plus the
-fan's own. Reading the diff catches none of them; the check catches each one it
-has a row for.
-
-That last clause is the whole of it. **An assertion only sees the states the
-check renders.** Iteration 3 shipped a table where a finished trick was never
-drawn, a declaration was cut in half at every phone width, and your own name
-plate hung below the fold — with every assertion green, because no pass ever
-rendered a finished trick, an announcement, or measured anything below your
-cards. When the page gains a state, the check gains the row that puts it there,
-and that is the harder half of the work.
-
-The `ui-check` skill explains what it covers and how to read a failure.
-
-**After any engine change, run the unit tests.**
-
-```sh
-npm test
-```
-
-They are deterministic — the shuffle and Piero's roll both arrive as a seeded
-rng — and they cover what the UI check cannot see: the rank order, `prende` with
-no trump, the eleven points every deal scores, the trap positions, the search
-that refuses a position it cannot deduce, and the golden fixture's sixty frozen
-deals. They live in `tools/engine.test.mjs` and `tools/opponent.test.mjs`.
-
-This rule is not optional for the same reason the UI one is not. The golden
-fixture freezes the plays: a formula change moves them by accident and the test
-says so, and a weight change moves them deliberately and the fixture is
-re-recorded in the same commit — `node tools/selfplay.mjs --golden >
-tools/golden.json` (§3 of `SPEC.md`). `npm test` and `node tools/check_ui.mjs`
-are the two jobs in `.github/workflows/check.yml`, on every pull request and
-every push to `main`, and a red one does not merge.
-
-**The card size is a budget, and it has two terms.** Discola's budget was height
-alone. A hand of ten cards adds a width term, and `--cw` is the smaller of the
-two:
-
-```
-height:  (100dvh − --chrome) / --rows / --ratio
-width:   (table width − 2 × --pad-inline) / (1 + 9 × --overlap)
-```
-
-`--chrome` is **derived** from the spacing tokens next to it — never hard-code
-it. It was hand-estimated three times in Discola and wrong three times,
-silently, because a card too tall for its row does not error, it just lands on
-the hand below. `--rows` is 3 in landscape and 4 in portrait.
-
-The width term is this project's own way to fail silently: ten cards do not fit
-side by side on a phone, so the hand is a fan, each card showing a strip of
-`--cw × --overlap`. A strip too narrow to touch does not error either — it just
-makes a card unreachable, and a misplay costs the deal. That is why a tap
-raises a card and a second tap plays it, and why the fan assertions in §3.7 of
-this document are written against a broken fan before the good one.
-
-Anything that takes vertical space on the table is in the budget, and is in the
-flow whether or not it has something in it: the line that names the raised card
-costs `--say` whether or not a card is raised, because a row that costs nothing
-while empty moves every card below it the moment it fills. Anything that cannot
-be budgeted — a declaration is a sentence, and three of them at once is three
-lines — does not go in the flow at all; it floats over the table and out of the
-budget.
-
-**Every term of `--chrome` is derived, including the ones that look like
-constants.** `--plates` was 76px, forked from Discola, against two name plates
-that cost 120px on a 770px-wide screen, because their type is expressed in vw —
-and the player's own plate hung below the fold while the check said `pass`. A
-number in that block is a defect waiting for the screen that disagrees with it.
-
-**The engine is ours, and then it is frozen.** `engine.js` holds the rules and
-the opponent as pure functions over a plain state object. Nothing in it touches
-`document`, `window`, timers or `Math.random` — that is what lets Node run the
-same file as the browser, which is what makes the self-play harness and the
-golden fixture possible. Randomness arrives as an injectable `rng`,
-`rollProfiles(rng)` included.
-
-Discola's engine was a transcription of a 1997 original, so its rule was
-*change a weight, not the formula*. Here the formula is ours until v1.0 — and
-from v1.0 the same rule applies for a different reason: the golden fixture
-freezes the plays, and a formula change invalidates it. There are **eleven**
-weights, and the settings sheet discloses eleven; a twelfth is not invented to
-match Discola's count.
-
-One exception to "score every legal card and play the highest" is deliberate
-and belongs in the source with its reason: from `CODA_FROM` on — the last seven
-tricks, where the tallone is empty and the opponent's information is already
-perfect — `compGioca` enumerates the position and plays it out exactly. All
-four opponents play those seven tricks alike, which is also why those decisions
-are not in the denominator when the roster is measured for difference: there is
-nothing there for a weight to change. A weight that cannot move a play does not
-belong in the eleven.
-
-Piero's weights are rolled once per session, as in Discola, where `SetProfiles`
-ran from `FormCreate`. It is a house tradition now, not a Delphi accident.
-
-**The about screen says the rules, and says them twice.** It is the one screen
-here that is *read* rather than glanced at, and it carries the rules in Italian
-and in English — `RULES.md` and `REGOLE.md` are the long form, this is the short
-one, and the two are not independent: a rule stated twice in two places drifts,
-so a change to one is a change to both.
-
-Each language is a `section[lang]`, and that is not decoration. "The rules are
-in both languages" asserted as *a `lang` attribute exists somewhere* passes a
-page whose English paragraphs are tagged Italian, which is what a screen reader
-and a hyphenator would then go by. The check measures each section on its own —
-enough blocks and enough words to be the rules rather than a note, and the four
-things a tressette player has to be told — and it clicks Back, because a Back
-that always lands on the start sheet abandons the hand of anyone who opened the
-rules mid-deal to check what a napoletana is worth.
-
-**And each probe is in the language it is probing.** The first version of that
-row asked whether the text said `/undici|eleven/` and `/3, 2, (asso|ace)/`,
-which reads like thoroughness and is the opposite: a page whose English half was
-the Italian text under an `en` tag passed every one of them, because every one
-of them matched the Italian. That is the exact defect the row exists to catch,
-and the row could not catch it. A probe that accepts either language cannot tell
-the two apart, so the table is per language, and `napoletana` — the same word in
-both — is never the only thing asked.
-
-**Conventions.**
-
-- Player-facing text is Italian. The about screen says the *rules* twice, once
-  per language; its heading, its Back button and its footer line are Italian
-  like everything else. Comments, commit messages and documents are English.
-- No build step and no runtime dependencies. Nothing under `public/` imports
-  anything, and the page opens from a folder. `playwright-core` is a dev
-  dependency of the UI check, pinned in `package.json` so CI and a local run
-  measure the page with the same browser; `node_modules` stays gitignored.
-  `mobile/` and `desktop/` are packaging tooling and not part of the game.
-- Nothing the page loads comes from the network. The fonts are the subset in
-  `public/fonts/`, and the check's `fonts` pass asserts that no subresource is
-  fetched from outside — the Google Fonts link it replaced set the wordmark 12%
-  narrower whenever it failed to load, silently, and made "nothing leaves the
-  device" untrue.
-- The card art is the original 1997 bitmaps, copied byte for byte from Discola.
-  Do not redraw it and do not repack it. `tools/pack_cards.py` is carried over
-  in case a deck is ever repacked, from the BMPs in `diegoami/briscola-JS`. The
-  sixth deck, Bresciane, is not 1997 art and says so wherever it is named;
-  `tools/import_bresciane.mjs` records where it comes from. The icon is a crop
-  of the Napoletane sheet, nearest-neighbour scaled by `tools/make_icons.mjs`,
-  because interpolation is redrawing by another name.
-
-**Principles.**
-
-- Reproduce every finding before acting, and your own claims before publishing
-  them. When a check fails, suspect your harness first.
-- For each passing check, say what it would have caught had the code been
-  wrong — never let implementer and reviewer share a blind spot.
-- A passing test is not a working feature: assert what a person would notice.
-- A threshold from one measurement is a coin toss.
-- Flag out-of-scope defects rather than fixing them silently.
-- Show diffs, not whole files.
-
-**Gates.** The canonical local commands, and what CI runs:
-
-| gate | local | CI |
-|---|---|---|
-| unit tests | `npm test` | `node --test 'tools/**/*.test.mjs'` (`.github/workflows/check.yml:36`) |
-| UI check | `node tools/check_ui.mjs` | `npm run check` (`.github/workflows/check.yml:52`) |
-
-The full suite is both gates. Run it three times before pushing anything that
-touches the primary logic — the engine and the opponent — and read the pass
-count, not the absence of a FAIL. A red gate does not merge.
+The project was built one iteration per session, iterations 0 to 6, with 2 and
+3 alone; §4 is the record of each, including what it got wrong. What was forked
+from Discola and when is in `SPEC.md` §11. That order is history now, not
+process.
 
 ## 8. Glossary
 

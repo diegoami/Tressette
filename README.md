@@ -9,7 +9,8 @@ so it plays from a folder, or from an APK with the radio off.
 **Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
 
 You against one of four opponents, one deal at a time. Everything — your
-settings, your last hundred hands — stays in your browser.
+settings, your last hundred hands — stays in your browser. The interface and
+rules are available in Italian and English; Italian is the default.
 
 ## Playing
 
@@ -87,7 +88,7 @@ playing.
 ```sh
 npm run setup                       # playwright-core and a Chromium, once
 npm test                            # the unit tests, no dependencies
-npm run check                       # the UI check: five passes
+npm run check                       # the UI check: six passes
 npm start                           # public/ on http://localhost:8080
 node tools/selfplay.mjs             # the opponents against the baselines
 ```

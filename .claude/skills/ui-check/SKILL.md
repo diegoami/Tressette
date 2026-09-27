@@ -6,7 +6,7 @@ description: Run Tressette's UI checks across every screen, dialog and viewport.
 # UI check
 
 Tressette is one HTML file — five screens and two dialogs — and it has to work
-from a 360px phone to a 1920px desktop, in both orientations, with six decks
+in Italian and English, from a 360px phone to a 1920px desktop, in both orientations, with six decks
 whose cards have different aspect ratios. Nearly every UI defect this
 check was written for was invisible to code review and threw no error. It
 exists because reading the diff was repeatedly not enough — in Discola, where
@@ -66,8 +66,14 @@ serif and sets some 12% narrower than every threshold below is calibrated
 against. This check had never seen it, because this check had always run with
 the network up.
 
+**Language pass** — Italian is the default; changing the selector updates the
+visible copy and `<html lang>` immediately, includes the dynamic card names,
+declarations, result, history, dialog and dossier text, and survives a reload.
+The screens and card-table passes then exercise both languages rather than only
+the language used on a fresh install.
+
 **Screens pass** — every screen the page has, and every state worth looking at,
-at six real device shapes — 980x385 and 1100x330 among them, because the result
+in both languages at six real device shapes — 980x385 and 1100x330 among them, because the result
 panel's pinned footer is the thing those two shapes test: the start sheet, empty
 and after a hand; the table, the table with a card raised, the table with the
 longest declaration the game can say and the table with the opponent's hand face
@@ -84,19 +90,20 @@ two short landscape shapes the body has to actually overflow, or the pinned
 footer is being asserted about a page that never reached the state.
 
 **The about screen is the one that is read**, so it carries the rules in
-Italian and in English, and its row asserts both halves rather than the page as
-a whole: each `section[lang]` has to hold at least five blocks and two hundred
-words, and to state the card order, the declarations, following suit, the
-eleven points and **who takes the trick** — asked in that language wherever the
-two differ, which is four of the five; `napoletana` is the same word in both
-and cannot tell them apart, which is why it is never the only thing asked. The
-fifth is there because the first version of the screen never said who takes a
-trick at all: a rule missing from *both* halves is not drift, so nothing that
-compares the halves can see it, and only a rule that names it can. Each section
-also has to have a box as well as words — `display: none` on one half left
-every `textContent` rule happy. Checked as *a `lang`
-attribute exists somewhere*, the rule passes a page whose English is tagged
-Italian; and
+Italian and in English and displays the selected language. Its row asserts both
+halves rather than the page as a whole: each `section[lang]` has to hold at
+least five blocks and two hundred words, and to state the card order, the
+declarations, following suit, the eleven points and **who takes the trick** —
+asked in that language wherever the two differ, which is four of the five;
+`napoletana` is the same word in both and cannot tell them apart, which is why
+it is never the only thing asked. The fifth is there because the first version
+of the screen never said who takes a trick at all: a rule missing from *both*
+halves is not drift, so nothing that compares the halves can see it, and only a
+rule that names it can. Each section's copy is checked, but only the selected
+section may have a box — `display: none` on the active half left every
+`textContent` rule happy, and showing both at once ignored the language choice.
+Checked as *a `lang` attribute exists somewhere*, the rule passes a page whose
+English is tagged Italian; and
 checked with probes that match either language, so does a page whose English
 half *is* the Italian text, which is how the first version of this row went in.
 The row also clicks Back and asserts it lands on the table, because a Back that
@@ -131,7 +138,8 @@ ground, so a transparent select was ivory text on a white Windows menu — and
 nothing that measures a box can see a popup that is not in the document. The
 computed background is the only thing that decides it.
 
-**Table pass** — the card table at all twenty-one viewports in all six decks.
+**Table pass** — the card table in both languages at all twenty-one viewports
+in all six decks.
 Asserts the trick never overlaps either hand, your hand is never below the
 fold, nothing overflows the table, no element runs past the screen edge, and
 the rows never drift apart. Then it

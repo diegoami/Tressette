@@ -8,7 +8,7 @@
  *   npm run setup                                    # or npm i && npx playwright-core install chromium
  *   CHROME=/path/to/chrome node tools/check_ui.mjs   # or name one yourself
  *
- * Five passes. The middle two are Discola's, because the failures that project
+ * Six passes. The middle two are Discola's, because the failures that project
  * shipped came in two different shapes; the last plays a deal, because a table
  * can measure perfectly and still not be wired to the engine.
  *
@@ -20,7 +20,10 @@
  *    and nothing at all is fetched from outside. A face that does not arrive
  *    throws nothing and simply sets narrower than every threshold below.
  *
- * 2. SCREENS — every screen and both dialogs — the abandon confirm and the
+ * 2. LANGUAGE — the Italian default, a live switch to English, translated
+ *    dynamic copy, language metadata, and persistence across reloads.
+ *
+ * 3. SCREENS — every screen and both dialogs — the abandon confirm and the
  *    result panel over the table — at a handful of real device shapes, the
  *    short landscapes among them. Catches things that are wrong anywhere: more
  *    than one screen visible at once, text set too small to read, clipped
@@ -28,7 +31,8 @@
  *    the result panel's own contract: covers the table, out of the card
  *    budget, body scrolls, footer does not.
  *
- * 3. TABLE — the card table only, at every viewport and in all six decks, and
+ * 4. TABLE — the card table only, at every viewport, in both languages and all
+ *    six decks, and
  *    then the tightest five again with the spacing tokens inflated.
  *    The card size is a budget, (viewport height - chrome) / rows, and when
  *    that budget is wrong nothing throws and nothing looks broken in review:
@@ -36,7 +40,7 @@
  *    rows drift apart until the table stops reading as one surface. Each of
  *    those shipped once. They are assertions now.
  *
- * 4. DEAL — one whole deal against the house opponent, played through the fan by tapping,
+ * 5. DEAL — one whole deal against the house opponent, played through the fan by tapping,
  *    at one viewport in one deck, then a second deal abandoned through the
  *    confirm. It asserts the game can be finished, recorded and walked away
  *    from, not how it looks.
@@ -396,7 +400,7 @@ const SCREENS = [
       await p.click('#btnHistory');
     },
     check: () => [...document.querySelectorAll('#historyBody button')]
-      .some(b => /Cancella/.test(b.textContent))
+      .some(b => (state.language === 'en' ? /Clear history/ : /Cancella lo storico/).test(b.textContent))
       ? [] : ['the history has no way to clear itself'] },
   // Issue #25. `usable` accepted any finite number, and a finite number outside
   // Date's range — 1e100 — is NaN to `new Date(...).getTime()`, which makes
@@ -416,7 +420,8 @@ const SCREENS = [
     check: () => {
       const out = [];
       const body = document.querySelector('#historyBody');
-      if (![...body.querySelectorAll('button')].some(b => /Cancella/.test(b.textContent)))
+      if (![...body.querySelectorAll('button')].some(b =>
+        (state.language === 'en' ? /Clear history/ : /Cancella lo storico/).test(b.textContent)))
         out.push('the history has no way to clear itself');
       if (!body.textContent.includes('Franco'))
         out.push('the valid row beside the bad timestamp was dropped too');
@@ -476,14 +481,16 @@ const SCREENS = [
         said[lang] = text;
         for (const [what, re] of SAYS[lang])
           if (!re.test(text)) out.push(`the rules in ${lang} never state the ${what}`);
-        // Everything above reads textContent, which a half that is not painted
-        // still has: `section[lang="en"]{ display: none }` passed every rule in
-        // this row. In a project whose defects are all invisible in the diff and
-        // throw no error, a rule that cannot tell a rendered half from a hidden
-        // one is not measuring the screen.
+        // Both language sections are present for content checks, but only the
+        // selected one should be painted. Checking the selected and inactive
+        // halves separately catches both a missing rules view and both halves
+        // showing together.
         const sec = section(lang);
-        if (sec && !sec.getClientRects().length)
-          out.push(`the rules in ${lang} are in the page but not on the screen`);
+        const visible = sec && !sec.hidden && sec.getClientRects().length > 0;
+        if (lang === state.language && !visible)
+          out.push(`the selected ${lang} rules are not on the screen`);
+        if (lang !== state.language && visible)
+          out.push(`the unselected ${lang} rules are also on the screen`);
       }
       // And the cheapest statement of the same thing: two halves that are the
       // same text are one half told twice, whatever they are tagged.
@@ -1087,14 +1094,168 @@ async function checkFonts(browser) {
   return failed;
 }
 
-/* ---- pass 2: every screen -------------------------------------------------- */
+/* ---- pass 3: every screen -------------------------------------------------- */
+
+const languageFaults = language => {
+  const out = [];
+  if (document.documentElement.lang !== language)
+    out.push(`the document lang is ${document.documentElement.lang}, not ${language}`);
+  if (el.languageSel.value !== language)
+    out.push(`the language selector says ${el.languageSel.value}, not ${language}`);
+  for (const node of document.querySelectorAll("[data-i18n]"))
+    if (node.textContent !== t(node.dataset.i18n))
+      out.push(`${node.dataset.i18n} is not rendered in ${language}`);
+  for (const node of document.querySelectorAll("[data-i18n-title]"))
+    if (node.title !== t(node.dataset.i18nTitle))
+      out.push(`${node.dataset.i18nTitle} title is not in ${language}`);
+  for (const node of document.querySelectorAll("[data-i18n-aria]"))
+    if (node.getAttribute("aria-label") !== t(node.dataset.i18nAria))
+      out.push(`${node.dataset.i18nAria} accessible label is not in ${language}`);
+  for (const button of document.querySelectorAll(".deck-opt"))
+    if (button.getAttribute("aria-label") !== format("deckAria", { name: button.dataset.deck }))
+      out.push(`${button.dataset.deck} deck accessible label is not in ${language}`);
+  const rules = [...document.querySelectorAll("#viewAbout section[lang]")];
+  const shown = rules.filter(section => !section.hidden && section.getClientRects().length);
+  if (!document.querySelector('#viewAbout').hidden
+      && (shown.length !== 1 || shown[0]?.lang !== language))
+    out.push(`the about screen shows ${shown.map(section => section.lang).join(", ") || "no rules"}, not only ${language}`);
+  return out;
+};
+
+async function checkLanguageFlow(browser) {
+  console.log('\nlanguage selection and live copy');
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  const issues = [];
+  page.on('pageerror', e => issues.push(`script error: ${e.message}`));
+  await page.goto(URL_);
+  await page.evaluate(() => {
+    localStorage.removeItem('tressette.settings');
+    localStorage.removeItem('tressette.history');
+  });
+  await page.reload();
+
+  let first = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    selected: document.querySelector('#languageSel').value,
+    play: document.querySelector('#play').textContent.trim()
+  }));
+  if (first.lang !== 'it' || first.selected !== 'it' || first.play !== 'Gioca')
+    issues.push(`a fresh install is ${first.lang}/${first.selected}/${first.play}, not Italian by default`);
+
+  await page.click('#opponents [data-name="Valerio"]');
+  await page.click('#viewStart [data-nav="settings"]');
+  await page.selectOption('#languageSel', 'en');
+  await page.evaluate(() => { document.querySelector('#viewSettings details').open = true; });
+  let englishSettings = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    heading: document.querySelector('#viewSettings h2').textContent,
+    language: document.querySelector('#languageSel').value,
+    persisted: JSON.parse(localStorage.getItem('tressette.settings')).language,
+    dossier: document.querySelector('#dossier').textContent,
+    weight: document.querySelector('#weightsTable tbody tr td').textContent
+  }));
+  if (englishSettings.lang !== 'en' || englishSettings.heading !== 'Settings'
+      || englishSettings.language !== 'en' || englishSettings.persisted !== 'en'
+      || !englishSettings.dossier.includes('loosest of the four')
+      || englishSettings.weight !== 'sure-win lead bonus')
+    issues.push(`choosing English did not update and save the UI (${JSON.stringify(englishSettings)})`);
+
+  await page.click('#viewSettings [data-back]');
+  await page.click('#viewStart [data-nav="about"]');
+  let englishAbout = await page.evaluate(() => ({
+    visible: [...document.querySelectorAll('#viewAbout section[lang]')]
+      .filter(section => !section.hidden && section.getClientRects().length).map(section => section.lang),
+    back: document.querySelector('#viewAbout [data-back]').getAttribute('aria-label'),
+    rule: document.querySelector('#viewAbout section[lang="en"] h3').textContent
+  }));
+  if (englishAbout.visible.join() !== 'en' || englishAbout.back !== 'Back'
+      || englishAbout.rule !== 'The rules')
+    issues.push(`English About did not show only its own rules and controls (${JSON.stringify(englishAbout)})`);
+  await page.click('#viewAbout [data-back]');
+
+  await page.evaluate(() => {
+    localStorage.setItem('tressette.history', JSON.stringify([
+      { t: Date.now(), o: 'Franco', d: 'Trevisane', y: 11, a: 4 }
+    ]));
+    renderLastResult();
+  });
+  let lastHand = await page.locator('#lastResult').textContent();
+  if (!lastHand.includes('Last hand: you won') || !lastHand.includes('against Franco'))
+    issues.push(`the English last-hand summary is untranslated (${lastHand.trim()})`);
+  await page.click('#viewStart [data-nav="history"]');
+  let history = await page.locator('#historyBody').textContent();
+  if (!['hands', 'won', 'lost', 'draws', 'Clear history'].every(s => history.includes(s)))
+    issues.push('the English history is missing translated totals or its clear action');
+  await page.click('#viewHistory [data-back]');
+
+  await page.click('#play');
+  const cardLabel = await page.evaluate(() => {
+    state.deveGiocare = BASSO;
+    state.perPrimo = BASSO;
+    state.selected = ordinaMano(state.hands[BASSO])[0];
+    render();
+    return document.querySelector('.hand--you .card[aria-pressed="true"]').getAttribute('aria-label');
+  });
+  if (!/^Play the /.test(cardLabel)) issues.push(`the English card control is untranslated (${cardLabel})`);
+  await page.evaluate(() => announce(ALTO, [{ kind: 'set', n: 1, count: 3, points: 3 }]));
+  const announcement = await page.locator('#announce').textContent();
+  if (!announcement.includes('three aces') || !announcement.includes('points'))
+    issues.push(`the English declaration is untranslated (${announcement})`);
+
+  await page.click('#again');
+  const confirm = await page.locator('#confirmScrim').textContent();
+  if (!confirm.includes('Abandon this hand?') || !confirm.includes('Keep playing')
+      || !confirm.includes('Abandon'))
+    issues.push('the English abandon dialog is missing translated copy');
+  await page.click('#confirmNo');
+  await page.evaluate(() => {
+    epoch++;
+    clearTimeout(timer);
+    clearTimeout(sayTimer);
+    sweeping = null;
+    state.dealt = true;
+    state.over = true;
+    state.perPrimo = BASSO;
+    state.terzi = [15, 12];
+    state.accusi = [[], []];
+    state.prese = [11, 9];
+    finish();
+  });
+  const result = await page.locator('#result').textContent();
+  if (!result.includes('You won') || !result.includes('Tricks')
+      || !result.includes('Declarations') || !result.includes('Total')
+      || !result.includes('Play again'))
+    issues.push('the English result panel is missing translated score labels or actions');
+
+  await page.reload();
+  const restored = await page.evaluate(() => ({
+    lang: document.documentElement.lang,
+    selected: document.querySelector('#languageSel').value,
+    play: document.querySelector('#play').textContent.trim()
+  }));
+  if (restored.lang !== 'en' || restored.selected !== 'en' || restored.play !== 'Play')
+    issues.push(`English was not restored after reload (${JSON.stringify(restored)})`);
+  await page.click('#viewStart [data-nav="settings"]');
+  await page.selectOption('#languageSel', 'it');
+  if (await page.evaluate(() => document.documentElement.lang) !== 'it'
+      || await page.locator('#play').textContent() !== 'Gioca')
+    issues.push('switching back to Italian did not update the page');
+  await page.reload();
+  if (await page.evaluate(() => document.documentElement.lang) !== 'it')
+    issues.push('Italian was not restored after reload');
+
+  await page.close();
+  console.log(`  ${issues.length ? 'FAIL' : 'pass'}  Italian default, live English switch, localized screens and dynamic copy, saved choice`);
+  issues.forEach(i => console.log(`        ${i}`));
+  return issues.length ? 1 : 0;
+}
 
 async function checkScreens(browser) {
   console.log('\nscreens');
   let failed = 0;
   for (const vname of SCREEN_VIEWPORTS) {
     const [, width, height] = VIEWPORTS.find(v => v[0] === vname);
-    for (const screen of SCREENS) {
+    for (const language of ['it', 'en']) for (const screen of SCREENS) {
       const page = await browser.newPage({ viewport: { width, height } });
       const errs = [];
       page.on('pageerror', e => errs.push('script error: ' + e.message));
@@ -1106,18 +1267,24 @@ async function checkScreens(browser) {
       await page.goto(URL_);
       await page.evaluate(() => localStorage.removeItem('tressette.history'));
       await page.goto(URL_);
+      await page.evaluate(language => {
+        const select = document.querySelector('#languageSel');
+        select.value = language;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+      }, language);
       await page.addStyleTag({ content: STILL });
       await page.waitForTimeout(350);
       await screen.open(page);
       await page.waitForTimeout(350);
 
       const issues = [
+        ...(await page.evaluate(languageFaults, language)),
         ...(await page.evaluate(audit)),
         ...(screen.check ? await page.evaluate(screen.check) : []),
         ...errs,
       ];
       if (issues.length) failed++;
-      console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${vname.padEnd(16)} ${screen.name}`);
+      console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${vname.padEnd(16)} ${language} ${screen.name}`);
       issues.forEach(i => console.log(`        ${i}`));
       await page.close();
     }
@@ -1125,7 +1292,7 @@ async function checkScreens(browser) {
   return failed;
 }
 
-/* ---- pass 3: the card table ----------------------------------------------- */
+/* ---- pass 4: the card table ----------------------------------------------- */
 
 const measure = () => {
   const r = s => document.querySelector(s).getBoundingClientRect();
@@ -1214,7 +1381,7 @@ const measure = () => {
   // and the line just named the card, so the second tap read as a repeat of
   // the first.
   const raisedLift = Math.round(cards[0].top - raised.top);
-  const saysNext = /^Gioca /.test(document.querySelector('.sel-name').textContent);
+  const saysNext = /^(Gioca il|Play the) /.test(document.querySelector('.sel-name').textContent);
   state.selected = wasSelected; render();
 
   // The hand empties, and that is a state no pass had ever rendered. A hand is
@@ -1346,11 +1513,18 @@ async function checkTable(browser, only, inflate) {
       await page.evaluate(d => applyDeck(d), deck);
       await page.click('#play');
       await page.waitForTimeout(260);
-      rows.push({ deck, ...(await page.evaluate(measure)) });
+      for (const language of ['it', 'en']) {
+        await page.evaluate(language => {
+          const select = document.querySelector('#languageSel');
+          select.value = language;
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        }, language);
+        rows.push({ deck, language, ...(await page.evaluate(measure)) });
+      }
     }
     await page.close();
 
-    const bad = rows.flatMap(r => tableFaults(r).map(f => `${r.deck}: ${f}`));
+    const bad = rows.flatMap(r => tableFaults(r).map(f => `${r.deck} (${r.language}): ${f}`));
     if (bad.length) failed++;
     const margin = Math.min(...rows.map(r => Math.min(r.gapTop, r.gapBot, -r.belowFold)));
     console.log(`  ${bad.length ? 'FAIL' : 'pass'}  ${vname.padEnd(18)} ` +
@@ -1363,7 +1537,7 @@ async function checkTable(browser, only, inflate) {
   return failed;
 }
 
-/* ---- pass 4: a whole deal, through the table ------------------------------- */
+/* ---- pass 5: a whole deal, through the table ------------------------------- */
 
 // Iteration 3 is done when a full deal can be played against the opponent, and that
 // is a wiring claim the two passes above cannot make: they measure a table that
@@ -1783,6 +1957,7 @@ const browser = await chromium.launch({ ...(CHROME && { executablePath: CHROME }
 let failed = 0;
 failed += await checkDocument(browser);
 failed += await checkFonts(browser);
+failed += await checkLanguageFlow(browser);
 failed += await checkScreens(browser);
 failed += await checkTable(browser, null, false);
 failed += await checkTable(browser, TIGHT, true);

@@ -15,10 +15,25 @@ milestone, before its tag, from a model that is not Claude.
 
 ## Process
 
-Claude implements the change on a branch, opens a PR referencing any relevant
-issue, and the owner merges. CI runs on every PR (`PLAN.md` §7.4), and a red
-check does not merge. A PR gets no review of its own; its review comes with the
-next milestone's.
+Claude implements the change in a worktree of its own, on a branch, opens a PR
+referencing any relevant issue, and the owner merges. CI runs on every PR
+(`PLAN.md` §7.4), and a red check does not merge. A PR gets no review of its
+own; its review comes with the next milestone's.
+
+**Where Claude works** follows `PLAN.md` §7.7, "Who works where". `Tressette/`,
+the main checkout, is the planner's or orchestrator's, and nobody implements,
+reviews, or checks out a branch or commit there. A session asked to implement,
+unless it is already a Claude Code fork in the tool's own worktree
+(`.claude/worktrees/`), first runs `git fetch origin`, then makes its worktree:
+
+    git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>
+
+It works only there, naming the worktree in every command, since the tool's
+shell may return to `Tressette/` after each command. If it finds itself about
+to edit, commit or switch branches in `Tressette/`, it stops and makes the
+worktree first. After the merge it removes the worktree it made
+(`git worktree remove`) and deletes its merged branch. It removes no worktree
+it did not make.
 
 ## Milestones
 
@@ -76,15 +91,19 @@ no build step, wrapped as an Android APK and a Windows app.
 
 The candidate for <TAG> is <SHA> on main. The previous release is <PREV>.
 Reach it in this order, and review nowhere else:
-1. Fetch first: `git fetch origin --tags`. Not `git pull`. The candidate is a
-   commit on main, not a pull request, so there is no pull/<N>/head to fetch.
+1. Fetch first: `git fetch origin --tags <SHA>`. Naming the SHA brings an
+   untagged candidate even into a clone whose refspec leaves out main, such as
+   a single-branch or shallow clone a sandbox or a cloud session makes. The
+   candidate is a commit on main, not a pull request, so there is no
+   pull/<N>/head to fetch. Not `git pull`: the checkout you started in may be
+   on another branch or hold local changes.
 2. A commit you cannot see is not missing until you have fetched. Only if
    `git cat-file -t <SHA>` still does not print "commit" after the fetch, stop
    and say so in your reply; do not review.
-3. Review in a fresh, detached worktree of your own at <SHA>, never in the
-   checkout you started in, which may be someone's work in progress: leave
+3. Review in a fresh, detached worktree of your own at exactly <SHA>, never in
+   the checkout you started in, which may be someone's work in progress: leave
    its branch and files exactly as they are. Run
-     git worktree add --detach <main>/../Tressette-work/review-<id>-<stamp> <SHA>
+     git worktree add --detach <main>/../Tressette-review/review-<id>-<stamp> <SHA>
    where <main> is the parent directory of
    `git rev-parse --path-format=absolute --git-common-dir`, <id> is the first
    12 characters of <SHA>, and <stamp> is the UTC time as YYYYMMDDTHHMMSSZ, so
@@ -114,7 +133,7 @@ diegoami/Tressette: what is wrong, file:line, severity (defect, risk or nit),
 and how to reproduce it. Then post one comment on
 https://github.com/diegoami/Tressette/issues/<N>: AGREE or BLOCK on the first
 line, then the worktree you reviewed in, as a relative path
-(../Tressette-work/review-<id>-<stamp>), and <SHA>, then the finding issues,
+(../Tressette-review/review-<id>-<stamp>), and <SHA>, then the finding issues,
 anything you inferred but could not reproduce,
 what you checked and found clean, and what each passing check would have caught
 had the code been wrong. BLOCK if any finding should stop <TAG> from shipping.

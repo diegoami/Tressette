@@ -6,6 +6,11 @@ node_modules
 # Packaged release artifacts (built by tools/package_release.mjs).
 dist-release
 
+# A Claude Code forked subagent's worktree, which the tool makes inside the
+# main checkout (PLAN.md 7.7, "Who works where"): someone's work in progress,
+# never something to commit from here.
+.claude/worktrees/
+
 # The Android wrapper's own installs and build outputs. mobile/android/ itself
 # is committed — it is generated once and then edited — but nothing Gradle or
 # the SDK writes into it is.

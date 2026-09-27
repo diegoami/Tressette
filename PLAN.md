@@ -1674,7 +1674,8 @@ Each iteration is one session, opened with:
 That opener was for iterations 0 to 6, which are done. A session since then
 works on one issue or one change, and does not read this whole document first:
 it reads §7 and §7.7, then the issue, then the sections of this document the
-change touches. §7.7 says which files to read.
+change touches. §7.7 says which files to read, and where the session works: in
+a worktree of its own, never in the main checkout ("Who works where").
 
 Why one iteration and not several: the defects this kind of page ships are
 invisible in a diff and show up only in the check or at the table, and a
@@ -1875,6 +1876,53 @@ the mark before pasting.
 On bash, `| tail -40` instead of `Select-Object -Last 40`. Use `node --check
 <file>` for a syntax check instead of running a script, and scope file searches
 to source directories rather than searching from the repository root.
+
+**Who works where.** One layout, for every session of either harness. `<main>`
+is the main checkout, the parent directory of
+`git rev-parse --path-format=absolute --git-common-dir`; here it is
+`Tressette/`, and `<default>` is what
+`git symbolic-ref --short refs/remotes/origin/HEAD` names (`origin/main`).
+
+- **`Tressette/`, the main checkout, is the planner's or orchestrator's
+  only.** No implementer or reviewer works there, and none checks out a branch
+  or a commit there: no `git checkout`, `git switch` or `gh pr checkout`. Its
+  branch and uncommitted files may be someone's work in progress.
+- **Every session that implements works in a worktree of its own**, one per
+  change, never in `Tressette/`. A Claude Code forked subagent uses the tool's
+  own worktree isolation (`.claude/worktrees/`). Every other session, whether a
+  new session the owner opened in `Tressette/` and asked to implement a
+  feature, OpenCode, Codex, a headless session, or a worktree the main session
+  makes, first runs `git fetch origin`, then makes its worktree beside the main
+  checkout, from `origin/<default>`:
+  `git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/<default>`.
+  If that branch or path exists, it adds a UTC stamp to both. It works only
+  there, naming the worktree in every command, since a tool's shell may return
+  to `Tressette/` after each command, and its first push is
+  `git push -u origin <branch>`. Without `--no-track`, a branch made from
+  `origin/<default>` tracks it (git's default), and a bare push would head for
+  the default branch instead of its own. A Claude Code fork in the tool's own
+  worktree is the one exception to making a worktree this way; it is never an
+  exception to working outside `Tressette/`.
+- **Every worktree installs its own dependencies** before any check runs in it,
+  as the project's setup says (`npm ci`, then `npm run setup` if Chromium is
+  missing), and never copies or links them from `Tressette/`. This holds for
+  implementers and reviewers alike.
+- **On Windows, `git config --global core.longpaths true` is a prerequisite**,
+  since nested worktree paths can pass the path limit. The owner sets it on the
+  machine; a session does not.
+- **If it finds itself about to edit, commit or switch branches in
+  `Tressette/`, it stops and makes the worktree first.**
+- **After the merge, it removes the worktree it made** (`git worktree remove`)
+  and deletes its merged branch.
+- **Reviewers work in worktrees of their own**, one per review round, detached
+  at the exact commit under review, under
+  `Tressette-review/review-<first 12 of the SHA>-<UTC stamp YYYYMMDDTHHMMSSZ>`
+  beside the main checkout. They fetch first, a commit they cannot see is not
+  missing until they have, and they install the dependencies in their worktree
+  before any check (`CLAUDE.md`'s milestone prompt spells the steps out).
+- **In a cloud session**, the session's own clone takes the place of these
+  folders; the fetch and commit checks still apply.
+- **A session removes only worktrees it made.**
 
 **Sessions and handoff.** Start a fresh session after a completed logical unit —
 a merged PR, a finished fix, a documentation pass — or when a thread has grown

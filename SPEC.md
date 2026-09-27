@@ -444,9 +444,9 @@ crop of the Napoletane sheet, nearest-neighbour scaled by
 The typefaces are Bodoni Moda and Barlow (SIL Open Font License), subset to
 latin and served from `public/fonts/`.
 
-The decks, `tools/pack_cards.py`, the `ui-check` skill and `netlify.toml` came
-from Discola at `44363d8`, re-synced to `22c4b9c` (iteration 0, `3e8198d` and
-`106584f`). The page and its stylesheet are forked from Discola at `22c4b9c` and changed
+The decks, `tools/pack_cards.py`, `tools/check_ui.mjs`, the `ui-check` skill,
+`netlify.toml` and `.gitignore` came from Discola at `44363d8`, re-synced to
+`22c4b9c` (iteration 0, `3e8198d` and `106584f`). The page and its stylesheet are forked from Discola at `22c4b9c` and changed
 where a ten-card fan and a trumpless game needed something different. The
 fonts, the dev server, the release scripts, the Capacitor wrapper and the sixth
 deck were adopted from Discola at `5307c14`, after it diverged — issue #15, and

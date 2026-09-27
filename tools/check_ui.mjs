@@ -973,7 +973,24 @@ async function checkDocument(browser) {
   await page.close();
   console.log(`  ${bad.length ? 'FAIL' : 'pass'}  head tags`);
   bad.forEach(b => console.log(`        ${b}`));
-  return bad.length ? 1 : 0;
+
+  // The Android app's bridge is injected into the page by Capacitor's
+  // JSInjector, which looks for the literal text `<head>` or `</head>` in the
+  // file it serves, and without either logs "Unable to inject Capacitor,
+  // Plugins won't work" and serves the page as it is (#74). HTML lets the head's
+  // tags be left out, and this page left out both: every APK shipped with no
+  // window.Capacitor at all, which nothing noticed until Back and Exit (#70)
+  // depended on it. The parsed document always has a head element, so this is
+  // read from the source, not from the DOM, and no browser here can see it.
+  const source = readFileSync(FILE, 'utf8');
+  const bridge = source.includes('<head>') || source.includes('</head>');
+  if (!bridge) {
+    console.log('  FAIL  the Android bridge can be injected');
+    console.log('        no literal <head> or </head> in the page — Capacitor injects nothing, '
+      + 'and window.Capacitor, Back and Exit are missing from the APK');
+  } else console.log('  pass  the Android bridge can be injected');
+
+  return (bad.length ? 1 : 0) + (bridge ? 0 : 1);
 }
 
 /* ---- pass 1: the fonts ----------------------------------------------------- */

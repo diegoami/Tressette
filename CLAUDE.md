@@ -22,8 +22,13 @@ own; its review comes with the next milestone's.
 
 **Where Claude works** follows `PLAN.md` §7.7, "Who works where". `Tressette/`,
 the main checkout, is the planner's or orchestrator's, and nobody implements,
-reviews, or checks out a branch or commit there. That includes a new session
-the owner opens in `Tressette/` and asks to implement a feature. A session asked
+reviews, or checks out a branch or commit there. A session the owner opens in
+`Tressette/` may bring it up to date once, at startup, exactly as §7.7 says:
+`git fetch origin`, then `git pull --ff-only` only if it is on the default
+branch with nothing uncommitted; otherwise it leaves the checkout as it is and
+tells the owner why, and it never resets, stashes or merges there. That includes
+a new session the owner opens in `Tressette/` and asks to implement a feature.
+A session asked
 to implement, unless it is already a Claude Code fork in the tool's own worktree
 (`.claude/worktrees/`), which is the one exception, first runs
 `git fetch origin`, then makes its worktree:
@@ -41,8 +46,10 @@ or links them from `Tressette/`. On Windows, nested worktree paths need
 machine; a session does not set it. If it finds itself about
 to edit, commit or switch branches in `Tressette/`, it stops and makes the
 worktree first. After the merge it removes the worktree it made
-(`git worktree remove`) and deletes its merged branch. It removes no worktree
-it did not make.
+(`git worktree remove`) and deletes its merged branch; a worktree it made but
+did not remove is a leftover, which only the owner clears with
+`tools/remove_worktree.mjs` (`PLAN.md` §7.7). It removes no worktree it did not
+make.
 
 ## Milestones
 
@@ -64,7 +71,9 @@ tag goes on this repository's `main`, and the release notes name its commit.
 3. Claude gives the owner one review prompt, from the template below, and puts
    it in the issue. The owner runs it in a model that is not Claude, in a fresh
    session. The reviewer opens one issue per finding it reproduced, and posts
-   one verdict comment on the milestone issue: **AGREE** or **BLOCK**.
+   one verdict comment on the milestone issue: **AGREE** or **BLOCK**. It
+   removes the worktree it made only after recording that verdict
+   (`PLAN.md` §7.7).
 4. **The tag waits for the verdict.** On BLOCK, the findings are fixed in
    ordinary PRs, the candidate moves to the new `main` commit, and Claude
    updates the milestone issue and gives the re-review prompt without being
@@ -164,8 +173,11 @@ candidate as `<SHA>`, and this paragraph after the list of pull requests:
 
 ```
 This is round <R>. Round <R-1> reviewed <OLD SHA> and posted BLOCK, with the
-findings <#issue, #issue>. Reach <SHA> as above, fetching again and in a new
-worktree of its own, not round <R-1>'s. Check first that each finding is fixed
+findings <#issue, #issue>. Reach <SHA> as the prompt above says, in full: fetch
+the exact full SHA (`git fetch origin --tags <SHA>`); the candidate is on main,
+not a pull request, so there is no `pull/<N>/head`; only then check
+`git cat-file -t <SHA>`; and only then create a fresh, detached worktree of its
+own at exactly <SHA>, not round <R-1>'s. Check first that each finding is fixed
 at <SHA>, and say so on its issue. Then review `git diff <OLD SHA>..<SHA>` as
 a whole, and anything in `<PREV>..<SHA>` the fixes reach into.
 ```

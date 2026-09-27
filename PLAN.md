@@ -1887,6 +1887,15 @@ is the main checkout, the parent directory of
   only.** No implementer or reviewer works there, and none checks out a branch
   or a commit there: no `git checkout`, `git switch` or `gh pr checkout`. Its
   branch and uncommitted files may be someone's work in progress.
+- **A session opened in `Tressette/` may update it once, at startup, and only
+  this way.** It runs `git fetch origin`; then it runs `git pull --ff-only`
+  **only if** the checkout is on the default branch (`git symbolic-ref --short
+  HEAD` prints the default branch name, `main` here) **and**
+  `git status --porcelain` is empty. If either does not hold — another branch,
+  a detached HEAD, or any uncommitted change — it leaves the checkout exactly
+  as it is and tells the owner why. It never runs `git reset`, `git stash` or
+  `git merge` there. An implementer then leaves `Tressette/` and starts its
+  work from `origin/<default>` in a worktree of its own, as below.
 - **Every session that implements works in a worktree of its own**, one per
   change, never in `Tressette/`. A Claude Code forked subagent uses the tool's
   own worktree isolation (`.claude/worktrees/`). Every other session, whether a
@@ -1912,14 +1921,36 @@ is the main checkout, the parent directory of
   machine; a session does not.
 - **If it finds itself about to edit, commit or switch branches in
   `Tressette/`, it stops and makes the worktree first.**
-- **After the merge, it removes the worktree it made** (`git worktree remove`)
-  and deletes its merged branch.
+- **After the merge, an implementer that is still running removes only the
+  worktree it made** (`git worktree remove`) **and deletes its merged branch.**
+  A reviewer removes only its own worktree, and only after it has recorded its
+  verdict on the issue or pull request. A worktree whose session ended before
+  cleanup, or one the owner made, is a leftover: the owner clears it (below),
+  and no session infers which worktrees are unused.
 - **Reviewers work in worktrees of their own**, one per review round, detached
   at the exact commit under review, under
   `Tressette-review/review-<first 12 of the SHA>-<UTC stamp YYYYMMDDTHHMMSSZ>`
-  beside the main checkout. They fetch first, a commit they cannot see is not
-  missing until they have, and they install the dependencies in their worktree
-  before any check (`CLAUDE.md`'s milestone prompt spells the steps out).
+  beside the main checkout. They fetch first, in this order: the exact full SHA
+  (`git fetch origin <SHA>`), which brings an untagged commit even into a clone
+  whose refspec leaves out the default branch; and, when the target is a pull
+  request, `git fetch origin pull/<N>/head`. Only then do they check
+  `git cat-file -t <SHA>` — a commit they cannot see is not missing until they
+  have fetched — and only then do they create the detached worktree at exactly
+  that SHA. A milestone candidate is a commit on the default branch, not a pull
+  request, so its review does not use `pull/<N>/head`. They install the
+  dependencies in their worktree before any check (`CLAUDE.md`'s milestone
+  prompt spells the steps out).
+- **The owner clears one leftover worktree at a time**, naming it exactly:
+  `node tools/remove_worktree.mjs <path>`. It acts on exactly that one path and
+  refuses a second argument, the main checkout, an unregistered or locked
+  worktree, and any worktree with tracked changes or untracked files. It prints
+  the exact path, the branch or detached SHA and the clean status, then requires
+  the owner to type the exact path and to attest that no session is using the
+  worktree before it runs plain `git worktree remove` — never `--force`, never a
+  branch delete, never `git worktree prune`. It never selects by age and never
+  batches. It proves the repository, path and cleanliness conditions only; that
+  the worktree is unused is the owner's attestation, which the tool cannot make
+  for itself.
 - **In a cloud session**, the session's own clone takes the place of these
   folders; the fetch and commit checks still apply.
 - **A session removes only worktrees it made.**

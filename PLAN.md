@@ -1894,10 +1894,15 @@ is the main checkout, the parent directory of
   feature, OpenCode, Codex, a headless session, or a worktree the main session
   makes, first runs `git fetch origin`, then makes its worktree beside the main
   checkout, from `origin/<default>`:
-  `git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>`.
+  `git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/<default>`.
   If that branch or path exists, it adds a UTC stamp to both. It works only
   there, naming the worktree in every command, since a tool's shell may return
-  to `Tressette/` after each command.
+  to `Tressette/` after each command, and its first push is
+  `git push -u origin <branch>`. Without `--no-track`, a branch made from
+  `origin/<default>` tracks it (git's default), and a bare push would head for
+  the default branch instead of its own. A Claude Code fork in the tool's own
+  worktree is the one exception to making a worktree this way; it is never an
+  exception to working outside `Tressette/`.
 - **Every worktree installs its own dependencies** before any check runs in it,
   as the project's setup says (`npm ci`, then `npm run setup` if Chromium is
   missing), and never copies or links them from `Tressette/`. This holds for

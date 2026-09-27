@@ -22,14 +22,18 @@ own; its review comes with the next milestone's.
 
 **Where Claude works** follows `PLAN.md` §7.7, "Who works where". `Tressette/`,
 the main checkout, is the planner's or orchestrator's, and nobody implements,
-reviews, or checks out a branch or commit there. A session asked to implement,
-unless it is already a Claude Code fork in the tool's own worktree
-(`.claude/worktrees/`), first runs `git fetch origin`, then makes its worktree:
+reviews, or checks out a branch or commit there. That includes a new session
+the owner opens in `Tressette/` and asks to implement a feature. A session asked
+to implement, unless it is already a Claude Code fork in the tool's own worktree
+(`.claude/worktrees/`), which is the one exception, first runs
+`git fetch origin`, then makes its worktree:
 
-    git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>
+    git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/<default>
 
 It works only there, naming the worktree in every command, since the tool's
-shell may return to `Tressette/` after each command. Before any check runs
+shell may return to `Tressette/` after each command, and its first push is
+`git push -u origin <branch>`. `--no-track` keeps the branch from tracking
+`origin/<default>`, so the push goes to its own branch. Before any check runs
 there, it installs the dependencies in that worktree, as the project's setup
 says (`npm ci`, then `npm run setup` if Chromium is missing), and never copies
 or links them from `Tressette/`. On Windows, nested worktree paths need

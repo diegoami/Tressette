@@ -34,8 +34,10 @@ apply `CLAUDE.md`'s process: that file is the other harness.
 2. **IMPLEMENTATION.** Implement the agreed design in a worktree of your own,
    never in the main checkout (`PLAN.md` §7.7, "Who works where"): first
    `git fetch origin`, then
-   `git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>`,
-   and work only there, naming the worktree in every command. Install the
+   `git worktree add --no-track -b <branch> <main>/../Tressette-work/<branch> origin/<default>`,
+   and work only there, naming the worktree in every command; the first push
+   is `git push -u origin <branch>` (`--no-track` keeps the branch from
+   tracking `origin/<default>`, so the push goes to its own branch). Install the
    dependencies in it before any check (`npm ci`, then `npm run setup` if
    Chromium is missing); never copy or link them from the main checkout. If
    you find yourself about to edit, commit or switch branches in the main

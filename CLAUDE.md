@@ -75,9 +75,25 @@ Tressette card game for the browser, public/index.html and public/engine.js with
 no build step, wrapped as an Android APK and a Windows app.
 
 The candidate for <TAG> is <SHA> on main. The previous release is <PREV>.
-Check out <SHA> first (`git fetch origin && git checkout <SHA>`), and review
-`git diff <PREV>..<SHA>`, following it into any file it touches. The pull
-requests in that range:
+Reach it in this order, and review nowhere else:
+1. Fetch first: `git fetch origin --tags`. Not `git pull`. The candidate is a
+   commit on main, not a pull request, so there is no pull/<N>/head to fetch.
+2. A commit you cannot see is not missing until you have fetched. Only if
+   `git cat-file -t <SHA>` still does not print "commit" after the fetch, stop
+   and say so in your reply; do not review.
+3. Review in a fresh, detached worktree of your own at <SHA>, never in the
+   checkout you started in, which may be someone's work in progress: leave
+   its branch and files exactly as they are. Run
+     git worktree add --detach <main>/../Tressette-work/review-<id>-<stamp> <SHA>
+   where <main> is the parent directory of
+   `git rev-parse --path-format=absolute --git-common-dir`, <id> is the first
+   12 characters of <SHA>, and <stamp> is the UTC time as YYYYMMDDTHHMMSSZ, so
+   every run has its own. Remove no worktree you did not make.
+4. In that worktree, `git rev-parse HEAD` must equal <SHA> before you review.
+   Every command from here on runs there.
+
+Review `git diff <PREV>..<SHA>`, following it into any file it touches. The
+pull requests in that range:
 <one line per merged PR: number and title>
 
 Read PLAN.md §7 and §7.7 first, then SPEC.md. PLAN.md §2 is the rules and §3.4
@@ -97,7 +113,9 @@ Do not fix anything. For each finding you reproduced, open one issue in
 diegoami/Tressette: what is wrong, file:line, severity (defect, risk or nit),
 and how to reproduce it. Then post one comment on
 https://github.com/diegoami/Tressette/issues/<N>: AGREE or BLOCK on the first
-line, then the finding issues, anything you inferred but could not reproduce,
+line, then the worktree you reviewed in, as a relative path
+(../Tressette-work/review-<id>-<stamp>), and <SHA>, then the finding issues,
+anything you inferred but could not reproduce,
 what you checked and found clean, and what each passing check would have caught
 had the code been wrong. BLOCK if any finding should stop <TAG> from shipping.
 
@@ -111,9 +129,10 @@ candidate as `<SHA>`, and this paragraph after the list of pull requests:
 
 ```
 This is round <R>. Round <R-1> reviewed <OLD SHA> and posted BLOCK, with the
-findings <#issue, #issue>. Check first that each is fixed at <SHA>, and say so
-on its issue. Then review `git diff <OLD SHA>..<SHA>` as a whole, and anything
-in `<PREV>..<SHA>` the fixes reach into.
+findings <#issue, #issue>. Reach <SHA> as above, fetching again and in a new
+worktree of its own, not round <R-1>'s. Check first that each finding is fixed
+at <SHA>, and say so on its issue. Then review `git diff <OLD SHA>..<SHA>` as
+a whole, and anything in `<PREV>..<SHA>` the fixes reach into.
 ```
 
 ## Amending this file

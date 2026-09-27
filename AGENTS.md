@@ -35,9 +35,12 @@ apply `CLAUDE.md`'s process: that file is the other harness.
    never in the main checkout (`PLAN.md` §7.7, "Who works where"): first
    `git fetch origin`, then
    `git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>`,
-   and work only there, naming the worktree in every command. If you find
-   yourself about to edit, commit or switch branches in the main checkout,
-   stop and make the worktree first. Open a PR that references the issue.
+   and work only there, naming the worktree in every command. Install the
+   dependencies in it before any check (`npm ci`, then `npm run setup` if
+   Chromium is missing); never copy or link them from the main checkout. If
+   you find yourself about to edit, commit or switch branches in the main
+   checkout, stop and make the worktree first. Open a PR that references the
+   issue.
    Have Luna review the PR against the agreed design; fix and iterate until
    Luna posts an explicit **AGREE**. The owner merges. After the merge, remove
    the worktree you made (`git worktree remove`) and delete the merged branch.

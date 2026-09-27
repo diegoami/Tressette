@@ -1898,6 +1898,13 @@ is the main checkout, the parent directory of
   If that branch or path exists, it adds a UTC stamp to both. It works only
   there, naming the worktree in every command, since a tool's shell may return
   to `Tressette/` after each command.
+- **Every worktree installs its own dependencies** before any check runs in it,
+  as the project's setup says (`npm ci`, then `npm run setup` if Chromium is
+  missing), and never copies or links them from `Tressette/`. This holds for
+  implementers and reviewers alike.
+- **On Windows, `git config --global core.longpaths true` is a prerequisite**,
+  since nested worktree paths can pass the path limit. The owner sets it on the
+  machine; a session does not.
 - **If it finds itself about to edit, commit or switch branches in
   `Tressette/`, it stops and makes the worktree first.**
 - **After the merge, it removes the worktree it made** (`git worktree remove`)
@@ -1905,9 +1912,9 @@ is the main checkout, the parent directory of
 - **Reviewers work in worktrees of their own**, one per review round, detached
   at the exact commit under review, under
   `Tressette-review/review-<first 12 of the SHA>-<UTC stamp YYYYMMDDTHHMMSSZ>`
-  beside the main checkout. They fetch first, and a commit they cannot see is
-  not missing until they have (`CLAUDE.md`'s milestone prompt spells the steps
-  out).
+  beside the main checkout. They fetch first, a commit they cannot see is not
+  missing until they have, and they install the dependencies in their worktree
+  before any check (`CLAUDE.md`'s milestone prompt spells the steps out).
 - **In a cloud session**, the session's own clone takes the place of these
   folders; the fetch and commit checks still apply.
 - **A session removes only worktrees it made.**

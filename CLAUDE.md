@@ -29,7 +29,12 @@ unless it is already a Claude Code fork in the tool's own worktree
     git worktree add -b <branch> <main>/../Tressette-work/<branch> origin/<default>
 
 It works only there, naming the worktree in every command, since the tool's
-shell may return to `Tressette/` after each command. If it finds itself about
+shell may return to `Tressette/` after each command. Before any check runs
+there, it installs the dependencies in that worktree, as the project's setup
+says (`npm ci`, then `npm run setup` if Chromium is missing), and never copies
+or links them from `Tressette/`. On Windows, nested worktree paths need
+`git config --global core.longpaths true`, which the owner sets on the
+machine; a session does not set it. If it finds itself about
 to edit, commit or switch branches in `Tressette/`, it stops and makes the
 worktree first. After the merge it removes the worktree it made
 (`git worktree remove`) and deletes its merged branch. It removes no worktree
@@ -107,9 +112,16 @@ Reach it in this order, and review nowhere else:
    where <main> is the parent directory of
    `git rev-parse --path-format=absolute --git-common-dir`, <id> is the first
    12 characters of <SHA>, and <stamp> is the UTC time as YYYYMMDDTHHMMSSZ, so
-   every run has its own. Remove no worktree you did not make.
+   every run has its own. Remove no worktree you did not make. On Windows,
+   nested worktree paths can pass the path limit: this needs
+   `git config --global core.longpaths true`, which the owner sets on the
+   machine. If a path is too long, stop and say so; do not change git's
+   configuration.
 4. In that worktree, `git rev-parse HEAD` must equal <SHA> before you review.
    Every command from here on runs there.
+5. Before any check runs there, install the dependencies in that worktree, as
+   the project's setup says: `npm ci`, then `npm run setup` if Chromium is
+   missing. Never copy or link them from the checkout you started in.
 
 Review `git diff <PREV>..<SHA>`, following it into any file it touches. The
 pull requests in that range:
@@ -119,7 +131,7 @@ Read PLAN.md §7 and §7.7 first, then SPEC.md. PLAN.md §2 is the rules and §3
 the opponent.
 
 Run both gates yourself and report the counts: `npm test` and
-`node tools/check_ui.mjs` (run `npm run setup` first if Chromium is missing).
+`node tools/check_ui.mjs`, in your worktree, after step 5.
 The desktop build and its smoke need Windows with Rust and WebView2; if you
 cannot run them, say so and review them by reading.
 

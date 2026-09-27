@@ -182,21 +182,41 @@ A release carries the APK and the Windows build together, since 1.0.4
 
 **Tag first, then build from the tag.** A release is a milestone: an annotated
 tag `vX.Y.Z` on `main`, on the exact commit that was reviewed (`PLAN.md` §7.4,
-`CLAUDE.md`). In order:
+`CLAUDE.md`). Every build is made in a worktree of its own, detached at the
+commit it builds, beside the main checkout, never in the main checkout itself
+(`PLAN.md` §7.7, "Who works where"). `package_release.mjs` refuses to run in the
+main checkout. In order:
 
-1. `node tools/package_release.mjs --candidate` on the candidate commit, a
-   clean checkout of `main`. It stages `dist-release/candidate-<sha>/`, which is
-   for the device checks in §6 and is never published.
+1. `git fetch origin --tags`, then
+   `git worktree add --detach <main>/../Tressette-work/release-<first 12 of the sha> <sha>`
+   for the candidate commit on `main`, and in it
+   `node tools/package_release.mjs --candidate`. It stages
+   `dist-release/candidate-<sha>/` in that worktree, which is for the device
+   checks in §6 and is never published.
 2. The milestone review, and the device checks on that build.
 3. On AGREE (or the owner's decision to skip the review), the tag, on exactly
    that commit: `git tag -a vX.Y.Z -m "Tressette X.Y.Z" <sha>`, then
    `git push origin vX.Y.Z`.
-4. `git checkout vX.Y.Z`, then `node tools/package_release.mjs`. It refuses to
-   stage `dist-release/vX.Y.Z/` unless HEAD is that annotated tag, on
-   `origin/main`, with no tracked file changed.
-5. `node tools/publish_release.mjs --subtitle "…"`, the dry run, then with
-   `--confirm` on the owner's go-ahead. It refuses a tag that is lightweight,
-   off `main`, or not pushed, and the release notes name the tagged commit.
+4. `git worktree add --detach <main>/../Tressette-work/release-vX.Y.Z vX.Y.Z`,
+   and in it `node tools/package_release.mjs`. It refuses to stage
+   `dist-release/vX.Y.Z/` unless HEAD is that annotated tag, on `origin/main`,
+   with no tracked file changed.
+5. In the same worktree, `node tools/publish_release.mjs --subtitle "…"`, the dry
+   run, then with `--confirm` on the owner's go-ahead. It refuses a tag that is
+   lightweight, off `main`, or not pushed, and the release notes name the
+   tagged commit.
+6. Once the release is published, remove the worktrees the steps above made
+   (`git worktree remove`); their `dist-release/` goes with them, and the
+   release repository holds the files.
+
+A fresh worktree has none of the installs and none of the secrets, and the
+packager handles both. It runs `npm ci` in `mobile/` and at the root itself,
+and the desktop's install is its own step. The signing key's
+`keystore.properties` is gitignored, so its one copy stays in the main
+checkout's `mobile/android/`. The packager finds it there and passes only its
+path to Gradle, in `TRESSETTE_KEYSTORE_PROPERTIES` (`app/build.gradle` reads
+that before the file beside it). Nothing copies it, and the script never reads
+it.
 
 **`node tools/package_release.mjs`** — check where the build comes from (step
 4 above), check that every version declaration

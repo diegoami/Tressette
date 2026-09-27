@@ -96,16 +96,22 @@ on one version line, from this machine: it holds the Android signing key and
 the Rust toolchain.
 
 A release is a milestone, an annotated tag on the reviewed commit of `main`, and
-it is built from the tag ([`ANDROID.md`](ANDROID.md) §4 has the whole order):
+it is built from the tag, in a worktree of its own, never in the main checkout
+([`ANDROID.md`](ANDROID.md) §4 has the whole order):
 
 ```sh
-node tools/package_release.mjs --candidate   # the candidate, for the device checks; never published
-git tag -a vX.Y.Z -m "Tressette X.Y.Z" <sha> && git push origin vX.Y.Z   # after the review's AGREE
-git checkout vX.Y.Z
-node tools/package_release.mjs               # builds both from the tag, smokes the exe, stages dist-release/vX.Y.Z/
-node tools/publish_release.mjs --subtitle "…"            # dry run: verifies, prints the notes
-node tools/publish_release.mjs --subtitle "…" --confirm
+git fetch origin --tags
+git worktree add --detach <main>/../Tressette-work/release-<sha12> <sha>   # the candidate
+node <that worktree>/tools/package_release.mjs --candidate                 # for the device checks; never published
+git tag -a vX.Y.Z -m "Tressette X.Y.Z" <sha> && git push origin vX.Y.Z      # after the review's AGREE
+git worktree add --detach <main>/../Tressette-work/release-vX.Y.Z vX.Y.Z
+node <that worktree>/tools/package_release.mjs                             # builds both from the tag, smokes the exe, stages dist-release/vX.Y.Z/
+node <that worktree>/tools/publish_release.mjs --subtitle "…"              # dry run: verifies, prints the notes
+node <that worktree>/tools/publish_release.mjs --subtitle "…" --confirm
 ```
+
+The packager installs what a fresh worktree lacks itself, and finds the
+signing key's configuration in the main checkout (`ANDROID.md` §4).
 
 A version bump touches seven declarations in six files: Android's
 `versionName` (and `versionCode`), `tauri.conf.json`, `Cargo.toml`,

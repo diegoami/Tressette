@@ -14,6 +14,7 @@ import {
   parseChecksums, checksumProblems, releaseCreateArgs,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, releaseNotes,
   pickJdk, buildSource, publishTagProblems, versionCodeProblem, previousTag,
+  releaseCheckoutProblem,
 } from './release_lib.mjs';
 
 // --- #23: the newest staged version is the highest number, not the last string
@@ -182,6 +183,30 @@ test("the Android build is given a JDK 21, not whichever JDK is found first", ()
 
 const HEAD = 'a'.repeat(40), OTHER = 'b'.repeat(40);
 const tagged = { version: '1.0.5', head: HEAD, tagCommit: HEAD, tagType: 'tag', onMain: true, clean: true };
+
+// A release is built in a worktree of its own, never in the main checkout
+// (PLAN.md 7.7): the main checkout's git dir is the common dir, a linked
+// worktree's is its own under it. Windows may report the same directory with
+// a different drive-letter case or slashes, and that is still the same one.
+test("a release is built in a worktree, never in the main checkout", () => {
+  const common = path.join('C:', 'work', 'Tressette', '.git');
+  assert.match(releaseCheckoutProblem({ gitDir: common, commonDir: common }), /main checkout/);
+  assert.match(releaseCheckoutProblem({ gitDir: common.toUpperCase(), commonDir: common }), /main checkout/);
+  assert.equal(releaseCheckoutProblem({
+    gitDir: path.join(common, 'worktrees', 'release-v1.0.6'), commonDir: common }), null);
+  assert.match(releaseCheckoutProblem({ gitDir: null, commonDir: common }), /not a git checkout/);
+});
+
+// The same question asked of the real repository: a test run in the main
+// checkout must get the refusal, and one in a linked worktree must not.
+test("the refusal matches where this repository actually is", () => {
+  const git = (...args) => spawnSync('git', args, {
+    cwd: new URL('..', import.meta.url), encoding: 'utf8' }).stdout.trim();
+  const gitDir = git('rev-parse', '--path-format=absolute', '--git-dir');
+  const commonDir = git('rev-parse', '--path-format=absolute', '--git-common-dir');
+  const linked = path.resolve(gitDir).toLowerCase() !== path.resolve(commonDir).toLowerCase();
+  assert.equal(releaseCheckoutProblem({ gitDir, commonDir }) === null, linked);
+});
 
 test("a publishable build comes only from the annotated tag, on main, unchanged", () => {
   assert.deepEqual(buildSource(tagged), { ok: true, kind: 'release', dir: 'v1.0.5' });

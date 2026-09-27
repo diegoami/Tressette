@@ -8,7 +8,7 @@ first.
 The game is live at **<https://tresettette.netlify.app>** — the Netlify site
 linked to `main`, which publishes `public/` and nothing else. That URL is not
 reachable from the container the work is done in (the network policy denies
-it), so nothing in the repository asserts that it serves; see §7 of `PLAN.md`.
+it), so nothing in the repository asserts that it serves.
 
 ---
 
@@ -58,7 +58,7 @@ RULES.md / REGOLE.md the rules as this game plays them, English and Italian
 PLAN.md              the plan and the record, iteration by iteration
 ANDROID.md           the APK: what is done, what is left, and whose
 DESKTOP.md           the Windows build: the decision, and how it is checked
-PLAN.md §7.7         the working rules a builder has to follow
+AGENTS.md            the working rules a builder has to follow
 ```
 
 Nothing is generated at build time and nothing under `public/` imports

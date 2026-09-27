@@ -108,7 +108,7 @@ export function pickJdk(candidates){
 
 // Where a build comes from, and so where it may be staged. A release is a
 // milestone: an annotated tag vX.Y.Z on main, on the exact commit that was
-// reviewed (CLAUDE.md, Milestones), and a publishable build is made from that
+// reviewed (AGENTS.md, Releases), and a publishable build is made from that
 // tag and nothing else. `candidate` is the one other build there is: the
 // untagged candidate commit, built for the device checks that must happen
 // before the tag, and staged where publish_release never looks.
@@ -135,13 +135,13 @@ export function buildSource({ version, head, tagCommit, tagType, onMain, clean, 
   if (tagCommit) return { ok: true, kind: 'release', dir: tag };
   if (candidate) return { ok: true, kind: 'candidate', dir: `candidate-${head.slice(0, 7)}` };
   return no(`HEAD is not tagged ${tag}. The tag comes first, on the reviewed commit ` +
-            '(CLAUDE.md, Milestones); build from it. For the device checks before the tag, ' +
+            '(AGENTS.md, Releases); build from it. For the device checks before the tag, ' +
             'pass --candidate: that build is staged where publish_release never looks.');
 }
 
 // Why a release cannot be built in this checkout, or null. It is built in a
-// worktree of its own (PLAN.md 7.7, "Who works where"), never in the main
-// checkout, which is the planner's and may hold someone's work in progress.
+// worktree of its own (AGENTS.md), never in the main
+// checkout, which may hold someone's work in progress.
 // A linked worktree's git dir is its own, under the common one; the main
 // checkout's git dir is the common dir. Both are absolute paths from
 // `git rev-parse --path-format=absolute`.
@@ -149,7 +149,7 @@ export function releaseCheckoutProblem({ gitDir, commonDir }){
   const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
   if (!gitDir || !commonDir) return 'this is not a git checkout';
   if (same(gitDir, commonDir))
-    return 'this is the main checkout, where no release is built (PLAN.md §7.7). Fetch, then ' +
+    return 'this is the main checkout, where no release is built (AGENTS.md). Fetch, then ' +
       'git worktree add --detach <main>/../Tressette-work/release-<tag or sha> <tag or sha>, ' +
       'and run the packager from there (ANDROID.md §4).';
   return null;

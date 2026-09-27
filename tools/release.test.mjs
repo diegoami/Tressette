@@ -185,7 +185,7 @@ const HEAD = 'a'.repeat(40), OTHER = 'b'.repeat(40);
 const tagged = { version: '1.0.5', head: HEAD, tagCommit: HEAD, tagType: 'tag', onMain: true, clean: true };
 
 // A release is built in a worktree of its own, never in the main checkout
-// (PLAN.md 7.7): the main checkout's git dir is the common dir, a linked
+// (AGENTS.md): the main checkout's git dir is the common dir, a linked
 // worktree's is its own under it. Windows may report the same directory with
 // a different drive-letter case or slashes, and that is still the same one.
 test("a release is built in a worktree, never in the main checkout", () => {

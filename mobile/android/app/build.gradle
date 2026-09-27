@@ -6,8 +6,8 @@ apply plugin: 'com.android.application'
 // without the secret — the release build stays unsigned rather than failing;
 // tools/package_release.mjs is what refuses to publish an unsigned APK.
 //
-// A release is built in a worktree of its own (PLAN.md 7.7, "Who works
-// where"), where this gitignored file does not exist: its one copy lives in
+// A release is built in a worktree of its own (AGENTS.md), where this
+// gitignored file does not exist: its one copy lives in
 // the main checkout. package_release.mjs finds it there and passes its path in
 // TRESSETTE_KEYSTORE_PROPERTIES; without that, the file beside this project is
 // read, as it always was.

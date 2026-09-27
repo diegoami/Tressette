@@ -7,8 +7,8 @@ node_modules
 dist-release
 
 # A Claude Code forked subagent's worktree, which the tool makes inside the
-# main checkout (PLAN.md 7.7, "Who works where"): someone's work in progress,
-# never something to commit from here.
+# main checkout: someone's work in progress, never something to commit from
+# here.
 .claude/worktrees/
 
 # The Android wrapper's own installs and build outputs. mobile/android/ itself

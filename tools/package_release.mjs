@@ -7,7 +7,7 @@
  *   node tools/package_release.mjs --candidate  # from the untagged candidate
  *
  * A release is a milestone: an annotated tag vX.Y.Z on main, on the exact
- * commit that was reviewed (CLAUDE.md, Milestones). The build comes from that
+ * commit that was reviewed (AGENTS.md, Releases). The build comes from that
  * tag, checked out, and nothing else stages into dist-release/vX.Y.Z/, the
  * directory publish_release reads. --candidate builds the untagged candidate
  * for the device checks that come before the tag, into
@@ -16,7 +16,7 @@
  * Steps, in order, stopping at the first failure:
  *   0. HEAD is the tag (or, with --candidate, an untagged commit on main), and
  *      no tracked file differs from it; this is a worktree of its own, not the
- *      main checkout (PLAN.md §7.7); the signing key's keystore.properties is
+ *      main checkout (AGENTS.md); the signing key's keystore.properties is
  *      found here or in the main checkout and its path handed to Gradle; and
  *      npm ci installs what a fresh worktree lacks
  *   1. every version declaration agrees with Android's versionName, and
@@ -152,7 +152,7 @@ console.log(source.kind === 'release'
     'checks, not for publishing');
 
 // --- a worktree of its own, and the signing key's configuration ---
-// A release is built in a worktree, never in the main checkout (PLAN.md §7.7).
+// A release is built in a worktree, never in the main checkout (AGENTS.md).
 // keystore.properties is gitignored, so its one copy is in the main checkout:
 // it is looked for beside this project first, then there, and only its path is
 // passed on (build.gradle reads TRESSETTE_KEYSTORE_PROPERTIES). This script

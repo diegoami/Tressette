@@ -15,7 +15,10 @@
  *
  * Steps, in order, stopping at the first failure:
  *   0. HEAD is the tag (or, with --candidate, an untagged commit on main), and
- *      no tracked file differs from it
+ *      no tracked file differs from it; this is a worktree of its own, not the
+ *      main checkout (PLAN.md §7.7); the signing key's keystore.properties is
+ *      found here or in the main checkout and its path handed to Gradle; and
+ *      npm ci installs what a fresh worktree lacks
  *   1. every version declaration agrees with Android's versionName, and
  *      versionCode has moved with it since the previous milestone tag
  *   2. cap sync android   — copy public/ into the Android project
@@ -46,7 +49,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  EXPECTED_CERT, JDK_MAJOR, newestBuildTools, signatureVerdict, pickJdk, buildSource,
+  EXPECTED_CERT, JDK_MAJOR, newestBuildTools, signatureVerdict, pickJdk, buildSource, releaseCheckoutProblem,
   previousTag, versionCodeProblem,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, checksumProblems,
 } from './release_lib.mjs';
@@ -148,10 +151,33 @@ console.log(source.kind === 'release'
   : `packaging a candidate for Tressette ${tag}, commit ${head}: for the device ` +
     'checks, not for publishing');
 
-// --- a signing key must be configured, or the whole exercise is pointless ---
-if (!existsSync(path.join(ANDROID, 'keystore.properties')))
-  fail('mobile/android/keystore.properties is missing — no signing key configured. ' +
-       'Copy keystore.properties.example and fill it in (see ANDROID.md §4).');
+// --- a worktree of its own, and the signing key's configuration ---
+// A release is built in a worktree, never in the main checkout (PLAN.md §7.7).
+// keystore.properties is gitignored, so its one copy is in the main checkout:
+// it is looked for beside this project first, then there, and only its path is
+// passed on (build.gradle reads TRESSETTE_KEYSTORE_PROPERTIES). This script
+// never reads the file.
+const commonDir = out('rev-parse', '--path-format=absolute', '--git-common-dir');
+const where = releaseCheckoutProblem({
+  gitDir: out('rev-parse', '--path-format=absolute', '--git-dir'), commonDir,
+});
+if (where) fail(where);
+const mainCheckout = path.dirname(commonDir);
+const keystore = [
+  path.join(ANDROID, 'keystore.properties'),
+  path.join(mainCheckout, 'mobile', 'android', 'keystore.properties'),
+].find((p) => existsSync(p));
+if (!keystore)
+  fail('no keystore.properties, neither in this worktree nor in the main checkout ' +
+       `(${path.join(mainCheckout, 'mobile', 'android')}) — no signing key configured. ` +
+       'Copy keystore.properties.example there and fill it in (ANDROID.md §3).');
+env.TRESSETTE_KEYSTORE_PROPERTIES = keystore;
+console.log(`signing key configured by ${keystore}`);
+
+// --- what a fresh worktree does not have: the Capacitor CLI, and the smoke's
+// playwright-core. The desktop's own install is step 6.
+step('npm ci (mobile)', 'npm', ['ci', '--no-audit', '--no-fund'], { cwd: MOBILE });
+step('npm ci (root, for the desktop smoke)', 'npm', ['ci', '--no-audit', '--no-fund'], { cwd: ROOT });
 
 // --- 2 & 3: sync the web assets, then build ---
 const apkDir = path.join(ANDROID, 'app', 'build', 'outputs', 'apk', 'release');

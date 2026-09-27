@@ -5,7 +5,14 @@ apply plugin: 'com.android.application'
 // keystore.properties.example). When it is absent — a fresh clone, or CI
 // without the secret — the release build stays unsigned rather than failing;
 // tools/package_release.mjs is what refuses to publish an unsigned APK.
-def keystorePropsFile = rootProject.file("keystore.properties")
+//
+// A release is built in a worktree of its own (PLAN.md 7.7, "Who works
+// where"), where this gitignored file does not exist: its one copy lives in
+// the main checkout. package_release.mjs finds it there and passes its path in
+// TRESSETTE_KEYSTORE_PROPERTIES; without that, the file beside this project is
+// read, as it always was.
+def keystorePropsPath = System.getenv("TRESSETTE_KEYSTORE_PROPERTIES")
+def keystorePropsFile = keystorePropsPath ? file(keystorePropsPath) : rootProject.file("keystore.properties")
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {
     keystoreProps.load(new FileInputStream(keystorePropsFile))

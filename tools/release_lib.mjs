@@ -139,6 +139,22 @@ export function buildSource({ version, head, tagCommit, tagType, onMain, clean, 
             'pass --candidate: that build is staged where publish_release never looks.');
 }
 
+// Why a release cannot be built in this checkout, or null. It is built in a
+// worktree of its own (PLAN.md 7.7, "Who works where"), never in the main
+// checkout, which is the planner's and may hold someone's work in progress.
+// A linked worktree's git dir is its own, under the common one; the main
+// checkout's git dir is the common dir. Both are absolute paths from
+// `git rev-parse --path-format=absolute`.
+export function releaseCheckoutProblem({ gitDir, commonDir }){
+  const same = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+  if (!gitDir || !commonDir) return 'this is not a git checkout';
+  if (same(gitDir, commonDir))
+    return 'this is the main checkout, where no release is built (PLAN.md §7.7). Fetch, then ' +
+      'git worktree add --detach <main>/../Tressette-work/release-<tag or sha> <tag or sha>, ' +
+      'and run the packager from there (ANDROID.md §4).';
+  return null;
+}
+
 // Why publishing `tag` must not go ahead, from the tag's facts here and on the
 // origin: `localObject` and `remoteObject` are the tag objects' SHAs (null when
 // absent), `type` what `git cat-file -t` says, `onMain` whether its commit is

@@ -60,8 +60,9 @@ The contract, in one list. Everything else is detail.
   about 15% of the positions where they have a choice, and under a fifth of
   those disagreements fall in the tricks the search now takes over. In the
   opponent that ships it is none of them, by construction. §3.4 has the rule.
-- **Player-facing text is Italian.** Comments, commits and documents are
-  English.
+- **Player-facing text is available in Italian and English.** Italian is the
+  default; the language selector in Settings persists the choice. Comments,
+  commits and documents are English.
 - **The UI check runs after every UI change**, and every threshold in it names
   the defect it was written for.
 - **What is different is different because the game is**, not because of
@@ -1426,12 +1427,12 @@ side effect reaches the next assertion is not measuring the page any more. A
 check that fails one run in three is worse than one that never fails, because the first thing anyone does with it is
 run it again.
 
-### After it shipped — the about screen says the rules, twice
+### After it shipped — the about screen has the rules in both languages
 
 Issue #13, from the owner. `RULES.md` had promised since iteration 0 that the
 about screen would carry the Italian rules; it carries both languages now, in
-short, and both documents say that the screen and the document are not
-independent — a rule written twice in two places drifts.
+short, and shows the selected one. Both documents say that the screen and the
+document are not independent — a rule written twice in two places drifts.
 
 **The prose is a statement about `engine.js`, and a false one reads exactly
 like a true one.** No assertion can tell them apart and neither can a reviewer
@@ -1445,9 +1446,10 @@ terzi are floored, the deck holds 32 of them, the ultima is worth 3, and 35 mod
 somewhere, which is what makes them easy to write down by mistake.
 
 **Each language is a `section[lang]`, and the check reads each on its own.**
-"The rules are in both languages" asserted as *a `lang` attribute exists
-somewhere* passes a page whose English paragraphs are tagged Italian — what a
-screen reader and a hyphenator then go by.
+It probes each section in its own language and also verifies that only the
+selected language is visible; a `lang` attribute alone cannot tell a page whose
+English paragraphs are tagged Italian — what a screen reader and a hyphenator
+then go by.
 
 **And the sharper half of the same lesson, which seven breaks found.** Six of
 them — no `lang` on the English, both halves tagged `it`, the eleven points
@@ -1622,7 +1624,7 @@ first and decided by the owner on the numbers.
 | A framework or build step | Same reason as Discola. The one concession is a second script file, and it is still static. |
 | A match to 21 across deals | The traditional form, left out on the owner's call to keep Discola's rhythm of one deal per partita. `scoreDeal` returns per-deal points, so a running total, a second dialog and a saved match are additions, not a redesign. |
 | Other variants (Tressette a perdere, Terziglio, Quintiglio) | Scope is one game done properly. |
-| Localisation | The terms of art are Italian. |
+| Additional languages | Italian and English are the supported UI languages. |
 | A difficulty slider | The four opponents are the difficulty, as in Discola. |
 | Card counting aids | Counting is the game. The easter egg is already more than enough. |
 

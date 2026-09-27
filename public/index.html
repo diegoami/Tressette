@@ -1157,16 +1157,16 @@ button.card:disabled{ cursor: default; }
   <header class="topbar">
     <span class="wordmark">Tressette</span>
     <nav class="tools">
-      <button class="tool" id="again" type="button" title="Nuova mano" aria-label="Nuova mano">
+      <button class="tool" id="again" type="button" title="Nuova mano" aria-label="Nuova mano" data-i18n-title="newHand" data-i18n-aria="newHand">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-.7 3.3"/><path d="M20 5.5V11h-5.5"/></svg>
       </button>
-      <button class="tool" id="btnHistory" type="button" title="Storico mani" aria-label="Storico mani">
+      <button class="tool" id="btnHistory" type="button" title="Storico mani" aria-label="Storico mani" data-i18n-title="history" data-i18n-aria="history">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/></svg>
       </button>
-      <button class="tool" id="btnSettings" type="button" title="Impostazioni" aria-label="Impostazioni">
+      <button class="tool" id="btnSettings" type="button" title="Impostazioni" aria-label="Impostazioni" data-i18n-title="settings" data-i18n-aria="settings">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="16" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
       </button>
-      <button class="tool" id="btnAbout" type="button" title="Informazioni" aria-label="Informazioni">
+      <button class="tool" id="btnAbout" type="button" title="Informazioni" aria-label="Informazioni" data-i18n-title="about" data-i18n-aria="about">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.3"/><path d="M12 7.6v1"/></svg>
       </button>
     </nav>
@@ -1176,14 +1176,14 @@ button.card:disabled{ cursor: default; }
        (issue #45): a dialog that never gives focus back drops it on <body>,
        and the next Tab starts from the top of the page. -->
   <main class="table" id="table" tabindex="-1">
-    <p class="cheat-note" id="cheatNote" hidden>Carte scoperte</p>
+    <p class="cheat-note" id="cheatNote" data-i18n="cheatNote" hidden>Carte scoperte</p>
 
     <section class="seat seat--opp">
       <div class="plate" id="plateOpp">
         <span class="turn-dot"></span>
         <span>
           <span class="plate__who" id="oppName">Franco</span>
-          <span class="plate__role">avversario</span>
+          <span class="plate__role" data-i18n="opponentRole">avversario</span>
         </span>
         <span class="plate__score" id="oppScore">0</span>
       </div>
@@ -1200,9 +1200,9 @@ button.card:disabled{ cursor: default; }
           <div class="card stock" id="stockCard" style="--col:10;--row:0"></div>
         </div>
         <div class="tallone-meta">
-          <span class="eyebrow">Tallone</span>
+          <span class="eyebrow" data-i18n="stock">Tallone</span>
           <span class="count" id="stockCount">20</span>
-          <span class="last-hand" id="lastHand" hidden>Ultima presa</span>
+        <span class="last-hand" id="lastHand" data-i18n="lastTrick" hidden>Ultima presa</span>
         </div>
       </div>
     </section>
@@ -1217,8 +1217,8 @@ button.card:disabled{ cursor: default; }
       <div class="plate" id="plateYou">
         <span class="turn-dot"></span>
         <span>
-          <span class="plate__who">Tu</span>
-          <span class="plate__role">giocatore</span>
+          <span class="plate__who" data-i18n="you">Tu</span>
+          <span class="plate__role" data-i18n="playerRole">giocatore</span>
         </span>
         <span class="plate__score" id="youScore">0</span>
       </div>
@@ -1244,44 +1244,44 @@ button.card:disabled{ cursor: default; }
              floor((Carte + Ultima) / 3) + Accusi, which is scoreDeal. -->
         <div class="result__grid" id="resultGrid">
           <div class="r-head"></div>
-          <div class="r-head">Tu</div>
+          <div class="r-head" data-i18n="you">Tu</div>
           <div class="r-head" id="gridOppName">Franco</div>
 
-          <div class="r-label">Prese</div>
+          <div class="r-label" data-i18n="tricks">Prese</div>
           <div class="r-num" id="gridPreseYou">0</div>
           <div class="r-num" id="gridPreseOpp">0</div>
 
-          <div class="r-label">Carte <span class="r-unit">terzi</span></div>
+          <div class="r-label"><span data-i18n="cards">Carte</span> <span class="r-unit" data-i18n="thirds">terzi</span></div>
           <div class="r-num" id="gridCarteYou">0</div>
           <div class="r-num" id="gridCarteOpp">0</div>
 
-          <div class="r-label">Ultima <span class="r-unit">terzi</span></div>
+          <div class="r-label"><span data-i18n="last">Ultima</span> <span class="r-unit" data-i18n="thirds">terzi</span></div>
           <div class="r-num" id="gridUltimaYou">0</div>
           <div class="r-num" id="gridUltimaOpp">0</div>
 
-          <div class="r-label">Accusi <span class="r-unit">punti</span></div>
+          <div class="r-label"><span data-i18n="declarations">Accusi</span> <span class="r-unit" data-i18n="points">punti</span></div>
           <div class="r-num" id="gridAccusiYou">0</div>
           <div class="r-num" id="gridAccusiOpp">0</div>
 
-          <div class="r-label r-total">Totale <span class="r-unit">punti</span></div>
+          <div class="r-label r-total"><span data-i18n="total">Totale</span> <span class="r-unit" data-i18n="points">punti</span></div>
           <div class="r-num r-total" id="gridTotaleYou">0</div>
           <div class="r-num r-total" id="gridTotaleOpp">0</div>
         </div>
 
-        <p class="result__rule">Carte e ultima sono terzi: il totale è
+        <p class="result__rule" data-i18n="scoreRule">Carte e ultima sono terzi: il totale è
         (Carte&nbsp;+&nbsp;Ultima) ÷ 3, arrotondato in giù, più gli accusi.</p>
 
         <p class="result__accusi" id="resultAccusi" hidden></p>
         <p class="result__note" id="resultNote"></p>
 
         <div class="group result__setup">
-          <div class="group-head"><span class="eyebrow">Avversario</span></div>
+          <div class="group-head"><span class="eyebrow" data-i18n="opponent">Avversario</span></div>
           <div class="chips" id="resultOpponents"></div>
         </div>
 
         <div class="group result__setup">
           <div class="group-head">
-            <span class="eyebrow">Mazzo</span><span class="pick" id="resultDeckName">Trevisane</span>
+            <span class="eyebrow" data-i18n="deck">Mazzo</span><span class="pick" id="resultDeckName">Trevisane</span>
           </div>
           <div class="decks" id="resultDecks"></div>
         </div>
@@ -1291,8 +1291,8 @@ button.card:disabled{ cursor: default; }
            the deck are on this screen now, so "cambia avversario o mazzo" has
            nothing left to open, and the settings sheet holds the rest. -->
       <div class="result__actions">
-        <button class="btn btn--primary" id="playAgain" type="button">Ancora</button>
-        <button class="btn" id="resultSettings" type="button">Impostazioni</button>
+        <button class="btn btn--primary" id="playAgain" type="button" data-i18n="playAgain">Ancora</button>
+        <button class="btn" id="resultSettings" type="button" data-i18n="settings">Impostazioni</button>
       </div>
     </section>
   </main>
@@ -1308,19 +1308,19 @@ button.card:disabled{ cursor: default; }
        where the sheet was opened from. -->
   <header class="topbar topbar--start">
     <nav class="tools">
-      <button class="tool" data-nav="history" type="button" title="Storico mani" aria-label="Storico mani">
+      <button class="tool" data-nav="history" type="button" title="Storico mani" aria-label="Storico mani" data-i18n-title="history" data-i18n-aria="history">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.4 2"/></svg>
       </button>
-      <button class="tool" data-nav="settings" type="button" title="Impostazioni" aria-label="Impostazioni">
+      <button class="tool" data-nav="settings" type="button" title="Impostazioni" aria-label="Impostazioni" data-i18n-title="settings" data-i18n-aria="settings">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.1"/><circle cx="16" cy="12" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
       </button>
-      <button class="tool" data-nav="about" type="button" title="Informazioni" aria-label="Informazioni">
+      <button class="tool" data-nav="about" type="button" title="Informazioni" aria-label="Informazioni" data-i18n-title="about" data-i18n-aria="about">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.2v5.3"/><path d="M12 7.6v1"/></svg>
       </button>
       <!-- Leave the app (#69). Android only: hidden until the page finds the
            App plugin, because a web page cannot close its own tab and the
            desktop window has its own close button. -->
-      <button class="tool" id="btnExit" type="button" title="Esci" aria-label="Esci" hidden>
+      <button class="tool" id="btnExit" type="button" title="Esci" aria-label="Esci" data-i18n-title="exit" data-i18n-aria="exit" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4"/><path d="M18 12H9"/></svg>
       </button>
     </nav>
@@ -1329,48 +1329,54 @@ button.card:disabled{ cursor: default; }
     <div class="sheet-inner">
       <div class="hero">
         <h1>Tressette</h1>
-        <p>Tressette a due. Una mano, venti prese, undici punti più gli accusi.</p>
+        <p data-i18n="startBlurb">Tressette a due. Una mano, venti prese, undici punti più gli accusi.</p>
         <!-- One line for the two things somebody wants from outside the game:
              the rules in full and the Android build. Both live on the releases
              repo, which is the only public face this project has — the source
              is private, and release assets on a private repository cannot be
              downloaded at all. -->
-        <p class="hero-link"><a href="https://github.com/diegoami/tressette-releases">Regole, download e crediti</a></p>
+        <p class="hero-link"><a href="https://github.com/diegoami/tressette-releases" data-i18n="rulesDownloadCredits">Regole, download e crediti</a></p>
         <p class="last-result" id="lastResult" hidden></p>
       </div>
 
       <div class="group">
-        <div class="group-head"><span class="eyebrow">Avversario</span></div>
+        <div class="group-head"><span class="eyebrow" data-i18n="opponent">Avversario</span></div>
         <div class="chips" id="opponents"></div>
         <p class="dossier" id="dossier" aria-live="polite"></p>
       </div>
 
       <div class="group">
         <div class="group-head">
-          <span class="eyebrow">Mazzo</span><span class="pick" id="deckName">Trevisane</span>
+          <span class="eyebrow" data-i18n="deck">Mazzo</span><span class="pick" id="deckName">Trevisane</span>
         </div>
         <div class="decks" id="decks"></div>
       </div>
     </div>
   </div>
   <footer class="start-foot">
-    <button class="btn btn--primary btn--big" id="play" type="button">Gioca</button>
+    <button class="btn btn--primary btn--big" id="play" type="button" data-i18n="play">Gioca</button>
   </footer>
 </div>
 
 <!-- ============================ settings ============================ -->
 <div class="view" id="viewSettings" hidden>
   <header class="sheet-head">
-    <button class="tool" type="button" data-back aria-label="Indietro">
+    <button class="tool" type="button" data-back aria-label="Indietro" data-i18n-aria="back">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <h2>Impostazioni</h2>
+    <h2 data-i18n="settings">Impostazioni</h2>
   </header>
   <div class="sheet-body">
     <div class="sheet-inner">
       <div class="group">
-        <span class="eyebrow">Tavolo</span>
-        <label class="field" for="deckSel">Mazzo
+        <span class="eyebrow" data-i18n="tableSettings">Tavolo</span>
+        <label class="field" for="languageSel"><span data-i18n="language">Lingua</span>
+          <select id="languageSel">
+            <option value="it">Italiano</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label class="field" for="deckSel"><span data-i18n="deck">Mazzo</span>
           <select id="deckSel">
             <option value="Trevisane">Trevisane</option>
             <option value="Piacentine">Piacentine</option>
@@ -1380,31 +1386,32 @@ button.card:disabled{ cursor: default; }
             <option value="Bresciane">Bresciane</option>
           </select>
         </label>
-        <label class="field" for="feltSel">Panno
+        <label class="field" for="feltSel"><span data-i18n="felt">Panno</span>
           <input type="color" id="feltSel" value="#1e5140">
         </label>
-        <label class="field" for="speedSel">Ritmo
+        <label class="field" for="speedSel"><span data-i18n="pace">Ritmo</span>
           <input type="range" id="speedSel" min="200" max="2000" step="100" value="1300">
         </label>
-        <label class="toggle" for="pointsSel">Mostra i punti
+        <label class="toggle" for="pointsSel"><span data-i18n="showPoints">Mostra i punti</span>
           <input type="checkbox" id="pointsSel" checked>
         </label>
-        <label class="toggle" for="soundSel">Suono
+        <label class="toggle" for="soundSel"><span data-i18n="sound">Suono</span>
           <input type="checkbox" id="soundSel" checked>
         </label>
       </div>
 
       <div class="group">
-        <span class="eyebrow">Mano</span>
-        <button class="btn" id="changeOpponent" type="button">Cambia avversario</button>
+        <span class="eyebrow" data-i18n="handSettings">Mano</span>
+        <button class="btn" id="changeOpponent" type="button" data-i18n="changeOpponent">Cambia avversario</button>
       </div>
 
       <details class="group">
-        <summary class="eyebrow" style="cursor:pointer;list-style:revert">Pesi della strategia</summary>
-        <p class="prose">Gli undici pesi con cui <code>compGioca</code> sceglie la
-        carta, per l&rsquo;avversario scelto. Dalla quattordicesima presa in poi
-        non ne usa nessuno: lì il tallone è finito, le carte sono note e la
-        posizione si risolve per intero.</p>
+        <summary class="eyebrow" style="cursor:pointer;list-style:revert" data-i18n="strategyWeights">Pesi della strategia</summary>
+        <p class="prose"><span data-i18n="weightsBefore">Gli undici pesi con cui</span>
+        <code>compGioca</code> <span data-i18n="weightsAfter">sceglie la carta, per
+        l&rsquo;avversario scelto. Dalla quattordicesima presa in poi non ne usa
+        nessuno: lì il tallone è finito, le carte sono note e la posizione si
+        risolve per intero.</span></p>
         <table class="weights" id="weightsTable"><tbody></tbody></table>
       </details>
     </div>
@@ -1414,10 +1421,10 @@ button.card:disabled{ cursor: default; }
 <!-- ============================ history ============================ -->
 <div class="view" id="viewHistory" hidden>
   <header class="sheet-head">
-    <button class="tool" type="button" data-back aria-label="Indietro">
+    <button class="tool" type="button" data-back aria-label="Indietro" data-i18n-aria="back">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
-    <h2>Storico mani</h2>
+    <h2 data-i18n="history">Storico mani</h2>
   </header>
   <div class="sheet-body">
     <div class="sheet-inner" id="historyBody"></div>
@@ -1427,7 +1434,7 @@ button.card:disabled{ cursor: default; }
 <!-- ============================ about ============================ -->
 <div class="view" id="viewAbout" hidden>
   <header class="sheet-head">
-    <button class="tool" type="button" data-back aria-label="Indietro">
+    <button class="tool" type="button" data-back aria-label="Indietro" data-i18n-aria="back">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
     </button>
     <h2>Tressette</h2>
@@ -1495,7 +1502,7 @@ button.card:disabled{ cursor: default; }
         e giocare senza connessione.</p>
       </section>
 
-      <section lang="en">
+      <section lang="en" hidden>
         <h3>The rules</h3>
 
         <p><strong>Tressette for two</strong>, with a stock — the
@@ -1556,8 +1563,8 @@ button.card:disabled{ cursor: default; }
       </section>
 
       <p style="margin:0">
-        <a href="https://github.com/diegoami/Tressette">Sorgente di questo gioco</a> &middot;
-        <a href="https://github.com/diegoami/discola-web">Discola, la briscola del 1997</a>
+        <a href="https://github.com/diegoami/Tressette" data-i18n="sourceLink">Sorgente di questo gioco</a> &middot;
+        <a href="https://github.com/diegoami/discola-web" data-i18n="discolaLink">Discola, la briscola del 1997</a>
       </p>
     </div>
   </div>
@@ -1565,12 +1572,12 @@ button.card:disabled{ cursor: default; }
 
 <div class="scrim" id="confirmScrim" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <h2 id="confirmTitle">Abbandonare la mano?</h2>
-    <p class="modal__note">La mano in corso va persa e non viene registrata
+    <h2 id="confirmTitle" data-i18n="abandonTitle">Abbandonare la mano?</h2>
+    <p class="modal__note" data-i18n="abandonNote">La mano in corso va persa e non viene registrata
     nello storico.</p>
     <div class="modal__actions">
-      <button class="btn btn--primary" id="confirmNo" type="button">Continua a giocare</button>
-      <button class="btn btn--quiet" id="confirmYes" type="button">Abbandona</button>
+      <button class="btn btn--primary" id="confirmNo" type="button" data-i18n="continuePlaying">Continua a giocare</button>
+      <button class="btn btn--quiet" id="confirmYes" type="button" data-i18n="abandon">Abbandona</button>
     </div>
   </div>
 </div>
@@ -1607,7 +1614,131 @@ const NOMI = ["asso", "due", "tre", "quattro", "cinque", "sei", "sette",
 // not a suffix: "tre assi", not "tre assoi".
 const PLURALI = ["assi", "due", "tre", "quattro", "cinque", "sei", "sette",
                  "fanti", "cavalli", "re"];
-const nomeDi = card => `${NOMI[card.n - 1]} di ${SUITS[card.s]}`;
+const CARD_NAMES = {
+  it: {
+    ranks: NOMI, plurals: PLURALI,
+    suits: SUITS,
+    three: "tre", four: "quattro",
+  },
+  en: {
+    ranks: ["ace", "two", "three", "four", "five", "six", "seven", "jack", "knight", "king"],
+    plurals: ["aces", "twos", "threes", "fours", "fives", "sixes", "sevens", "jacks", "knights", "kings"],
+    suits: ["coins", "cups", "swords", "clubs"],
+    three: "three", four: "four",
+  }
+};
+const TEXT = {
+  it: {
+    newHand: "Nuova mano", history: "Storico mani", settings: "Impostazioni",
+    about: "Informazioni", cheatNote: "Carte scoperte", opponentRole: "avversario",
+    stock: "Tallone", lastTrick: "Ultima presa", you: "Tu", playerRole: "giocatore",
+    tricks: "Prese", cards: "Carte", last: "Ultima", thirds: "terzi",
+    declarations: "Accusi", points: "punti", total: "Totale",
+    scoreRule: "Carte e ultima sono terzi: il totale è (Carte + Ultima) ÷ 3, arrotondato in giù, più gli accusi.",
+    opponent: "Avversario", deck: "Mazzo", playAgain: "Ancora", play: "Gioca",
+    startBlurb: "Tressette a due. Una mano, venti prese, undici punti più gli accusi.",
+    rulesDownloadCredits: "Regole, download e crediti", tableSettings: "Tavolo",
+    language: "Lingua", felt: "Panno", pace: "Ritmo", showPoints: "Mostra i punti",
+    sound: "Suono", handSettings: "Mano", changeOpponent: "Cambia avversario",
+    strategyWeights: "Pesi della strategia", weightsBefore: "Gli undici pesi con cui",
+    weightsAfter: "sceglie la carta, per l’avversario scelto. Dalla quattordicesima presa in poi non ne usa nessuno: lì il tallone è finito, le carte sono note e la posizione si risolve per intero.",
+    sourceLink: "Sorgente di questo gioco", discolaLink: "Discola, la briscola del 1997",
+    back: "Indietro", exit: "Esci",
+    abandonTitle: "Abbandonare la mano?",
+    abandonNote: "La mano in corso va persa e non viene registrata nello storico.",
+    continuePlaying: "Continua a giocare", abandon: "Abbandona",
+    resultWin: "Hai vinto", resultLoss: "Hai perso", resultDraw: "Pareggio",
+    playCard: "Gioca il {card}", chooseCard: "Scegli il {card}",
+    resultPoints: "{you}: {words} — {points} punti",
+    declarationNapoletana: "napoletana di {suit}",
+    declarationSet: "{count} {rank}", three: "tre", four: "quattro",
+    point: "punto", pointsWord: "punti",
+    finalDraw: "Pari. Senza gli accusi gli undici punti non si dividono.",
+    finalLast: "L'ultima presa ha deciso la mano.",
+    finalDeclarations: "Hanno deciso gli accusi, non le prese.",
+    finalYouTricks: "Hai fatto {count} prese su venti, e i punti sono andati a {opponent}.",
+    finalOppTricks: "{opponent} ha fatto {count} prese su venti, e i punti sono venuti a te.",
+    finalOnePoint: "Decisa per un punto.", finalMargin: "{count} punti di scarto.",
+    lastHandSummary: "Ultima mano: hai {verb} {score} contro {opponent}",
+    won: "vinto", lost: "perso", drew: "pareggiato",
+    emptyHistory: "Nessuna mano ancora. Lo storico resta in questo browser.",
+    hands: "mani", wins: "vinte", losses: "perse", draws: "pari",
+    wonAgainst: "Vinte contro", winMark: "V", lossMark: "S", drawMark: "P",
+    clearHistory: "Cancella lo storico",
+    deckAria: "Mazzo {name}",
+    weightLeadSure: "bonus presa sicura", weightLeadLow: "bonus carta bassa in uscita",
+    weightLongSuit: "seme lungo in uscita", weightExposedAce: "penalità asso esposto",
+    weightControlLead: "penalità carta di controllo in uscita", weightVoid: "penalità seme vuoto",
+    weightTakeThirds: "peso dei terzi presi", weightGiveThirds: "peso dei terzi ceduti",
+    weightSpendControl: "penalità controllo speso", weightGuardDiscard: "penalità scarto protetto",
+    weightLate: "fattore finale",
+    dossierValerio: "Il più sciolto dei quattro: gioca subito le carte grosse, non apre mai di lungo e prende quello che passa. Si lascia dietro qualche punto.",
+    dossierFranco: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte.",
+    dossierGraziano: "Apre il suo seme lungo e tiene meno cartine. Forte quanto Franco, ma su cinque scelte ne gioca una diversa.",
+    dossierPiero: "Apre lungo come Graziano ma tiene le cartine, e prende volentieri. Tutti i suoi pesi sono estratti a ogni sessione, ma non tutti lo cambiano."
+  },
+  en: {
+    newHand: "New hand", history: "Hand history", settings: "Settings",
+    about: "About", cheatNote: "Cards revealed", opponentRole: "opponent",
+    stock: "Stock", lastTrick: "Last trick", you: "You", playerRole: "player",
+    tricks: "Tricks", cards: "Cards", last: "Last trick", thirds: "thirds",
+    declarations: "Declarations", points: "points", total: "Total",
+    scoreRule: "Cards and the last trick count in thirds: the total is (Cards + Last trick) ÷ 3, rounded down, plus declarations.",
+    opponent: "Opponent", deck: "Deck", playAgain: "Play again", play: "Play",
+    startBlurb: "Two-player Tressette. One hand, twenty tricks, eleven points plus declarations.",
+    rulesDownloadCredits: "Rules, downloads and credits", tableSettings: "Table",
+    language: "Language", felt: "Felt", pace: "Pace", showPoints: "Show points",
+    sound: "Sound", handSettings: "Hand", changeOpponent: "Change opponent",
+    strategyWeights: "Strategy weights", weightsBefore: "The eleven weights that",
+    weightsAfter: "uses to choose a card for the selected opponent. From the fourteenth trick onward, none are used: the stock is gone, every card is known, and the position is solved exactly.",
+    sourceLink: "Source for this game", discolaLink: "Discola, the 1997 briscola game",
+    back: "Back", exit: "Exit",
+    abandonTitle: "Abandon this hand?",
+    abandonNote: "The hand in progress will be lost and will not be recorded in the history.",
+    continuePlaying: "Keep playing", abandon: "Abandon",
+    resultWin: "You won", resultLoss: "You lost", resultDraw: "Draw",
+    playCard: "Play the {card}", chooseCard: "Choose the {card}",
+    resultPoints: "{you}: {words} — {points} {pointsLabel}",
+    declarationNapoletana: "napoletana of {suit}",
+    declarationSet: "{count} {rank}", three: "three", four: "four",
+    point: "point", pointsWord: "points",
+    finalDraw: "A draw. Without declarations, the eleven points cannot be split.",
+    finalLast: "The last trick decided the hand.",
+    finalDeclarations: "Declarations decided it, not the tricks.",
+    finalYouTricks: "You took {count} of the twenty tricks, but the points went to {opponent}.",
+    finalOppTricks: "{opponent} took {count} of the twenty tricks, but the points came to you.",
+    finalOnePoint: "Decided by one point.", finalMargin: "A margin of {count} points.",
+    lastHandSummary: "Last hand: you {verb} {score} against {opponent}",
+    won: "won", lost: "lost", drew: "drew",
+    emptyHistory: "No hands yet. History stays in this browser.",
+    hands: "hands", wins: "won", losses: "lost", draws: "draws",
+    wonAgainst: "Wins against", winMark: "W", lossMark: "L", drawMark: "D",
+    clearHistory: "Clear history",
+    deckAria: "{name} deck",
+    weightLeadSure: "sure-win lead bonus", weightLeadLow: "low-card lead bonus",
+    weightLongSuit: "long-suit lead", weightExposedAce: "exposed-ace lead penalty",
+    weightControlLead: "control-card lead penalty", weightVoid: "lead-into-void penalty",
+    weightTakeThirds: "thirds taken weight", weightGiveThirds: "thirds conceded weight",
+    weightSpendControl: "control spent penalty", weightGuardDiscard: "guarded discard penalty",
+    weightLate: "late-game factor",
+    dossierValerio: "The loosest of the four: plays high cards early, never leads a long suit, and takes what he can. Leaves a few points behind.",
+    dossierFranco: "The house standard. Balanced: he will not spend a three on a trick that is not worth it, and he plays the last seven tricks exactly.",
+    dossierGraziano: "Leads his longest suit and keeps fewer low cards. As strong as Franco, but makes a different choice about one time in five.",
+    dossierPiero: "Leads long like Graziano but keeps low cards and likes to take tricks. All his weights are rolled each session, though not all of them change him."
+  }
+};
+const WORDS = {
+  LEAD_SURE_BONUS: "weightLeadSure", LEAD_LISCIO_BONUS: "weightLeadLow",
+  LEAD_LONG_SUIT: "weightLongSuit", LEAD_ACE_EXPOSED_PENALTY: "weightExposedAce",
+  LEAD_CONTROL_PENALTY: "weightControlLead", LEAD_INTO_VOID_PENALTY: "weightVoid",
+  TAKE_TERZI_WEIGHT: "weightTakeThirds", GIVE_TERZI_WEIGHT: "weightGiveThirds",
+  SPEND_CONTROL_PENALTY: "weightSpendControl", DISCARD_GUARD_PENALTY: "weightGuardDiscard",
+  LATE_FACTOR: "weightLate"
+};
+const t = key => TEXT[state.language][key];
+const format = (key, values) => Object.entries(values).reduce(
+  (text, [name, value]) => text.replaceAll(`{${name}}`, value), t(key));
+const nomeDi = card => `${CARD_NAMES[state.language].ranks[card.n - 1]} ${state.language === "it" ? "di" : "of"} ${CARD_NAMES[state.language].suits[card.s]}`;
 
 /* --- state ------------------------------------------------------------------ */
 
@@ -1617,10 +1748,8 @@ const PROFILES = rollProfiles(Math.random);   // §3.2: the page rolls, the engi
 // player can check across a few deals. The chips are built from PROFILES, so
 // this map and the engine's roster stay in step.
 const DOSSIER = {
-  Valerio: "Il più sciolto dei quattro: gioca subito le carte grosse, non apre mai di lungo e prende quello che passa. Si lascia dietro qualche punto.",
-  Franco: "Lo standard della casa. Equilibrato: non spreca un tre per una presa che non lo vale, e le ultime sette prese le gioca esatte.",
-  Graziano: "Apre il suo seme lungo e tiene meno cartine. Forte quanto Franco, ma su cinque scelte ne gioca una diversa.",
-  Piero: "Apre lungo come Graziano ma tiene le cartine, e prende volentieri. Tutti i suoi pesi sono estratti a ogni sessione, ma non tutti lo cambiano."
+  Valerio: "dossierValerio", Franco: "dossierFranco",
+  Graziano: "dossierGraziano", Piero: "dossierPiero"
 };
 
 const state = {
@@ -1634,7 +1763,7 @@ const state = {
   // terzi and has no reason to count prese, and the result's note does.
   prese: [0, 0],
   opponent: "Franco", deck: "Trevisane", felt: "#1e5140",
-  speed: 900, showPoints: true, sound: true
+  speed: 900, showPoints: true, sound: true, language: "it"
 };
 
 let timer = null;
@@ -1703,7 +1832,7 @@ for (const id of ["table","oppHand","youHand","slotOpp","slotYou","pile","stockC
   "cheatNote","viewTable","viewStart","viewSettings","viewHistory","viewAbout",
   "announce","selName","play","again","btnHistory","btnSettings","btnAbout",
   "opponents","dossier","decks","deckName","lastResult",
-  "deckSel","feltSel","speedSel","pointsSel","soundSel","changeOpponent","weightsTable",
+  "deckSel","languageSel","feltSel","speedSel","pointsSel","soundSel","changeOpponent","weightsTable",
   "historyBody","confirmScrim","confirmNo","confirmYes",
   "result","resultTitle","resultGrid","gridOppName",
   "gridPreseYou","gridPreseOpp","gridCarteYou","gridCarteOpp",
@@ -1711,6 +1840,21 @@ for (const id of ["table","oppHand","youHand","slotOpp","slotYou","pile","stockC
   "gridTotaleYou","gridTotaleOpp","resultAccusi","resultNote","playAgain",
   "resultSettings","resultOpponents","resultDecks","resultDeckName","btnExit"])
   el[id] = document.getElementById(id);
+
+function applyStaticLanguage(){
+  document.documentElement.lang = state.language;
+  for (const node of document.querySelectorAll("[data-i18n]"))
+    node.textContent = t(node.dataset.i18n);
+  for (const node of document.querySelectorAll("[data-i18n-title]"))
+    node.title = t(node.dataset.i18nTitle);
+  for (const node of document.querySelectorAll("[data-i18n-aria]"))
+    node.setAttribute("aria-label", t(node.dataset.i18nAria));
+  for (const button of document.querySelectorAll(".deck-opt"))
+    button.setAttribute("aria-label", format("deckAria", { name: button.dataset.deck }));
+  for (const section of document.querySelectorAll("#viewAbout section[lang]"))
+    section.hidden = section.lang !== state.language;
+  el.languageSel.value = state.language;
+}
 
 function faceOf(node, card){
   if (!card){
@@ -1804,8 +1948,8 @@ function render(){
     // by the table, not by an error message after the fact.
     node.disabled = !yourTurn || !legal.includes(slot);
     node.setAttribute("aria-pressed", String(state.selected === slot));
-    node.setAttribute("aria-label", state.selected === slot
-      ? `Gioca il ${nomeDi(card)}` : `Scegli il ${nomeDi(card)}`);
+    node.setAttribute("aria-label", format(state.selected === slot ? "playCard" : "chooseCard",
+      { card: nomeDi(card) }));
   });
 
   const oppOrder = ordinaMano(state.hands[ALTO]);
@@ -1834,7 +1978,7 @@ function render(){
   // taps are one decision and one confirmation, and the line is where that is
   // said. It matches the card's aria-label, which has always read this way.
   const sel = state.selected !== null ? state.hands[BASSO][state.selected] : null;
-  el.selName.textContent = sel ? `Gioca il ${nomeDi(sel)}` : "";
+  el.selName.textContent = sel ? format("playCard", { card: nomeDi(sel) }) : "";
   el.selName.hidden = !sel;
 
   el.plateYou.classList.toggle("plate--turn", yourTurn);
@@ -1858,7 +2002,7 @@ function renderResult(){
   if (!over) return;
 
   const [you, them] = scoreDeal(state);
-  el.resultTitle.textContent = you > them ? "Hai vinto" : you < them ? "Hai perso" : "Pareggio";
+  el.resultTitle.textContent = t(you > them ? "resultWin" : you < them ? "resultLoss" : "resultDraw");
   el.gridOppName.textContent = state.opponent;
 
   // The five rows, from the state: the ultima is three terzi to whoever led
@@ -1882,8 +2026,12 @@ function renderResult(){
 
   const righe = [BASSO, ALTO]
     .filter(who => state.accusi[who].length)
-    .map(who => `${who === BASSO ? "Tu" : state.opponent}: ` +
-                `${accusiInParole(state.accusi[who])} — ${puntiAccusi(state.accusi[who])} punti`);
+    .map(who => format("resultPoints", {
+      you: who === BASSO ? t("you") : state.opponent,
+      words: accusiInParole(state.accusi[who]),
+      points: puntiAccusi(state.accusi[who]),
+      pointsLabel: t("pointsWord")
+    }));
   el.resultAccusi.textContent = righe.join(" · ");
   el.resultAccusi.hidden = !righe.length;
 
@@ -1903,12 +2051,12 @@ function coverTable(on){
 // A declaration is announced once, when its owner plays their first card.
 function announce(who, list){
   if (!list.length) return;
-  const words = list.map(a => a.kind === "napoletana"
-    ? `napoletana di ${SUITS[a.suit]}`
-    : `${a.count === 4 ? "quattro" : "tre"} ${PLURALI[a.n - 1]}`);
+  const words = accusiInParole(list);
   const punti = list.reduce((t, a) => t + a.points, 0);
-  el.announce.textContent =
-    `${who === BASSO ? "Tu" : state.opponent}: ${words.join(", ")} — ${punti} punti`;
+  el.announce.textContent = format("resultPoints", {
+    you: who === BASSO ? t("you") : state.opponent,
+    words, points: punti, pointsLabel: t("pointsWord")
+  });
   el.announce.hidden = false;
   sayLater(() => { el.announce.hidden = true; }, 2600);
 }
@@ -2019,26 +2167,30 @@ function notaFinale(you, them){
   const finale = segno([you, them]);
   const scarto = Math.abs(you - them);
 
-  if (finale === 0) return "Pari. Senza gli accusi gli undici punti non si dividono.";
-  if (segno(senzaUltima) !== finale) return "L'ultima presa ha deciso la mano.";
-  if (segno(senzaAccusi) !== finale) return "Hanno deciso gli accusi, non le prese.";
+  if (finale === 0) return t("finalDraw");
+  if (segno(senzaUltima) !== finale) return t("finalLast");
+  if (segno(senzaAccusi) !== finale) return t("finalDeclarations");
   // The one thing worth saying that the two totals do not already say: who took
   // more tricks. Losing on points with the tricks in hand is the mistake this
   // game punishes, and the count is kept by the table, one per sweep.
   if (state.prese[BASSO] > state.prese[ALTO] && finale < 0)
-    return `Hai fatto ${state.prese[BASSO]} prese su venti, e i punti sono andati a ${state.opponent}.`;
+    return format("finalYouTricks", { count: state.prese[BASSO], opponent: state.opponent });
   if (state.prese[ALTO] > state.prese[BASSO] && finale > 0)
-    return `${state.opponent} ha fatto ${state.prese[ALTO]} prese su venti, e i punti sono venuti a te.`;
-  if (scarto <= 1) return "Decisa per un punto.";
-  return `${scarto} punti di scarto.`;
+    return format("finalOppTricks", { count: state.prese[ALTO], opponent: state.opponent });
+  if (scarto <= 1) return t("finalOnePoint");
+  return format("finalMargin", { count: scarto });
 }
 
 // The same words the table announces, without the "chi — quanti punti" around
 // them, so the dialog can list both players' declarations on one line.
 function accusiInParole(list){
+  const names = CARD_NAMES[state.language];
   return list.map(a => a.kind === "napoletana"
-    ? `napoletana di ${SUITS[a.suit]}`
-    : `${a.count === 4 ? "quattro" : "tre"} ${PLURALI[a.n - 1]}`).join(", ");
+    ? format("declarationNapoletana", { suit: names.suits[a.suit] })
+    : format("declarationSet", {
+      count: a.count === 4 ? names.four : names.three,
+      rank: names.plurals[a.n - 1]
+    })).join(", ");
 }
 
 function newDealHere(){
@@ -2164,14 +2316,18 @@ function clearHistory(){
   renderHistory();
 }
 
-const WHEN = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" });
+function formatWhen(timestamp){
+  const locale = state.language === "en" ? "en-US" : "it-IT";
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(timestamp));
+}
 
 function renderLastResult(){
   const [last] = loadHistory();
   if (!last){ el.lastResult.hidden = true; return; }
-  const verbo = last.y > last.a ? "vinto" : last.y < last.a ? "perso" : "pareggiato";
-  el.lastResult.textContent =
-    `Ultima mano: hai ${verbo} ${last.y}\u2013${last.a} contro ${last.o}`;
+  const verb = last.y > last.a ? t("won") : last.y < last.a ? t("lost") : t("drew");
+  el.lastResult.textContent = format("lastHandSummary", {
+    verb, score: `${last.y}\u2013${last.a}`, opponent: last.o
+  });
   el.lastResult.hidden = false;
 }
 
@@ -2182,7 +2338,7 @@ function renderHistory(){
   if (!list.length){
     const p = document.createElement("p");
     p.className = "empty";
-    p.textContent = "Nessuna mano ancora. Lo storico resta in questo browser.";
+    p.textContent = t("emptyHistory");
     el.historyBody.append(p);
     return;
   }
@@ -2192,14 +2348,14 @@ function renderHistory(){
 
   const tally = document.createElement("div");
   tally.className = "tally";
-  for (const [n, label] of [[list.length, "mani"], [vinte, "vinte"], [perse, "perse"],
-                            [list.length - vinte - perse, "pari"]]){
+  for (const [n, label] of [[list.length, "hands"], [vinte, "wins"], [perse, "losses"],
+                            [list.length - vinte - perse, "draws"]]){
     const cell = document.createElement("div");
     const b = document.createElement("b");
     b.textContent = n;
     const s = document.createElement("span");
     s.className = "eyebrow";
-    s.textContent = label;
+    s.textContent = t(label);
     cell.append(b, s);
     tally.append(cell);
   }
@@ -2219,7 +2375,7 @@ function renderHistory(){
     group.className = "group";
     const head = document.createElement("span");
     head.className = "eyebrow";
-    head.textContent = "Vinte contro";
+    head.textContent = t("wonAgainst");
     group.append(head);
     for (const nome of nomi){
       const line = document.createElement("div");
@@ -2243,7 +2399,7 @@ function renderHistory(){
 
     const res = document.createElement("span");
     res.className = "res " + (pari ? "res--d" : vinta ? "res--w" : "res--l");
-    res.textContent = pari ? "P" : vinta ? "V" : "S";
+    res.textContent = t(pari ? "drawMark" : vinta ? "winMark" : "lossMark");
 
     const chi = document.createElement("span");
     chi.textContent = m.o;
@@ -2254,7 +2410,7 @@ function renderHistory(){
 
     const when = document.createElement("span");
     when.className = "when";
-    when.textContent = WHEN.format(new Date(m.t));
+    when.textContent = formatWhen(m.t);
 
     li.append(res, chi, score, when);
     ul.append(li);
@@ -2264,7 +2420,7 @@ function renderHistory(){
   const wipe = document.createElement("button");
   wipe.type = "button";
   wipe.className = "btn btn--quiet";
-  wipe.textContent = "Cancella lo storico";
+  wipe.textContent = t("clearHistory");
   wipe.addEventListener("click", clearHistory);
   el.historyBody.append(wipe);
 }
@@ -2333,7 +2489,7 @@ function buildDecks(){
     b.className = "deck-opt";
     b.dataset.deck = name;
     b.title = name;
-    b.setAttribute("aria-label", `Mazzo ${name}`);
+    b.setAttribute("aria-label", format("deckAria", { name }));
     b.style.setProperty("--sheet", deckSheet(name));
     b.style.setProperty("--ratio", DECK_RATIO[name]);
     // No --col/--row here: .deck-opt .card pins the background to the top-left
@@ -2352,24 +2508,28 @@ function buildDecks(){
 
 function selectOpponent(name){
   state.opponent = name;
-  el.dossier.textContent = DOSSIER[name];
+  el.dossier.textContent = t(DOSSIER[name]);
   for (const group of [el.opponents, el.resultOpponents])
     for (const b of group.children)
       b.setAttribute("aria-pressed", String(b.dataset.name === name));
 
-  const P = PROFILES[name];
+  renderWeights();
+
+  render();
+  save();
+}
+
+function renderWeights(){
+  const P = PROFILES[state.opponent];
   el.weightsTable.tBodies[0].replaceChildren(...WEIGHT_KEYS.map(k => {
     const tr = document.createElement("tr");
     const label = document.createElement("td");
-    label.textContent = k.toLowerCase().replace(/_/g, " ");
+    label.textContent = t(WORDS[k]);
     const value = document.createElement("td");
     value.textContent = String(P[k]);
     tr.append(label, value);
     return tr;
   }));
-
-  render();
-  save();
 }
 
 /* --- persistence ------------------------------------------------------------ */
@@ -2380,7 +2540,8 @@ function save(){
   try{
     localStorage.setItem(KEY, JSON.stringify({
       opponent: state.opponent, deck: state.deck, felt: state.felt,
-      speed: state.speed, showPoints: state.showPoints, sound: state.sound
+      speed: state.speed, showPoints: state.showPoints, sound: state.sound,
+      language: state.language
     }));
   } catch (e){ /* private window or blocked storage: settings just will not stick */ }
 }
@@ -2534,11 +2695,23 @@ el.pointsSel.addEventListener("change", () => {
   state.showPoints = el.pointsSel.checked; render(); save();
 });
 el.soundSel.addEventListener("change", () => { state.sound = el.soundSel.checked; save(); });
+el.languageSel.addEventListener("change", () => {
+  state.language = el.languageSel.value === "en" ? "en" : "it";
+  applyStaticLanguage();
+  el.dossier.textContent = t(DOSSIER[state.opponent]);
+  renderWeights();
+  render();
+  renderLastResult();
+  if (screen === "history") renderHistory();
+  save();
+});
 
 /* --- boot ------------------------------------------------------------------- */
 
 function boot(){
   const saved = load();
+  state.language = saved.language === "en" ? "en" : "it";
+  applyStaticLanguage();
 
   buildHands();
   buildOpponents();

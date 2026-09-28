@@ -70,7 +70,13 @@ the network up.
 visible copy and `<html lang>` immediately, includes the dynamic card names,
 declarations, result, history, dialog and dossier text, and survives a reload.
 The screens and card-table passes then exercise both languages rather than only
-the language used on a fresh install.
+the language used on a fresh install. It also compares the two locale tables
+key by key: the rendered-copy rules ask the page's own `TEXT` table, so an
+English entry copied from Italian is exactly what they expect and passes every
+one of them — the defect #87 reported. Only a per-key comparison sees a value
+that was never translated, and each identical key is named rather than counted.
+`declarationSet`, the `{count} {rank}` template that holds no words, is the one
+value the two are allowed to share.
 
 **Screens pass** — every screen the page has, and every state worth looking at,
 in both languages at six real device shapes — 980x385 and 1100x330 among them, because the result
@@ -168,6 +174,14 @@ deal is written to the history under the same score and opponent; and a second
 deal abandoned through the confirm asks first, lands on the start sheet, and is
 *not* written down.
 
+**Score formula** — the result rule's parenthesized sum, rendered in both
+locales at the widths #88 reproduced: the `+` has to stay on the same line as
+the formula text on both sides of it. The non-breaking spaces around the `+`
+belong in the locale table, not the markup `applyStaticLanguage` overwrites, so
+a regression that leaves only the markup's `&nbsp;` is invisible to a source
+read and visible here. The assertion measures the rendered text's own `Range`,
+not the string.
+
 **The fan** — the assertions this game needs and Briscola did not, because a
 hand of ten cards overlaps. The step of the fan matches the page's own
 `--strip`, which catches margins that have drifted from the token at any
@@ -260,6 +274,8 @@ shipped — in Discola, which is the same table and the same budget:
 | Back from Settings abandoned the finished deal | the result's second action opens the settings sheet, and `back()` read a dealt-but-over state as "go to Start" — a deal already recorded, with the result screen still open behind the sheet it walked away from. Back now returns to the result |
 | the counting grid does not add up | the deal pass reads all five rows and recomputes `Totale = floor((Carte + Ultima) / 3) + Accusi` per side, twenty tricks across the Prese and three terzi of ultima; a row wired to the wrong state passes every presence check and fails this |
 | the table's trick count loses tricks | `prese` was credited inside the sweep's 420ms callback, and the next play — you are on turn the moment you win a trick — flushes the sweep, so a deal played at speed counted 6 prese of 20 and the result's Prese row was false. The count moved into `flushSweep()`, where every ended sweep passes; the deal pass's twenty-trick assertion is what caught it |
+| the two locale tables are the same | #87: an English entry copied from Italian passes every rendered-copy assertion, because each reads the DOM against the same `TEXT` table that produced it. Only `declarationSet`, the `{count} {rank}` template, may match — every other duplicate key is named |
+| the score formula breaks around its `+` | #88: the result markup held `&nbsp;` around the `+`, but `applyStaticLanguage` rewrote it from a `scoreRule` whose spaces were ordinary, so "(Carte" and "+ Ultima)" landed on different lines at phone widths and at 600px in English |
 
 If you believe a threshold is genuinely wrong, change it — then run the check
 against the commit that introduced the bug it names and confirm it still fails

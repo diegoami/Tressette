@@ -303,11 +303,16 @@ tooling, and Capacitor App-plugin wiring (#68, #71, #72, #75–#78, #81). The
 page also gained the explicit head marker that lets Capacitor inject its bridge;
 only #70 changes what a player sees.
 
-`versionName` is **1.0.7** / `versionCode 8` in `app/build.gradle`, the next
-milestone, not yet tagged or published. It adds an Italiano / English selector
-and translates the game UI; Italian remains the default and the choice is
-remembered on this device. The About screen shows the rules in the selected
-language (#84). Until v1.0.7 is published, v1.0.6 remains the newest release.
+1.0.7, published 2026-09-28, adds an Italiano / English selector and translates
+the game UI; Italian remains the default and the choice is remembered on this
+device. The About screen shows the rules in the selected language (#84). The
+result's score formula stays together in both languages, and the UI check now
+catches an English locale table copied from Italian (#90). The release is
+available as a [beta prerelease](https://github.com/diegoami/tressette-releases/releases/tag/v1.0.7-beta.1)
+and the [stable release](https://github.com/diegoami/tressette-releases/releases/tag/v1.0.7).
+
+`versionName` is **1.0.7** / `versionCode 8` in `app/build.gradle`. The next
+milestone is v1.0.8.
 
 v1.0.4 is tagged in this repository, on `aa33f8d`, as the baseline milestone
 (#55): the first tag under the rule that a release is a milestone (§4), placed
@@ -319,7 +324,10 @@ reviewed on its candidate `2bdfd19` (AGREE), device-checked on a
 built from the tag. v1.0.6 followed under the leaner process (#81): reviewed on
 its candidate `11e4572` (AGREE, one nit, #82), device-checked on the
 `v1.0.6-rc.3` candidate build, tagged on exactly that commit, and built from
-the tag. The next milestone is v1.0.7, reviewed as `v1.0.6..<candidate>`.
+the tag. v1.0.7 was reviewed on candidate `34d691a` (AGREE on round 2 after
+#87 and #88 were fixed by #90), device-checked from beta `v1.0.7-beta.1`,
+tagged on exactly that commit, and built from the tag. The next milestone is
+v1.0.8, reviewed as `v1.0.7..<candidate>`.
 
 A version identifies what is inside the APK, so a build that differs from a
 published one takes its own number rather than re-using a tag, and `versionCode`

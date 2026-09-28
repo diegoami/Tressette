@@ -8,9 +8,9 @@
  *   npm run setup                                    # or npm i && npx playwright-core install chromium
  *   CHROME=/path/to/chrome node tools/check_ui.mjs   # or name one yourself
  *
- * Six passes. The middle two are Discola's, because the failures that project
- * shipped came in two different shapes; the last plays a deal, because a table
- * can measure perfectly and still not be wired to the engine.
+ * Seven passes. The middle two are Discola's, because the failures that project
+ * shipped came in two different shapes; the deal pass plays one, because a
+ * table can measure perfectly and still not be wired to the engine.
  *
  * 0. DOCUMENT — the four document facts that cannot be expressed as a layout
  *    assertion: the viewport meta, the doctype, the charset and <html lang>.
@@ -44,6 +44,11 @@
  *    at one viewport in one deck, then a second deal abandoned through the
  *    confirm. It asserts the game can be finished, recorded and walked away
  *    from, not how it looks.
+ *
+ * 6. SCORE RULE — the result formula, rendered in both locales at the widths
+ *    that broke it: the non-breaking spaces around its + live in the locale
+ *    table, not the markup the script overwrites, and this measures the
+ *    rendered text rather than reading the string.
  *
  * Every threshold below is calibrated against a real defect, not taste. If you
  * relax one, check it still fails the commit that introduced the bug it names.
@@ -1096,6 +1101,25 @@ async function checkFonts(browser) {
 
 /* ---- pass 3: every screen -------------------------------------------------- */
 
+// #87: languageFaults below compares the DOM against the page's own locale table
+// (`t`), so an English entry copied from Italian passes every rendered-copy
+// assertion — it is exactly what was rendered. Only comparing the two tables
+// sees a value that was never translated. `declarationSet` is the sole value the
+// locales share on purpose: "{count} {rank}" holds no words. Everything else
+// identical is named, not merely counted.
+const localeTableFaults = () => {
+  const shared = ['declarationSet'];
+  const out = [];
+  for (const key of Object.keys(TEXT.en))
+    if (!(key in TEXT.it)) out.push(`en.${key} has no Italian counterpart`);
+  for (const key of Object.keys(TEXT.it)) {
+    if (!(key in TEXT.en)) { out.push(`it.${key} has no English counterpart`); continue; }
+    if (TEXT.it[key] === TEXT.en[key] && !shared.includes(key))
+      out.push(`${key} is the same in both locales: ${JSON.stringify(TEXT.it[key])}`);
+  }
+  return out;
+};
+
 const languageFaults = language => {
   const out = [];
   if (document.documentElement.lang !== language)
@@ -1133,6 +1157,15 @@ async function checkLanguageFlow(browser) {
     localStorage.removeItem('tressette.history');
   });
   await page.reload();
+
+  // The locale tables first, before anything is rendered from them. #87's
+  // mutation — an English entry given its Italian value — is invisible to every
+  // assertion below, which reads the DOM against the same table that produced
+  // it; this is the only one that can see it, and it names the key.
+  const localeIssues = await page.evaluate(localeTableFaults);
+  console.log(`  ${localeIssues.length ? 'FAIL' : 'pass'}  the two locale tables differ in every key but declarationSet`);
+  localeIssues.forEach(i => console.log(`        ${i}`));
+  issues.push(...localeIssues);
 
   let first = await page.evaluate(() => ({
     lang: document.documentElement.lang,
@@ -1290,6 +1323,73 @@ async function checkScreens(browser) {
     }
   }
   return failed;
+}
+
+/* ---- pass 6: the score formula under both locales -------------------------- */
+
+// #88: the result formula's markup carries &nbsp; around its +, but
+// applyStaticLanguage rewrites that markup from the locale table, and the table
+// held ordinary spaces — so a narrow column split "(Carte" / "+ Ultima)" across
+// two lines. The non-breaking spaces belong in the string, not the markup the
+// script overwrites, and this measures the rendered text rather than reading it:
+// the parenthesized sum has to stay one line at the widths the report
+// reproduced. The phone portrait shapes are the Italian case; 600px wide is the
+// English one, where the longer words push the break onto the +.
+const SCORE_RULE_VIEWPORTS = [
+  ['Android small',   360, 800],
+  ['iPhone 15',       393, 852],
+  ['Pixel',           412, 915],
+  ['big phone',       600, 1200],
+  ['tablet portrait', 600, 853],
+];
+
+// Runs in the page: how many line boxes the parenthesized "(Carte + Ultima)"
+// occupies. More than one means the + was broken away from its text; zero means
+// the result panel is not rendered, which is a failure too.
+const scoreRuleLines = () => {
+  const rule = document.querySelector('.result__rule');
+  const node = rule.firstChild;
+  const text = node.nodeValue;
+  const open = text.indexOf('('), close = text.indexOf(')');
+  if (open < 0 || close < 0) return 0;
+  const range = document.createRange();
+  range.setStart(node, open);
+  range.setEnd(node, close + 1);
+  return range.getClientRects().length;
+};
+
+async function checkScoreRule(browser) {
+  console.log('\nscore formula under both locales');
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  const issues = [];
+  page.on('pageerror', e => issues.push(`script error: ${e.message}`));
+  await page.goto(URL_);
+  await page.evaluate(() => localStorage.removeItem('tressette.history'));
+  await page.goto(URL_);
+  await page.evaluate(() => {
+    epoch++; clearTimeout(timer); clearTimeout(sayTimer); sweeping = null;
+    state.dealt = true; state.over = true; state.perPrimo = BASSO;
+    state.terzi = [15, 12]; state.accusi = [[], []]; state.prese = [11, 9];
+    show("table"); render();
+  });
+  for (const language of ['it', 'en']) {
+    await page.evaluate(lang => {
+      const select = document.querySelector('#languageSel');
+      select.value = lang;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }, language);
+    for (const [vname, width, height] of SCORE_RULE_VIEWPORTS) {
+      await page.setViewportSize({ width, height });
+      const lines = await page.evaluate(scoreRuleLines);
+      if (lines !== 1)
+        issues.push(`${language} ${vname} (${width}x${height}): the score formula spans ` +
+                    `${lines} line(s) — the + has parted from its text`);
+    }
+  }
+  await page.close();
+  console.log(`  ${issues.length ? 'FAIL' : 'pass'}  the plus stays with its formula in both locales at every width`);
+  issues.forEach(i => console.log(`        ${i}`));
+  return issues.length ? 1 : 0;
 }
 
 /* ---- pass 4: the card table ----------------------------------------------- */
@@ -1958,6 +2058,7 @@ let failed = 0;
 failed += await checkDocument(browser);
 failed += await checkFonts(browser);
 failed += await checkLanguageFlow(browser);
+failed += await checkScoreRule(browser);
 failed += await checkScreens(browser);
 failed += await checkTable(browser, null, false);
 failed += await checkTable(browser, TIGHT, true);

@@ -41,7 +41,7 @@ tools/engine.test.mjs    the rules, on node --test
 tools/opponent.test.mjs  the trap positions, the roster, the golden fixture
 tools/selfplay.mjs       the harness every number in this file came from
 tools/golden.json        sixty frozen deals and four weight vectors
-tools/check_ui.mjs       the UI check: six passes, six screen shapes,
+tools/check_ui.mjs       the UI check: seven passes, six screen shapes,
                          21 viewports × 6 decks
 tools/serve.mjs          public/ over http, standard library only
 tools/make_icons.mjs     cuts the icon out of the Napoletane sheet
@@ -323,21 +323,24 @@ npm run check                       the UI check: 6 screen shapes, 21 viewports
 
 Both run in CI on every pull request; a red check does not merge.
 
-The UI check has six passes: the **document** (the four facts a layout
+The UI check has seven passes: the **document** (the four facts a layout
 assertion cannot reach — the viewport meta, the doctype, the charset and
 `<html lang>`), the **fonts** (every character on the page is inside the
 shipped subset, every `@font-face` loads with the network cut off, and no
 subresource comes from outside), **language** (Italian default, a live switch,
-dynamic copy and persisted choice), the **screens** (every screen and every
-state worth looking at, in both languages at six device shapes, every opponent
-included, and the result panel's own contract — covers the table, out of the
-card budget, body scrolls while its two actions stay on screen, the covered
-table inert), the **table** (21 viewports × 6 decks in both languages, then the
-tightest five again with the spacing tokens inflated), and a **deal** — twenty
-cards tapped through the fan, a result whose counting grid is recomputed from
-the rules, a history entry, and a second deal abandoned through the confirm.
-`.claude/skills/ui-check/SKILL.md` explains what each threshold is calibrated
-against.
+dynamic copy and persisted choice — and the two locale tables compared key by
+key, so an English entry left in Italian is named), the **screens** (every
+screen and every state worth looking at, in both languages at six device
+shapes, every opponent included, and the result panel's own contract — covers
+the table, out of the card budget, body scrolls while its two actions stay on
+screen, the covered table inert), the **table** (21 viewports × 6 decks in both
+languages, then the tightest five again with the spacing tokens inflated), the
+**score formula** (the result rule's parentheses rendered in both locales at
+the widths that broke it, so its `+` cannot break away from its text), and a
+**deal** — twenty cards tapped through the fan, a result whose counting grid is
+recomputed from the rules, a history entry, and a second deal abandoned through
+the confirm. `.claude/skills/ui-check/SKILL.md` explains what each threshold is
+calibrated against.
 
 **Every threshold in it was calibrated against a defect that actually shipped.**
 Change one only after running the check against the commit that introduced the

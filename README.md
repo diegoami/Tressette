@@ -88,7 +88,7 @@ playing.
 ```sh
 npm run setup                       # playwright-core and a Chromium, once
 npm test                            # the unit tests, no dependencies
-npm run check                       # the UI check: six passes
+npm run check                       # the UI check: seven passes
 npm start                           # public/ on http://localhost:8080
 node tools/selfplay.mjs             # the opponents against the baselines
 ```

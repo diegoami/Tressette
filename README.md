@@ -8,6 +8,8 @@ so it plays from a folder, or from an APK with the radio off.
 
 **Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
 
+**Android app and rules:** download them from [tressette-releases](https://github.com/diegoami/tressette-releases).
+
 You against one of four opponents, one deal at a time. Everything — your
 settings, your last hundred hands — stays in your browser. The interface and
 rules are available in Italian and English; Italian is the default.

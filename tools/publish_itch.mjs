@@ -94,9 +94,15 @@ const readSidecar = (label, stage) => {
 const itchS = readSidecar('dist-itch', tag);
 const relS = readSidecar('dist-release', tag);
 if (itchS.problem) problems.push(itchS.problem);
-else problems.push(sidecarProblem({ label: 'dist-itch', stage: tag, sidecar: itchS.sidecar, version, commit: relS.sidecar?.commit ?? null, kind: 'release' }));
+else {
+  const problem = sidecarProblem({ label: 'dist-itch', stage: tag, sidecar: itchS.sidecar, version, commit: relS.sidecar?.commit ?? null, kind: 'release' });
+  if (problem) problems.push(problem);
+}
 if (relS.problem) problems.push(relS.problem);
-else problems.push(sidecarProblem({ label: 'dist-release', stage: tag, sidecar: relS.sidecar, version, commit: relS.sidecar.commit, kind: 'release' }));
+else {
+  const problem = sidecarProblem({ label: 'dist-release', stage: tag, sidecar: relS.sidecar, version, commit: relS.sidecar.commit, kind: 'release' });
+  if (problem) problems.push(problem);
+}
 const commit = relS.sidecar?.commit ?? null;
 if (itchS.sidecar && relS.sidecar && itchS.sidecar.commit !== relS.sidecar.commit)
   problems.push(`dist-itch and dist-release sidecars name different commits ` +
@@ -110,9 +116,15 @@ if (commit){
   const candItch = readSidecar('dist-itch', candStage);
   const candRel = readSidecar('dist-release', candStage);
   if (candItch.problem) problems.push(candItch.problem);
-  else problems.push(sidecarProblem({ label: 'dist-itch', stage: candStage, sidecar: candItch.sidecar, version, commit, kind: 'candidate' }));
+  else {
+    const problem = sidecarProblem({ label: 'dist-itch', stage: candStage, sidecar: candItch.sidecar, version, commit, kind: 'candidate' });
+    if (problem) problems.push(problem);
+  }
   if (candRel.problem) problems.push(candRel.problem);
-  else problems.push(sidecarProblem({ label: 'dist-release', stage: candStage, sidecar: candRel.sidecar, version, commit, kind: 'candidate' }));
+  else {
+    const problem = sidecarProblem({ label: 'dist-release', stage: candStage, sidecar: candRel.sidecar, version, commit, kind: 'candidate' });
+    if (problem) problems.push(problem);
+  }
 }
 if (problems.length) fail('the staged build is not publishable:\n  ' + problems.join('\n  '));
 

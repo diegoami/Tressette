@@ -8,9 +8,12 @@
  *   npm run setup                                    # or npm i && npx playwright-core install chromium
  *   CHROME=/path/to/chrome node tools/check_ui.mjs   # or name one yourself
  *
- * Seven passes. The middle two are Discola's, because the failures that project
- * shipped came in two different shapes; the deal pass plays one, because a
- * table can measure perfectly and still not be wired to the engine.
+ * Seven numbered passes, plus a framed probe. The middle two are Discola's,
+ * because the failures that project shipped came in two different shapes; the
+ * deal pass plays one, because a table can measure perfectly and still not be
+ * wired to the engine. The framed probe counts fullscreen and orientation-lock
+ * requests, top-level and inside a same-origin iframe, because the itch.io
+ * embed must not take either.
  *
  * 0. DOCUMENT — the four document facts that cannot be expressed as a layout
  *    assertion: the viewport meta, the doctype, the charset and <html lang>.
@@ -55,7 +58,8 @@
  */
 import { chromium } from 'playwright-core';
 import path from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import os from 'node:os';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 // fileURLToPath, not URL.pathname, and pathToFileURL, not 'file://' + path.
@@ -84,6 +88,10 @@ const VIEWPORTS = [
   ['iPhone 15',         393,  852],
   ['Pixel',             412,  915],
   ['iPhone Pro Max',    430,  932],
+  // The itch.io embed: the owner's canonical size is 480x720, portrait (#95,
+  // from Discola #121). It is a screen shape like any other here, and the
+  // start row asserts the whole first screen fits in it without scrolling.
+  ['itch embed',        480,  720],
   ['narrow and tall',   360, 1200],
   ['big phone',         600, 1200],
   ['tall phone A',      700, 1400],
@@ -108,10 +116,10 @@ const VIEWPORTS = [
 ];
 
 // Enough shapes to cover the ways a screen can go wrong, without visiting all
-// twenty screens at all twenty-one sizes. Short landscape is here rather than in
+// twenty screens at all twenty-two sizes. Short landscape is here rather than in
 // the table pass alone because the result panel's footer is a screen rule: at
 // 330px tall it is the only shape where the panel's body is certain to scroll.
-const SCREEN_VIEWPORTS = ['Android small', 'iPhone Pro Max', 'tablet portrait',
+const SCREEN_VIEWPORTS = ['Android small', 'iPhone Pro Max', 'itch embed', 'tablet portrait',
                           'phone landscape', 'short landscape', 'laptop'];
 
 // The tightest ones; worth re-running the table budget against inflated spacing.
@@ -304,6 +312,39 @@ const SCREENS = [
       const r = document.querySelector('#play').getBoundingClientRect();
       if (r.bottom > window.innerHeight + 1 || r.top < -1)
         out.push(`Gioca is off screen (bottom ${Math.round(r.bottom)} vs viewport ${window.innerHeight})`);
+      // The itch.io embed is 480x720, portrait (#95, from Discola #121/#123):
+      // the whole first screen, deck picker included, fits there without the
+      // sheet scrolling, and every control it offers is on the screen. Short
+      // windows are allowed to scroll — Gioca is sticky and stays reachable —
+      // but the canonical embed is not. #123 is the exact failure this
+      // prevents: the viewport existed but no row rendered Start at it, so the
+      // no-scroll assertion never ran.
+      const sheet = document.querySelector('#viewStart .sheet-body');
+      const embed = matchMedia('(orientation: portrait) and (min-width: 480px) ' +
+                               'and (min-height: 720px) and (max-height: 760px)').matches;
+      if (embed) {
+        if (sheet.scrollHeight > sheet.clientHeight + 1)
+          out.push(`the start sheet scrolls at ${window.innerWidth}x${window.innerHeight} ` +
+                   `(${sheet.scrollHeight} in ${sheet.clientHeight})`);
+        for (const el of document.querySelectorAll(
+          '#viewStart .tool, #viewStart .chip, #viewStart .deck-opt, #viewStart .hero-link a, #play')) {
+          if (!el.getClientRects().length) continue;      // hidden (e.g. Exit in a browser)
+          const b = el.getBoundingClientRect();
+          if (b.top < -1 || b.bottom > window.innerHeight + 1 || b.left < -1 || b.right > window.innerWidth + 1)
+            out.push(`${el.id || el.className.split(' ')[0]} is off the ` +
+                     `${window.innerWidth}x${window.innerHeight} first screen`);
+        }
+      }
+      // In portrait Gioca sits above the deck picker, so it is never the last
+      // thing on the screen: itch.io opens the game fullscreen on a phone and
+      // Android lays a toast over the bottom 9% for a few seconds (#128).
+      if (matchMedia('(orientation: portrait)').matches
+          && r.top > document.querySelector('#decks').getBoundingClientRect().top)
+        out.push('Gioca is below the deck picker; it belongs above it (#128)');
+      if (matchMedia('(orientation: portrait) and (max-width: 560px) and (min-height: 780px)').matches
+          && r.bottom > window.innerHeight * 0.88)
+        out.push(`Gioca ends at ${Math.round(100 * r.bottom / window.innerHeight)}% of the screen, ` +
+                 'under the fullscreen toast zone');
       // The one line out of the game: the rules in full and the APK, both on
       // the releases repo. It is asserted here rather than left to the about
       // screen because this is the screen somebody lands on, and because a
@@ -1325,6 +1366,58 @@ async function checkScreens(browser) {
   return failed;
 }
 
+/* ---- pass: no fullscreen or orientation lock, top-level and in the embed --- */
+
+// The itch.io embed must not take the page fullscreen or lock the orientation
+// on Start (#95, from Discola #121 and #93). Discola's v1.0.7.x tried it and
+// the owner rejected it: on a phone the embed launched in landscape and flipped
+// back on Start, and the jump to fullscreen was too invasive. No other pass
+// would see it come back — every one of them loads the page top-level, and
+// headless Chromium will not really enter fullscreen anyway — so the requests
+// are counted instead, at the 480x720 embed and at 640x480, top-level and
+// inside a same-origin iframe.
+async function checkFramed(browser) {
+  console.log('\nframed versus top-level');
+  const hostPath = path.join(os.tmpdir(), `tressette-host-${process.pid}.html`);
+  writeFileSync(hostPath, `<!doctype html><iframe src="${URL_}" style="width:100%;height:100%;border:0"></iframe>`);
+  const stub = () => {
+    window.__fs = { fullscreen: 0, lock: 0 };
+    const grant = () => { window.__fs.fullscreen++; return Promise.resolve(); };
+    for (const m of ['requestFullscreen', 'webkitRequestFullscreen'])
+      Element.prototype[m] = grant;
+    try { screen.orientation.lock = () => { window.__fs.lock++; return Promise.resolve(); }; } catch (_) {}
+  };
+  const sizes = [[480, 720], [640, 480]];
+  const cases = [
+    { name: 'top-level', url: URL_, pick: p => p },
+    { name: 'in an iframe', url: pathToFileURL(hostPath).href,
+      pick: p => p.frames().find(f => f !== p.mainFrame()) },
+  ];
+  let bad = 0;
+  for (const [width, height] of sizes) for (const c of cases) {
+    const page = await browser.newPage({ viewport: { width, height } });
+    const errs = [];
+    page.on('pageerror', e => errs.push('script error: ' + e.message));
+    await page.addInitScript(stub);
+    await page.goto(c.url);
+    const frame = c.pick(page);
+    await frame.waitForSelector('#play');
+    await frame.click('#play');
+    await page.waitForTimeout(300);
+    const got = await frame.evaluate(() => ({ ...window.__fs, table: !document.querySelector('#viewTable').hidden }));
+    const issues = [...errs];
+    for (const k of ['fullscreen', 'lock'])
+      if (got[k] !== 0) issues.push(`${k} requested ${got[k]} time(s), expected none`);
+    if (!got.table) issues.push('Start did not reach the table');
+    if (issues.length) bad++;
+    console.log(`  ${issues.length ? 'FAIL' : 'pass'}  ${width}x${height} ${c.name}`);
+    issues.forEach(i => console.log(`        ${i}`));
+    await page.close();
+  }
+  rmSync(hostPath, { force: true });
+  return bad;
+}
+
 /* ---- pass 6: the score formula under both locales -------------------------- */
 
 // #88: the result formula's markup carries &nbsp; around its +, but
@@ -2063,6 +2156,7 @@ failed += await checkScreens(browser);
 failed += await checkTable(browser, null, false);
 failed += await checkTable(browser, TIGHT, true);
 failed += await checkDeal(browser);
+failed += await checkFramed(browser);
 await browser.close();
 
 console.log(failed ? `\n${failed} case(s) failed` : '\nAll checks pass.');

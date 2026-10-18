@@ -589,27 +589,31 @@ button.card:disabled{ cursor: default; }
 
 /* ---- sheets: start, settings, history, about ------------------------------ */
 
-/* No header bar, and Gioca pinned as a footer row: the content above it may
-   scroll on a small phone, but the primary action never leaves the screen.
+/* No header bar, and Gioca above the deck picker inside the sheet: the content
+   may scroll on a small phone, but the primary action never leaves the screen.
    Making the text readable pushed the button past the fold at 393px, and the
    answer to that is to pin the button, not to shrink the text again. */
-/* Three rows now, not two: the icon bar, the sheet, the Gioca footer. With
-   two, the bar took the 1fr row and left 100px of rail under it — the felt
-   started a third of the way down the screen and nothing errored, because an
-   empty grid row is not an overflow. */
-#viewStart{ grid-template-rows: auto minmax(0,1fr) auto; }
+/* Two rows now: the icon bar, and the scrolling sheet. Gioca is a sticky row
+   of the sheet, not a third grid row — parked at the very bottom of a short
+   window it sat under the Android fullscreen toast (#95, from Discola #128). */
+#viewStart{ grid-template-rows: auto minmax(0,1fr); }
 
 /* The start screen's copy of the icon bar. It carries no wordmark, so the
    tools go to the right on their own; the table's bar keeps space-between
    because it has the wordmark to separate them from. */
 .topbar--start{ justify-content: flex-end; }
 
+/* Gioca sits above the deck picker, and sticks to the bottom edge when the
+   sheet scrolls, so the primary action never leaves the screen. It is a sticky
+   row of the sheet, not a bar: a fade under it keeps the content that scrolls
+   behind it legible without drawing a band across a roomy screen. */
 .start-foot{
+  position: sticky;
+  bottom: 0;
+  width: 100%;
   display: grid;
-  padding: .85rem 16px;
-  padding-bottom: calc(.85rem + env(safe-area-inset-bottom, 0px));
-  background: var(--rail);
-  border-top: 1px solid var(--rail-line);
+  padding: 1rem 0 calc(.35rem + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, var(--edge) 65%, transparent);
 }
 .start-foot .btn{ width: min(620px, 100%); margin-inline: auto; }
 
@@ -1135,6 +1139,31 @@ button.card:disabled{ cursor: default; }
   .chips{ grid-template-columns: 1fr 1fr; }
 }
 
+/* Phones in portrait: stack from the top instead of centring, so what is left
+   over lands below Gioca, not split above the title. itch.io's fullscreen
+   toast covers the bottom 9% of the screen for a few seconds (#128); Gioca
+   ends above it with room to spare. */
+@media (orientation: portrait) and (max-width: 560px) and (max-height: 1000px){
+  #viewStart .sheet-body{ align-content: start; padding-top: 1rem; }
+}
+
+/* itch.io's canonical embed is 480x720: every widget on the start screen fits
+   it without scrolling, in both languages (#95, from Discola #123). That
+   window is portrait but wider than 3/5, so the phone tier above does not
+   apply; take the sheet's padding and gaps back, and shrink the deck previews
+   a little, rather than shrinking the text. Each deck keeps its own aspect
+   ratio, so the previews scale by width, never by a fixed height. */
+@media (orientation: portrait) and (min-width: 480px) and (min-height: 720px) and (max-height: 760px){
+  #viewStart .sheet-body{ padding-block: .3rem; }
+  #viewStart .sheet-inner{ gap: .5rem; }
+  .start-foot{ padding-block: .25rem 0; }
+  #viewStart .deck-opt .card{ width: 86%; }
+  /* At 480px wide all four dossiers fit in three lines, so the row holds three
+     open here instead of four; it still does not move when the opponent
+     changes, and the sheet keeps the last-result line on screen. */
+  #dossier{ min-height: calc(var(--t-body) * 1.5 * 3); }
+}
+
 @media (prefers-reduced-motion: reduce){
   *, *::before, *::after{
     animation-duration: .001ms !important;
@@ -1345,6 +1374,15 @@ button.card:disabled{ cursor: default; }
         <p class="dossier" id="dossier" aria-live="polite"></p>
       </div>
 
+      <!-- Gioca sits above the deck picker, and sticks to the bottom of the
+           sheet only when the sheet scrolls (#95, from Discola #128). itch.io
+           opens the game fullscreen on phones and Android lays a toast over
+           the bottom edge for a few seconds; a button parked at the very
+           bottom sat under it. -->
+      <footer class="start-foot">
+        <button class="btn btn--primary btn--big" id="play" type="button" data-i18n="play">Gioca</button>
+      </footer>
+
       <div class="group">
         <div class="group-head">
           <span class="eyebrow" data-i18n="deck">Mazzo</span><span class="pick" id="deckName">Trevisane</span>
@@ -1353,9 +1391,6 @@ button.card:disabled{ cursor: default; }
       </div>
     </div>
   </div>
-  <footer class="start-foot">
-    <button class="btn btn--primary btn--big" id="play" type="button" data-i18n="play">Gioca</button>
-  </footer>
 </div>
 
 <!-- ============================ settings ============================ -->

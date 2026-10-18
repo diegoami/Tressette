@@ -90,7 +90,7 @@ playing.
 ```sh
 npm run setup                       # playwright-core and a Chromium, once
 npm test                            # the unit tests, no dependencies
-npm run check                       # the UI check: seven passes
+npm run check                       # the UI check: every screen, viewport and the itch frame
 npm start                           # public/ on http://localhost:8080
 node tools/selfplay.mjs             # the opponents against the baselines
 ```
@@ -132,7 +132,8 @@ The typefaces are Bodoni Moda and Barlow, the latin subset, served from
 There is an Android wrapper in `mobile/` — the same `public/` directory in an
 APK, no build step — described in [`ANDROID.md`](ANDROID.md). A Windows
 wrapper in `desktop/` does the same with Tauri, described in
-[`DESKTOP.md`](DESKTOP.md).
+[`DESKTOP.md`](DESKTOP.md). The itch.io HTML5 build, and the three channels it
+is uploaded to, are described in [`ITCH.md`](ITCH.md).
 
 The opponent is this game's own. There was no 1997 Tressette to transcribe, so
 the formula was designed here and tuned by self-play.

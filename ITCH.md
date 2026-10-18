@@ -1,5 +1,27 @@
 # Tressette — the itch.io build
 
+## Listing assets and page status
+
+The game and its binaries are named **Tressette**. The owner-selected itch.io
+project title is **Tressettette**, with the confirmed project slug
+[`diegoami/tressettette`](https://diegoami.itch.io/tressettette).
+
+The English copy, upload order, cover, and five screenshots for the official
+v1.0.8 page are in the versioned [v1.0.8 listing kit](itch-listing/v1.0.8/README.md).
+The kit is source material for the project page; it is not part of the HTML5
+game ZIP. Its capture script can regenerate the screenshots and cover from the
+repository's game and local fonts.
+
+The HTML5, Android, and Windows v1.0.8 builds have been uploaded to the private
+itch.io draft, and the owner confirmed that the HTML game and Android build
+passed their phone checks. The draft remains private until the owner publishes
+the page. For the HTML5 build, the page must use the HTML project kind and have
+**This file will be played in the browser** enabled on the HTML5 ZIP. The
+canonical embed is 480×720 portrait; keep the fullscreen option available and
+do not force it. The Android APK and Windows EXE stay downloadable. These
+settings are edited in the itch.io dashboard and are not changed by uploading
+the files again.
+
 The browser game, packaged as an HTML5 ZIP and uploaded to itch.io, with the
 Windows and Android builds on the same project page. This is the playbook the
 owner follows; `tools/package_itch.mjs`, `tools/smoke_itch_zip.mjs` and
@@ -15,8 +37,8 @@ storefront, staged under `dist-itch/` so it can never join that release.
 **Butler pushes builds, not page text.** The description, the embed size, the
 cover, the screenshots, the tags and the fullscreen toggle are all edited on
 itch.io by hand, so a change here is not live until the owner pastes it. The
-project slug is the owner's to confirm before the publisher is used (issue #95);
-check what is uploaded with `butler status <owner>/<slug>` (all three channels).
+confirmed publisher target is `diegoami/tressettette`; check what is uploaded
+with `butler status diegoami/tressettette` (all three channels).
 
 - **Embed size: 480×720, portrait.** On phones itch.io launches the game
   fullscreen and fixes the orientation from the embed's aspect ratio before any

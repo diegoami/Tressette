@@ -1,5 +1,23 @@
 # Tressette — the itch.io build
 
+## Listing assets and page status
+
+The English copy, upload order, cover, and five screenshots for the official
+v1.0.8 page are in the versioned [v1.0.8 listing kit](itch-listing/v1.0.8/README.md).
+The kit is source material for the project page; it is not part of the HTML5
+game ZIP. Its capture script can regenerate the screenshots and cover from the
+repository's game and local fonts.
+
+The HTML5, Android, and Windows v1.0.8 builds have been uploaded to the private
+itch.io draft, and the owner confirmed that the HTML game and Android build
+passed their phone checks. The draft remains private until the owner publishes
+the page. For the HTML5 build, the page must use the HTML project kind and have
+**This file will be played in the browser** enabled on the HTML5 ZIP. The
+canonical embed is 480×720 portrait; keep the fullscreen option available and
+do not force it. The Android APK and Windows EXE stay downloadable. These
+settings are edited in the itch.io dashboard and are not changed by uploading
+the files again.
+
 The browser game, packaged as an HTML5 ZIP and uploaded to itch.io, with the
 Windows and Android builds on the same project page. This is the playbook the
 owner follows; `tools/package_itch.mjs`, `tools/smoke_itch_zip.mjs` and

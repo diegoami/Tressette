@@ -14,6 +14,13 @@ here; `SPEC.md` is the handover. [Discola](https://github.com/diegoami/discola-w
 is the reference for everything those two do not state; clone it beside this
 repository if it is not already there.
 
+After the current itch.io task, the default for ordinary work is implementation
+in the running program's main thread or a Luna subagent here, with independent
+design and PR review through OpenCode using MiniMax M3. Task-specific
+instructions may override these defaults. They are current routing defaults,
+not permanent role assignments; update this guidance when the workflow changes.
+Release reviews follow the separate process below.
+
 ## How work flows
 
 - **Propose first, when it is more than a fix.** Open an issue with the problem,
@@ -38,8 +45,8 @@ repository if it is not already there.
 - **Discola is a moving reference, not a fixed one.** Record the commit a fork
   came from, and check whether Discola has moved since the last one recorded
   before forking again; `SPEC.md` §11 holds the record.
-- **No per-PR and no per-design review.** The independent review runs once per
-  release, below.
+- **The release review below is separate from ordinary design and PR reviews.**
+  It runs once per release.
 - **A PR that completes an issue says so**: one `Closes #N` line per issue at
   the end of its body, outside any pasted check output. A reference is a link;
   only the keyword closes.

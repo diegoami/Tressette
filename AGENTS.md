@@ -14,6 +14,12 @@ here; `SPEC.md` is the handover. [Discola](https://github.com/diegoami/discola-w
 is the reference for everything those two do not state; clone it beside this
 repository if it is not already there.
 
+Implementation for the current workflow happens in the running program's main
+thread, or in a Luna subagent here. OpenCode is used for independent review.
+Choose the reviewer for the task; MiniMax M3 is reviewing this workflow update.
+These are routing instructions, not permanent model assignments. Release
+reviews follow the separate process below.
+
 ## How work flows
 
 - **Propose first, when it is more than a fix.** Open an issue with the problem,
@@ -38,8 +44,10 @@ repository if it is not already there.
 - **Discola is a moving reference, not a fixed one.** Record the commit a fork
   came from, and check whether Discola has moved since the last one recorded
   before forking again; `SPEC.md` §11 holds the record.
-- **No per-PR and no per-design review.** The independent review runs once per
-  release, below.
+- **Review the design and PR for this workflow independently through OpenCode.**
+  For this update, MiniMax M3 reviews the design issue and the resulting PR.
+  This task-specific choice does not assign a permanent reviewer. The separate
+  release review below still runs once per release.
 - **A PR that completes an issue says so**: one `Closes #N` line per issue at
   the end of its body, outside any pasted check output. A reference is a link;
   only the keyword closes.

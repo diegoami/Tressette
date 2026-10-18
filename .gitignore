@@ -6,6 +6,9 @@ node_modules
 # Packaged release artifacts (built by tools/package_release.mjs).
 dist-release
 
+# Packaged itch.io HTML5 artifacts and source sidecars.
+dist-itch
+
 # A Claude Code forked subagent's worktree, which the tool makes inside the
 # main checkout: someone's work in progress, never something to commit from
 # here.

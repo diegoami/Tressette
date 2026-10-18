@@ -53,6 +53,7 @@ import {
   previousTag, versionCodeProblem,
   releaseAssets, versionDeclarations, versionDisagreements, exeProblem, checksumProblems,
 } from './release_lib.mjs';
+import { formatSidecar } from './itch_lib.mjs';
 
 const WIN = process.platform === 'win32';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -249,6 +250,13 @@ writeFileSync(path.join(outDir, 'SHA256SUMS.txt'), sums.join('\n') + '\n');
 const problems = checksumProblems(readFileSync(path.join(outDir, 'SHA256SUMS.txt'), 'utf8'),
   hashOf, { expected: assets, present: readdirSync(outDir) });
 if (problems.length) fail(`what was staged does not verify: ${problems.join('; ')}`);
+
+// The source sidecar, beside the staged directory so the release's own file
+// set stays exactly its two assets. tools/publish_itch.mjs compares it with the
+// itch sidecar to prove both were built from one commit; it is written only
+// now that staging has verified.
+writeFileSync(path.join(ROOT, 'dist-release', `${source.dir}.source`),
+  formatSidecar({ version, commit: head, kind: source.kind }));
 
 console.log(`\ndone.`);
 console.log(`  dist-release/${source.dir}/`);

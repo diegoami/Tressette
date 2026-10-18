@@ -2,6 +2,10 @@
 
 ## Listing assets and page status
 
+The game and its binaries are named **Tressette**. The owner-selected itch.io
+project title is **Tressettette**, with the confirmed project slug
+[`diegoami/tressettette`](https://diegoami.itch.io/tressettette).
+
 The English copy, upload order, cover, and five screenshots for the official
 v1.0.8 page are in the versioned [v1.0.8 listing kit](itch-listing/v1.0.8/README.md).
 The kit is source material for the project page; it is not part of the HTML5
@@ -33,8 +37,8 @@ storefront, staged under `dist-itch/` so it can never join that release.
 **Butler pushes builds, not page text.** The description, the embed size, the
 cover, the screenshots, the tags and the fullscreen toggle are all edited on
 itch.io by hand, so a change here is not live until the owner pastes it. The
-project slug is the owner's to confirm before the publisher is used (issue #95);
-check what is uploaded with `butler status <owner>/<slug>` (all three channels).
+confirmed publisher target is `diegoami/tressettette`; check what is uploaded
+with `butler status diegoami/tressettette` (all three channels).
 
 - **Embed size: 480×720, portrait.** On phones itch.io launches the game
   fullscreen and fixes the orientation from the embed's aspect ratio before any

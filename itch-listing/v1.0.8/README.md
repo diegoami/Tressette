@@ -1,5 +1,10 @@
 # Tressettette itch.io listing kit
 
+The game and its binaries are named **Tressette**. **Tressettette** is the
+owner-selected title of the itch.io project at
+[`diegoami/tressettette`](https://diegoami.itch.io/tressettette); keep this
+listing title and cover as provided.
+
 Captured for the official v1.0.8 release at commit
 `7d66f4dfb3bdb9eb4f41ce6ff1ea347c2c731810`. The screenshots show the
 running game, including a real trick in progress. This folder is for the itch.io

@@ -363,7 +363,7 @@ const SCREENS = [
       }
 
       const link = document.querySelector('#viewStart .hero-link a');
-      if (!link || !link.getAttribute('href').includes('tressette-releases'))
+      if (!link || !link.getAttribute('href').includes('github.com/diegoami/Tressette'))
         out.push('the start sheet does not link to the rules and the download');
       else if (!link.getClientRects().length)
         out.push('the start sheet\'s link to the rules is in the page but not on the screen');
@@ -552,7 +552,7 @@ const SCREENS = [
       //
       // Two builds, one link each, both to the same releases page, so a link
       // is told apart by its text and not its href. The Android rule once asked
-      // only whether some link pointed at tressette-releases; when the Windows
+      // only whether some link pointed at the source repository; when the Windows
       // link joined it with the same href, that question was answered by the
       // Windows link, and the Android one could vanish from either half with
       // the row still green (#59, from v1.0.4's review). The app's name is the
@@ -569,7 +569,7 @@ const SCREENS = [
           if (!sec) continue;
           const named = [...sec.querySelectorAll('a[href]')].some(a =>
             a.textContent.includes(app) && a.getAttribute('href').startsWith('http')
-            && a.getAttribute('href').includes('tressette-releases'));
+            && a.getAttribute('href').includes('github.com/diegoami/Tressette'));
           if (!named || !phrase[lang].test(sec.textContent))
             out.push(`the rules in ${lang} do not link to the ${app} app`);
         }

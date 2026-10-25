@@ -1,0 +1,208 @@
+[
+  {
+    "tag": "v1.0.0",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 94,
+        "label": "",
+        "sha256": "54cc881e6d2db0ce371caead2d936b1961dec084d4b639ffa586079159cffbaa"
+      },
+      {
+        "name": "Tressette-1.0.0-android.apk",
+        "size": 6408057,
+        "label": "",
+        "sha256": "417df091f66c71339d48b697a816eaf7c46fea0f5be82378c2bf28e857446095"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.1",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 94,
+        "label": "",
+        "sha256": "4d3b48493e3faf6fd80f6db04db30a6a0ea16f581c5538cbb757e8e368e14ff0"
+      },
+      {
+        "name": "Tressette-1.0.1-android.apk",
+        "size": 6314661,
+        "label": "",
+        "sha256": "0a0f7a034f101d5a0a9a41746491f0f6d35ca80e756694be989b690d196e8ea4"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.2",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 94,
+        "label": "",
+        "sha256": "edb9dcdf1d48f0a44aa575552ef8a0606774811b8870b31fa49296df986bbd0e"
+      },
+      {
+        "name": "Tressette-1.0.2-android.apk",
+        "size": 6314997,
+        "label": "",
+        "sha256": "8ff291c570fbee822801286569a864e711f284bfc11bc9c551f5ebdf00967c13"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.3",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 94,
+        "label": "",
+        "sha256": "5b732f95b8fad218d5bc3d6bdf3fc2dc678ae6a9b0c3712a15524ac42af3cd34"
+      },
+      {
+        "name": "Tressette-1.0.3-android.apk",
+        "size": 6317221,
+        "label": "",
+        "sha256": "b9a3e8989ec7c9fe9d559fec8302dfa096c05dfbc6b0c070e71723a32d3539cb"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.4",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "dde101d3e00e2d90c1e75501ed8cb98b9c862becfbab807a65042f593bb0a542"
+      },
+      {
+        "name": "Tressette-1.0.4-android.apk",
+        "size": 6320821,
+        "label": "",
+        "sha256": "fec53cee61c4888ccb452d8f43d98a5a565a865bc1a95f32c74fd38d71e24cc2"
+      },
+      {
+        "name": "Tressette-1.0.4-windows-x64.exe",
+        "size": 11450880,
+        "label": "",
+        "sha256": "7715c37191be9a831850297d7e9b874f3dfa79d999db6af999745bf19656a3c3"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.5",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "688578420323e1a763186c1333805dd76ba549ce1cfac6aef10f1949bf70f35b"
+      },
+      {
+        "name": "Tressette-1.0.5-android.apk",
+        "size": 6320993,
+        "label": "",
+        "sha256": "ee3321ca44ff5f378f1f9ee4301dfbf4ea43059980efce4a0d15623f2576abb9"
+      },
+      {
+        "name": "Tressette-1.0.5-windows-x64.exe",
+        "size": 11450880,
+        "label": "",
+        "sha256": "e23326cf90bef5785a47176529651f2ccc21e9d46ae1be94268b51c0dab1fe89"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.6",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "afc5716c99eb688ada9d8a813b4b9636e0a2f9fd59cd01bc5a9cde71701268e5"
+      },
+      {
+        "name": "Tressette-1.0.6-android.apk",
+        "size": 6323205,
+        "label": "",
+        "sha256": "f7f2888ff634a49795382df47bb7deb9ce297661a262d75490014f00641a7484"
+      },
+      {
+        "name": "Tressette-1.0.6-windows-x64.exe",
+        "size": 11451392,
+        "label": "",
+        "sha256": "6b269f664d0ef3e7785d17a99ee4d92a22a6ebecb7cff361e3801e09410a8c1d"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.7-beta.1",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "3da12872485596f46264fb1a9385cc431e5a02263f9828acb66a0db424dd1a52"
+      },
+      {
+        "name": "Tressette-1.0.7-android.apk",
+        "size": 6326381,
+        "label": "",
+        "sha256": "5b6e13cba007ee2e60ff5f2cc34f653bf2a858305c3282b3e06ca28250b12e19"
+      },
+      {
+        "name": "Tressette-1.0.7-windows-x64.exe",
+        "size": 11454464,
+        "label": "",
+        "sha256": "70287d88a5adcd7bf79858a050b1e13980ad35de4663415e46cd38b5bc816bf0"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.7",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "cd89914b0921f554ed8794686cccff1eae41095df417f935e3c8071b17435f7f"
+      },
+      {
+        "name": "Tressette-1.0.7-android.apk",
+        "size": 6326381,
+        "label": "",
+        "sha256": "5046f37ab9c4c2ad9d2486b3052c0739858e87f7709cdf936072e460300a5784"
+      },
+      {
+        "name": "Tressette-1.0.7-windows-x64.exe",
+        "size": 11454464,
+        "label": "",
+        "sha256": "26641583b25d547b062ddb7701621539f6c7d4ad0743e45a7ad77792913f88fc"
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.8",
+    "assets": [
+      {
+        "name": "SHA256SUMS.txt",
+        "size": 192,
+        "label": "",
+        "sha256": "af1550bafcfdb8836c0f8fa06f42e7fedff4b272a45e83032c074e4c732d4941"
+      },
+      {
+        "name": "Tressette-1.0.8-android.apk",
+        "size": 6327053,
+        "label": "",
+        "sha256": "eaa9ac8162488fd28b320e8a42d882fbd2ff2cac24bdead61af50b8a571c78e1"
+      },
+      {
+        "name": "Tressette-1.0.8-windows-x64.exe",
+        "size": 11454976,
+        "label": "",
+        "sha256": "01d6aa11fde28bf8fd9da1f4e8684a56a2842dad140bffc8a694580f6c3e22a1"
+      }
+    ]
+  }
+]

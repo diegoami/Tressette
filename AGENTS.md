@@ -57,8 +57,8 @@ Release reviews follow the separate process below.
 ## Releases
 
 A release is an annotated tag `vX.Y.Z` on `main`, on the exact commit the
-published binaries are built from. Binaries go to
-`diegoami/tressette-releases`, the tag stays here, and
+published binaries are built from. Binaries and tags live together in the public
+`diegoami/Tressette` repository, and
 `tools/publish_release.mjs` refuses anything else. Nothing but a release is a
 milestone: not a PR, a run of PRs, a change to a file, or a process change.
 

@@ -18,7 +18,7 @@ Chosen by the owner on 2026-09-23: Discola's decision, taken as it stands.
 | Shell | **Tauri 2** | wraps `public/` unchanged |
 | Platforms | **Windows only** | Linux and macOS are later options |
 | Goal | **Personal use + GitHub Releases** | as for Android, not app stores |
-| Binary hosting | **`diegoami/tressette-releases`** | the repository the APK ships from |
+| Binary hosting | **`diegoami/Tressette`** | the repository the APK ships from |
 | Code signing | **Unsigned first** | SmartScreen warns on first run; the release notes will say so |
 | Identifier | **`com.tressette.desktop`** | permanent: it keys the app's storage |
 
@@ -91,7 +91,7 @@ Two things learned writing it, both about the harness rather than the app:
 ## Releasing
 
 Both targets ship as one GitHub Release on
-[`diegoami/tressette-releases`](https://github.com/diegoami/tressette-releases),
+[`diegoami/Tressette`](https://github.com/diegoami/Tressette),
 on one version line, from this machine: it holds the Android signing key and
 the Rust toolchain.
 

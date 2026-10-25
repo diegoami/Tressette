@@ -232,14 +232,14 @@ warning. It runs on Windows only, because the desktop build does.
 
 **`node tools/publish_release.mjs`** — re-hash the staged files against
 `SHA256SUMS.txt` and require exactly the two assets, then `gh release create` on
-`diegoami/tressette-releases`. Dry run by default; `--confirm` to actually
+`diegoami/Tressette`. Dry run by default; `--confirm` to actually
 publish, because this is outward-facing and a public tag is hard to take back.
 
-**The releases repo does not exist yet.** `diegoami/Tressette` is private, and
-release assets on a private repo are not publicly downloadable, so the split is
-the same one Discola uses: source private, binaries public in
-`diegoami/tressette-releases`. Creating it is the owner's call and the one step
-here that cannot be undone quietly.
+Source, version tags and downloadable releases now live together in the public
+`diegoami/Tressette` repository. The former binary repository is retained as an
+archived pointer so installed apps can still use its old links. All ten historical
+releases were copied byte for byte, including the beta. See
+[RELEASE-MIGRATION.md](RELEASE-MIGRATION.md) for hashes and legacy tag exceptions.
 
 **Build locally, not in CI.** For one target, a release workflow means putting
 the signing key in a repository secret to save a command. Revisit if the matrix
@@ -247,7 +247,7 @@ ever grows.
 
 ## 5. Linking it from the site
 
-`netlify.toml` already redirects `/android` to the releases repo's
+`netlify.toml` already redirects `/android` to the source repository's
 `/releases/latest` — the page rather than a versioned asset URL, so the link
 survives every release, and because the release page is where the notes and the
 checksum are, which is what somebody about to sideload an APK should read.
@@ -275,7 +275,7 @@ deploy, to produce an artifact that changes only at release time.
 here rather than restating it.
 
 Releases **v1.0.0 to v1.0.6** are published at
-<https://github.com/diegoami/tressette-releases>, each signed, verified and with
+<https://github.com/diegoami/Tressette>, each signed, verified and with
 `SHA256SUMS.txt` beside it. **v1.0.0 installs and runs** — the owner sideloaded
 it and played, which is step 4 below and the one thing no check here could
 answer. 1.0.1 was the icon; 1.0.2 was the about screen saying that a void can be
@@ -308,8 +308,8 @@ the game UI; Italian remains the default and the choice is remembered on this
 device. The About screen shows the rules in the selected language (#84). The
 result's score formula stays together in both languages, and the UI check now
 catches an English locale table copied from Italian (#90). The release is
-available as a [beta prerelease](https://github.com/diegoami/tressette-releases/releases/tag/v1.0.7-beta.1)
-and the [stable release](https://github.com/diegoami/tressette-releases/releases/tag/v1.0.7).
+available as a [beta prerelease](https://github.com/diegoami/Tressette/releases/tag/v1.0.7-beta.1)
+and the [stable release](https://github.com/diegoami/Tressette/releases/tag/v1.0.7).
 
 `versionName` is **1.0.7** / `versionCode 8` in `app/build.gradle`. The next
 milestone is v1.0.8.
@@ -336,7 +336,7 @@ only ever increases.
 | # | Step | Whose | |
 |---|---|---|---|
 | 1 | Generate the release key and write `keystore.properties` | owner — it is a secret | **done** |
-| 2 | Create the public `diegoami/tressette-releases` | owner — outward-facing | **done** |
+| 2 | Consolidate public releases in `diegoami/Tressette` | owner — outward-facing | **done** |
 | 3 | Package and publish, in §4's order: candidate, review, tag, build from the tag, publish | either, after 1 and 2; publishing on the owner's go-ahead | **done** |
 | 4 | Install the APK on a phone and play a hand with the radio off — on each release's candidate build, before its tag | owner — no device here | **done** — it runs |
 | 5 | Add the about-screen link, run the check | either, after 3 | **done** |

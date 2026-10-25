@@ -27,7 +27,7 @@ Windows and Android builds on the same project page. This is the playbook the
 owner follows; `tools/package_itch.mjs`, `tools/smoke_itch_zip.mjs` and
 `tools/publish_itch.mjs` are what it runs.
 
-The GitHub release is unchanged: `diegoami/tressette-releases` still carries
+The GitHub release in the public source repository, `diegoami/Tressette`, carries
 exactly the APK and the Windows `.exe` and their `SHA256SUMS.txt`
 ([`ANDROID.md`](ANDROID.md) §4). The itch ZIP is a third artifact for a second
 storefront, staged under `dist-itch/` so it can never join that release.

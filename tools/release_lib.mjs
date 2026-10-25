@@ -301,8 +301,7 @@ export function checksumProblems(manifestText, hashOf, { expected, present } = {
 // the one place a player meets the unsigned-first decision (DESKTOP.md): it
 // says what SmartScreen will show and how to get past it. `subtitle` is the
 // one line that changes from release to release. `commit`, the full SHA the
-// tag names, goes in too: the binaries live in another repository, and that
-// line is how a release there leads back to the source it was built from.
+// tag names, goes in too: it identifies the exact source commit of the release.
 export function releaseNotes(version, { subtitle, commit } = {}){
   const [apk, exe] = releaseAssets(version);
   const title = subtitle ? `Tressette ${version}: ${subtitle}.` : `Tressette ${version}.`;
@@ -329,5 +328,5 @@ export function releaseCreateArgs({ confirm, tag, version, dir, assets, releases
   if (!confirm) return null;
   return ['release', 'create', tag,
     ...assets.map((name) => path.join(dir, name)), path.join(dir, 'SHA256SUMS.txt'),
-    '-R', releasesRepo, '--title', `Tressette ${version}`, '--notes-file', notesFile];
+    '-R', releasesRepo, '--verify-tag', '--title', `Tressette ${version}`, '--notes-file', notesFile];
 }

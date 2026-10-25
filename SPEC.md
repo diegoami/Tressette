@@ -423,7 +423,7 @@ part worth carrying to another project:
   Dal Negro deck — the same copyright grey area as the original art, a
   deliberate choice, documented in the README and in the import script.
 - **The APK is live, and has been installed once, at v1.0.0.** Its releases are
-  published at `diegoami/tressette-releases`, signed and checksummed, with a
+  published at `diegoami/Tressette`, signed and checksummed, with a
   Windows build beside the APK since v1.0.4. Which ones exist is in
   `ANDROID.md` §6, the one place that keeps count. The owner sideloaded v1.0.0
   and played a hand. The one

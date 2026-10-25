@@ -8,7 +8,9 @@ so it plays from a folder, or from an APK with the radio off.
 
 **Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
 
-**Android app and rules:** download them from [tressette-releases](https://github.com/diegoami/tressette-releases).
+**Android and Windows:** download them from the [latest release](https://github.com/diegoami/Tressette/releases/latest).
+
+[Italiano / English: downloads, rules and credits](DOWNLOADS.md) · [Privacy and contact](PRIVACY.md) · [Release migration record](RELEASE-MIGRATION.md)
 
 You against one of four opponents, one deal at a time. Everything — your
 settings, your last hundred hands — stays in your browser. The interface and

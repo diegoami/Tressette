@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Publish a packaged release to the public releases repo as a GitHub Release.
+ * Publish a packaged release to the public source repository as a GitHub Release.
  *
  *   node tools/publish_release.mjs                       # dry run: check everything, do nothing
  *   node tools/publish_release.mjs --confirm             # actually create the release
@@ -11,7 +11,7 @@
  * SHA256SUMS.txt, and the set itself, so a missing, unlisted or stray file
  * fails the run. The tag vX.Y.Z must be annotated, on main, and pushed to the
  * origin, and the notes name its commit. Needs `gh` logged in with access to
- * the releases repo. Outward-facing and hard to take back once the tag is
+ * the source repository. Outward-facing and hard to take back once the tag is
  * public, so it does nothing without --confirm.
  */
 import { spawnSync } from 'node:child_process';
@@ -31,7 +31,7 @@ import {
 const at = process.argv.indexOf('--subtitle');
 const SUBTITLE = at > 0 ? process.argv[at + 1] : undefined;
 
-const RELEASES_REPO = 'diegoami/tressette-releases';
+const RELEASES_REPO = 'diegoami/Tressette';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIRM = process.argv.includes('--confirm');
 

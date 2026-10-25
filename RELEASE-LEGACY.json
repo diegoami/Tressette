@@ -1,0 +1,78 @@
+[
+  {
+    "tag": "v1.0.0",
+    "files": [
+      {
+        "path": "assets/public/index.html",
+        "blob": "f4a388eb5460274a2f0b3543a89379a6745decfe",
+        "exactBlobInHistory": false,
+        "lfBlob": "b0cd689102c000082360ff5cd1079a73c826959e",
+        "lfBlobInHistory": true
+      },
+      {
+        "path": "assets/public/engine.js",
+        "blob": "7625ae0194d87d7e7311717dfae256172642c3a1",
+        "exactBlobInHistory": false,
+        "lfBlob": "2f4f6ee54be26cdd9a0317e8dedefd6593587b98",
+        "lfBlobInHistory": true
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.1",
+    "files": [
+      {
+        "path": "assets/public/index.html",
+        "blob": "cd43d948ebf037529f690b4ff812dc975e124e94",
+        "exactBlobInHistory": false,
+        "lfBlob": "f5389f6a73904b7d3cd3f65f8d787a72a44c7ce7",
+        "lfBlobInHistory": true
+      },
+      {
+        "path": "assets/public/engine.js",
+        "blob": "7625ae0194d87d7e7311717dfae256172642c3a1",
+        "exactBlobInHistory": false,
+        "lfBlob": "2f4f6ee54be26cdd9a0317e8dedefd6593587b98",
+        "lfBlobInHistory": true
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.2",
+    "files": [
+      {
+        "path": "assets/public/index.html",
+        "blob": "4661f7ea2c556372f1aa25fcb3643bdafc8f7107",
+        "exactBlobInHistory": false,
+        "lfBlob": "a0112ee79db8bcd73928bc1ec30caa10a63ebd90",
+        "lfBlobInHistory": true
+      },
+      {
+        "path": "assets/public/engine.js",
+        "blob": "7625ae0194d87d7e7311717dfae256172642c3a1",
+        "exactBlobInHistory": false,
+        "lfBlob": "2f4f6ee54be26cdd9a0317e8dedefd6593587b98",
+        "lfBlobInHistory": true
+      }
+    ]
+  },
+  {
+    "tag": "v1.0.3",
+    "files": [
+      {
+        "path": "assets/public/index.html",
+        "blob": "d41431e41392201d990a6c166380b3240e55c4ee",
+        "exactBlobInHistory": true,
+        "lfBlob": "d41431e41392201d990a6c166380b3240e55c4ee",
+        "lfBlobInHistory": true
+      },
+      {
+        "path": "assets/public/engine.js",
+        "blob": "2e6d450ea316750168296c7b3b78d9d127018835",
+        "exactBlobInHistory": true,
+        "lfBlob": "2e6d450ea316750168296c7b3b78d9d127018835",
+        "lfBlobInHistory": true
+      }
+    ]
+  }
+]

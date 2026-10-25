@@ -19,6 +19,7 @@ Android e le regole; per giocare subito nel browser vai su
 
 ### Scarica
 
+- **Windows:** scarica il file `.exe` portabile dall’[ultima release](https://github.com/diegoami/Tressette/releases/latest) e avvialo. Non serve un programma di installazione.
 - **Android:** prendi il file `.apk` dall'[ultima release](https://github.com/diegoami/Tressette/releases/latest),
   aprilo sul telefono e consenti l'installazione da questa fonte. È la stessa
   versione del sito, ma si gioca senza connessione: le carte, i caratteri e
@@ -120,6 +121,7 @@ Android app and the rules are here; to play in the browser, go to
 
 ### Download
 
+- **Windows:** download the portable `.exe` from the [latest release](https://github.com/diegoami/Tressette/releases/latest) and run it. No installer is needed.
 - **Android:** take the `.apk` from the [latest release](https://github.com/diegoami/Tressette/releases/latest),
   open it on the phone and allow installation from this source. It is the same
   version as the website, but it plays with no connection: the cards, the fonts
@@ -217,7 +219,5 @@ The opponent is this game's own: there was no 1997 Tressette to port, so the
 formula was designed and tuned for it. The card images are the original
 bitmaps of Discola, plus an imported Bresciane deck.
 
-
-Windows: download the portable `.exe` from the [latest release](https://github.com/diegoami/Tressette/releases/latest). No installer is needed. / Windows: scarica il file `.exe` portabile dall’[ultima release](https://github.com/diegoami/Tressette/releases/latest); non serve un programma di installazione.
 
 [Privacy e contatti / Privacy and contact](PRIVACY.md).

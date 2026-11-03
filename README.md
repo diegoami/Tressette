@@ -6,7 +6,7 @@ step, no runtime dependencies, and the 1997 card art from
 Nothing it draws with comes from the network — the fonts ship with the page —
 so it plays from a folder, or from an APK with the radio off.
 
-**Play it: [tresettette.netlify.app](https://tresettette.netlify.app)**
+**Play it: [GitHub Pages](https://diegoami.github.io/Tressette/)**
 
 **Android and Windows:** download them from the [latest release](https://github.com/diegoami/Tressette/releases/latest).
 
@@ -139,3 +139,9 @@ is uploaded to, are described in [`ITCH.md`](ITCH.md).
 
 The opponent is this game's own. There was no 1997 Tressette to transcribe, so
 the formula was designed here and tuned by self-play.
+
+## GitHub Pages
+
+The Pages workflow publishes only `public/` from `main`, with no build step.
+In Settings → Pages, select **GitHub Actions** as the source.
+Changes to the game deploy automatically; the workflow can also be run manually.
